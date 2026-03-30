@@ -211,7 +211,8 @@ void GameEngine::enterMarketPurge(size_t offset) {
     state_.encounter.title = "Black Market Purge";
     state_.encounter.description =
         "Select one card to erase from your deck. The black market visit ends immediately after the purge. Page " +
-        std::to_string(current_page) + "/" + std::to_string(total_pages) + ". Starter cards may appear on later pages.";
+        std::to_string(current_page) + "/" + std::to_string(total_pages) +
+        ". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.";
     state_.encounter.choices.clear();
     state_.encounter.details.clear();
     state_.encounter.payloadIds.clear();
@@ -230,7 +231,8 @@ void GameEngine::enterMarketPurge(size_t offset) {
     if (upper < candidates.size()) {
         state_.encounter.choices.push_back("More purge targets");
         state_.encounter.details.push_back("Cycle to the next page of cards that can be removed. Next page: " +
-                                           std::to_string(current_page + 1) + "/" + std::to_string(total_pages) + ".");
+                                           std::to_string(current_page + 1) + "/" + std::to_string(total_pages) +
+                                           ". Scroll controls stay available while browsing.");
         state_.encounter.payloadIds.push_back("market_purge_cycle");
         state_.encounter.payloadValues.push_back(static_cast<int>(upper));
     } else {

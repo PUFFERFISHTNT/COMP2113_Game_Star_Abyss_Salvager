@@ -36,7 +36,7 @@ std::string TrimAsciiSpaces(const std::string& value) {
 }
 
 std::vector<std::string> SplitDisplayTextByPunctuation(const std::string& text) {
-    static const std::vector<std::string> separators = {", ", ".", "; ", "，", "。", "；"};
+    static const std::vector<std::string> separators = {", ", ",", ".", "; ", ";", "，", "。", "；"};
 
     std::vector<std::string> lines;
     size_t cursor = 0;
@@ -239,6 +239,12 @@ std::string CompactFactText(UiLanguage language, const std::vector<std::string>&
         result += facts[i];
     }
     return result;
+}
+
+std::string ScrollHintLine(UiLanguage language) {
+    return Tr(language,
+              "Scroll: mouse wheel, PgUp/PgDn, Ctrl+Up/Ctrl+Down, or [ and ].",
+              "滚动：鼠标滚轮、PgUp/PgDn、Ctrl+上/下，或 [ 和 ]。");
 }
 
 Color CardAccent(const CardDef* card) {

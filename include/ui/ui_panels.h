@@ -27,6 +27,7 @@ std::string BattleKeyLabel(size_t index);
 std::string CardDescriptionText(UiLanguage language, const CardDef& card);
 std::vector<std::string> CardDescriptionLines(UiLanguage language, const CardDef& card);
 std::string CompactFactText(UiLanguage language, const std::vector<std::string>& facts);
+std::string ScrollHintLine(UiLanguage language);
 ftxui::Color CardAccent(const CardDef* card);
 ftxui::Color CardBackground(const CardDef* card, bool playable);
 std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card);

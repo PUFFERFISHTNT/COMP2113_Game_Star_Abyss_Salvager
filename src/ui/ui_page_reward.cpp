@@ -117,6 +117,8 @@ Element StarAbyssApp::RenderReward() const {
         separatorDouble(),
         hbox({vbox(std::move(cards)) | flex, InfoPanel(language_, Tr(language_, "Relic Reward", "遗物奖励"), relic_lines, kEnemy) | flex}),
         separator(),
+        text(ScrollHintLine(language_)) | color(kDim) | center,
+        separator(),
         hbox({rewardSkipButton_->Render() | flex, rewardMenuButton_->Render() | flex}),
         text(TranslateGameText(language_, state.statusLine)) | color(Color::White),
     });

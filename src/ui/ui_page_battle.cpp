@@ -183,6 +183,7 @@ Element StarAbyssApp::RenderBattle() const {
                         kEnemy),
         }),
         window(text(Tr(language_, "Battle Log", "战斗日志")) | color(kHull), vbox(std::move(log_lines))) | bgcolor(kPanel),
+        text(ScrollHintLine(language_)) | color(kDim) | center,
         text(TranslateGameText(language_, state.statusLine)) | color(Color::White),
     });
 

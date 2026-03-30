@@ -1,6 +1,7 @@
 #include "ui/star_abyss_app.h"
 
 #include <ftxui/component/event.hpp>
+#include <ftxui/component/mouse.hpp>
 
 #include "ui/ui_localization.h"
 
@@ -43,11 +44,28 @@ bool StarAbyssApp::HandleEvent(Event event) {
         return false;
     };
 
+    const auto handle_mouse_wheel = [&](Event mouse_event) {
+        if (!mouse_event.is_mouse()) {
+            return false;
+        }
+        if (mouse_event.mouse().button != Mouse::WheelUp && mouse_event.mouse().button != Mouse::WheelDown) {
+            return false;
+        }
+        if (forward_scroll_event(mouse_event)) {
+            return true;
+        }
+        return forward_scroll_event(mouse_event.mouse().button == Mouse::WheelUp ? Event::PageUp : Event::PageDown);
+    };
+
     if (event == Event::Custom) {
         ++ambientTick_;
         engine_.tickAnimation();
         SyncUi();
         return false;
+    }
+
+    if (handle_mouse_wheel(event)) {
+        return true;
     }
 
     if (event == Event::ArrowUpCtrl || event == Event::ArrowDownCtrl) {

@@ -487,6 +487,20 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         return "选择 1 张卡牌从卡组中彻底抹除。执行移除后，本次黑市访问会立刻结束。第 " +
                text.substr(page_start, page_end - page_start) + " 页。初始卡可能会出现在后续页面。";
     }
+    if (StartsWith(text, "Select one card to erase from your deck. The black market visit ends immediately after the purge. Page ") &&
+        text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t page_start = std::string("Select one card to erase from your deck. The black market visit ends immediately after the purge. Page ").size();
+        const size_t page_end = text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "选择 1 张卡牌从卡组中彻底抹除。执行移除后，本次黑市访问会立刻结束。第 " +
+               text.substr(page_start, page_end - page_start) + " 页。初始卡可能会出现在后续页面。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (StartsWith(text, "Cycle to the next page of cards that can be removed. Next page: ") &&
+        EndsWith(text, ". Scroll controls stay available while browsing.")) {
+        const size_t prefix = std::string("Cycle to the next page of cards that can be removed. Next page: ").size();
+        const size_t suffix_length = std::string(". Scroll controls stay available while browsing.").size();
+        return "切换到下一页可移除卡牌。下一页：" + text.substr(prefix, text.size() - prefix - suffix_length) +
+               "。浏览时滚动控制仍然可用。";
+    }
     if (StartsWith(text, "Cycle to the next page of cards that can be removed. Next page: ") && EndsWith(text, ".")) {
         const size_t prefix = std::string("Cycle to the next page of cards that can be removed. Next page: ").size();
         return "切换到下一页可移除卡牌。下一页：" + text.substr(prefix, text.size() - prefix - 1) + "。";
