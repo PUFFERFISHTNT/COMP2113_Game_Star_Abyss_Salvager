@@ -5,7 +5,28 @@ TARGET := star_abyss_salvager
 APP_SOURCES := \
 	src/tui_main.cpp \
 	src/tui_app.cpp \
-	src/tui_game.cpp
+	src/tui_game.cpp \
+	src/engine/game_battle.cpp \
+	src/engine/game_content.cpp \
+	src/engine/game_encounter.cpp \
+	src/engine/game_info.cpp \
+	src/engine/game_reward.cpp \
+	src/engine/game_route.cpp \
+	src/engine/game_save.cpp \
+	src/ui/ui_art.cpp \
+	src/ui/ui_input.cpp \
+	src/ui/ui_localization.cpp \
+	src/ui/ui_page_battle.cpp \
+	src/ui/ui_page_encounter.cpp \
+	src/ui/ui_page_info.cpp \
+	src/ui/ui_page_main_menu.cpp \
+	src/ui/ui_page_map.cpp \
+	src/ui/ui_page_reward.cpp \
+	src/ui/ui_page_setup.cpp \
+	src/ui/ui_page_summary.cpp \
+	src/ui/ui_panels.cpp \
+	src/ui/ui_save_dialog.cpp \
+	src/ui/ui_sync.cpp
 
 FTXUI_SCREEN_SOURCES := \
 	vendor/FTXUI/src/ftxui/screen/box.cpp \
@@ -95,7 +116,13 @@ OBJECTS := $(patsubst %.cpp,$(OBJDIR)/%.o,$(ALL_SOURCES))
 APP_CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -finput-charset=UTF-8 -fexec-charset=UTF-8 -Iinclude -isystem vendor/FTXUI/include
 FTXUI_CXXFLAGS := -std=c++17 -finput-charset=UTF-8 -fexec-charset=UTF-8 -isystem vendor/FTXUI/include -Ivendor/FTXUI/src
 LDFLAGS :=
-LDLIBS := -pthread -lstdc++fs
+LDLIBS := -pthread
+
+ifneq (,$(findstring clang,$(shell $(CXX) --version 2>/dev/null)))
+LDLIBS +=
+else
+LDLIBS += -lstdc++fs
+endif
 
 .PHONY: all run clean
 

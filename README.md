@@ -16,7 +16,7 @@ The UI is built with **FTXUI**, but the dependency is already vendored inside `v
 
 This release intentionally keeps only the runtime-critical files:
 
-- the active TUI entry point and gameplay code in `src/`
+- the modularized TUI entry point, gameplay engine, and UI code in `src/`
 - the matching public headers in `include/`
 - the leaderboard data file in `data/`
 - an empty `save/` directory for runtime save files
@@ -77,6 +77,8 @@ The game supports both keyboard and mouse through FTXUI.
 - `S`: open save manager
 - `L`: open load manager
 - `Esc`: return to the previous safe menu or the main menu
+- `PgUp` / `PgDn`: scroll long pages using the terminal UI container
+- `Ctrl+Up` / `Ctrl+Down`: fallback page scrolling for terminals where PageUp/PageDown is inconvenient
 - mouse: click buttons, cards, map nodes, rewards, and save slots
 
 ## Current Playable Scope
@@ -100,7 +102,9 @@ This release already supports:
 
 - Saves are written into `save/` and use a text-based `.sav` format.
 - The game currently stores the player currency internally in a field still named `scrap`, but all player-facing UI presents it as **credits**.
-- Most gameplay content is hardcoded in `src/tui_game.cpp` for portability, so no external card or enemy data files are required for the release build.
+- Gameplay data and rules are still compiled into the program for portability, but the implementation is now split across `src/engine/` and `src/ui/` rather than kept in two oversized source files.
+- The purge screen now shows page progress and warns that starter cards may appear on later pages.
+- Card text rendering was tightened so longer descriptions are shown more reliably in battle and reward views.
 
 ## If the Linux Machine Uses an Older GCC
 
@@ -116,10 +120,47 @@ github_release/
 |-- data/
 |   `-- leaderboard.txt
 |-- include/
+|   |-- engine/
+|   |   |-- game_battle.h
+|   |   |-- game_content.h
+|   |   |-- game_encounter.h
+|   |   |-- game_info.h
+|   |   |-- game_reward.h
+|   |   |-- game_route.h
+|   |   `-- game_save.h
+|   |-- ui/
+|   |   |-- star_abyss_app.h
+|   |   |-- ui_art.h
+|   |   |-- ui_localization.h
+|   |   |-- ui_panels.h
+|   |   `-- ui_save_dialog.h
 |   |-- tui_app.h
 |   `-- tui_game.h
 |-- save/
 |-- src/
+|   |-- engine/
+|   |   |-- game_battle.cpp
+|   |   |-- game_content.cpp
+|   |   |-- game_encounter.cpp
+|   |   |-- game_info.cpp
+|   |   |-- game_reward.cpp
+|   |   |-- game_route.cpp
+|   |   `-- game_save.cpp
+|   |-- ui/
+|   |   |-- ui_art.cpp
+|   |   |-- ui_input.cpp
+|   |   |-- ui_localization.cpp
+|   |   |-- ui_page_battle.cpp
+|   |   |-- ui_page_encounter.cpp
+|   |   |-- ui_page_info.cpp
+|   |   |-- ui_page_main_menu.cpp
+|   |   |-- ui_page_map.cpp
+|   |   |-- ui_page_reward.cpp
+|   |   |-- ui_page_setup.cpp
+|   |   |-- ui_page_summary.cpp
+|   |   |-- ui_panels.cpp
+|   |   |-- ui_save_dialog.cpp
+|   |   `-- ui_sync.cpp
 |   |-- tui_app.cpp
 |   |-- tui_game.cpp
 |   `-- tui_main.cpp
