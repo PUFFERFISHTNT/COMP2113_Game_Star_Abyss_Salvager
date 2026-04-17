@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="760" viewBox="0 0 1140 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#081221"/>
+      <stop offset="100%" stop-color="#02060e"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10243f"/>
+      <stop offset="100%" stop-color="#0a1426"/>
+    </linearGradient>
+    <linearGradient id="playerHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ccf5ff"/>
+      <stop offset="50%" stop-color="#5cc7f2"/>
+      <stop offset="100%" stop-color="#23456f"/>
+    </linearGradient>
+    <linearGradient id="foxHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d7fff8"/>
+      <stop offset="50%" stop-color="#57e2db"/>
+      <stop offset="100%" stop-color="#11506f"/>
+    </linearGradient>
+    <linearGradient id="bastionHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eff5ff"/>
+      <stop offset="50%" stop-color="#90a9c8"/>
+      <stop offset="100%" stop-color="#33425a"/>
+    </linearGradient>
+    <linearGradient id="enemyHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffb0b2"/>
+      <stop offset="50%" stop-color="#db5d6f"/>
+      <stop offset="100%" stop-color="#56192f"/>
+    </linearGradient>
+    <linearGradient id="carrierHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd08a"/>
+      <stop offset="50%" stop-color="#ff7b46"/>
+      <stop offset="100%" stop-color="#5e1f18"/>
+    </linearGradient>
+    <linearGradient id="sentinelHull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d6ffe5"/>
+      <stop offset="50%" stop-color="#61dfb5"/>
+      <stop offset="100%" stop-color="#3b225e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowOrange" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1140" height="760" fill="url(#bg)"/>
+
+  <g fill="none" stroke="#173154" stroke-opacity="0.45">
+    <path d="M40 80h1060"/>
+    <path d="M40 360h1060"/>
+    <path d="M380 60v640"/>
+    <path d="M760 60v640"/>
+  </g>
+
+  <text x="50" y="42" fill="#8fdcff" font-size="28" font-family="Menlo, monospace">彩色画像预览</text>
+  <text x="255" y="42" fill="#5c7aa2" font-size="16" font-family="Menlo, monospace">块面军舰风 / 先看方向，不改源码</text>
+
+  <!-- Panel backgrounds -->
+  <g stroke="#173154" stroke-width="2">
+    <rect x="40" y="60" width="320" height="280" rx="22" fill="url(#panel)"/>
+    <rect x="410" y="60" width="320" height="280" rx="22" fill="url(#panel)"/>
+    <rect x="780" y="60" width="320" height="280" rx="22" fill="url(#panel)"/>
+    <rect x="40" y="400" width="320" height="280" rx="22" fill="url(#panel)"/>
+    <rect x="410" y="400" width="320" height="280" rx="22" fill="url(#panel)"/>
+    <rect x="780" y="400" width="320" height="280" rx="22" fill="url(#panel)"/>
+  </g>
+
+  <!-- Vanguard -->
+  <g transform="translate(200 195)">
+    <text x="0" y="-105" text-anchor="middle" fill="#9de7ff" font-size="26" font-family="Menlo, monospace">Vanguard</text>
+    <polygon points="0,-90 34,-28 22,55 0,88 -22,55 -34,-28" fill="url(#playerHull)" stroke="#d8fbff" stroke-width="4"/>
+    <polygon points="-92,12 -20,-24 -16,20 -72,58 -108,38" fill="#3b6a9d" stroke="#9fdcff" stroke-width="3"/>
+    <polygon points="92,12 20,-24 16,20 72,58 108,38" fill="#3b6a9d" stroke="#9fdcff" stroke-width="3"/>
+    <polygon points="-54,-26 -18,-46 -10,-10 -52,8" fill="#76d3ff"/>
+    <polygon points="54,-26 18,-46 10,-10 52,8" fill="#76d3ff"/>
+    <polygon points="0,-58 12,-22 0,12 -12,-22" fill="#ffe37a" stroke="#fff3b1" stroke-width="3"/>
+    <polygon points="-18,48 18,48 10,84 -10,84" fill="#1d314a"/>
+    <rect x="-28" y="84" width="18" height="20" rx="6" fill="#ffa044" filter="url(#glowOrange)"/>
+    <rect x="10" y="84" width="18" height="20" rx="6" fill="#ffa044" filter="url(#glowOrange)"/>
+  </g>
+
+  <!-- Drift Fox -->
+  <g transform="translate(570 195)">
+    <text x="0" y="-105" text-anchor="middle" fill="#aef5f2" font-size="26" font-family="Menlo, monospace">Drift Fox</text>
+    <polygon points="0,-92 26,-40 16,48 0,82 -16,48 -26,-40" fill="url(#foxHull)" stroke="#d5fff8" stroke-width="4"/>
+    <polygon points="-116,20 -16,-34 -10,6 -72,68 -124,40" fill="#1d6d83" stroke="#89fff0" stroke-width="3"/>
+    <polygon points="116,20 16,-34 10,6 72,68 124,40" fill="#1d6d83" stroke="#89fff0" stroke-width="3"/>
+    <polygon points="-76,-10 -18,-56 -8,-18 -68,22" fill="#8df8f0"/>
+    <polygon points="76,-10 18,-56 8,-18 68,22" fill="#8df8f0"/>
+    <polygon points="0,-58 11,-24 0,7 -11,-24" fill="#ffd58a" stroke="#fff3c0" stroke-width="3"/>
+    <rect x="-42" y="72" width="16" height="22" rx="6" fill="#ff9941" filter="url(#glowOrange)"/>
+    <rect x="-8" y="84" width="16" height="18" rx="6" fill="#ffd266" filter="url(#glowOrange)"/>
+    <rect x="26" y="72" width="16" height="22" rx="6" fill="#ff9941" filter="url(#glowOrange)"/>
+  </g>
+
+  <!-- Iron Bastion -->
+  <g transform="translate(940 195)">
+    <text x="0" y="-105" text-anchor="middle" fill="#d7e4ff" font-size="26" font-family="Menlo, monospace">Iron Bastion</text>
+    <polygon points="0,-88 48,-42 58,30 28,88 -28,88 -58,30 -48,-42" fill="url(#bastionHull)" stroke="#ffffff" stroke-width="4"/>
+    <polygon points="-114,10 -54,-18 -46,30 -82,74 -122,44" fill="#4e6385" stroke="#dfe8ff" stroke-width="3"/>
+    <polygon points="114,10 54,-18 46,30 82,74 122,44" fill="#4e6385" stroke="#dfe8ff" stroke-width="3"/>
+    <rect x="-26" y="-10" width="52" height="28" rx="8" fill="#ffd57f" stroke="#fff0c2" stroke-width="3"/>
+    <rect x="-16" y="24" width="32" height="36" rx="8" fill="#34404f"/>
+    <rect x="-34" y="88" width="22" height="18" rx="6" fill="#ffa75c" filter="url(#glowOrange)"/>
+    <rect x="12" y="88" width="22" height="18" rx="6" fill="#ffa75c" filter="url(#glowOrange)"/>
+  </g>
+
+  <!-- Raider -->
+  <g transform="translate(200 535)">
+    <text x="0" y="-105" text-anchor="middle" fill="#ffb4bc" font-size="26" font-family="Menlo, monospace">Raider Hull</text>
+    <polygon points="0,-88 34,-18 20,52 0,84 -20,52 -34,-18" fill="url(#enemyHull)" stroke="#ffd0d4" stroke-width="4"/>
+    <polygon points="-88,8 -20,-20 -14,10 -60,56 -96,36" fill="#6a203d" stroke="#ff92a7" stroke-width="3"/>
+    <polygon points="88,8 20,-20 14,10 60,56 96,36" fill="#6a203d" stroke="#ff92a7" stroke-width="3"/>
+    <circle cx="0" cy="-18" r="18" fill="#ffe48e" stroke="#fff7cf" stroke-width="4"/>
+    <rect x="-22" y="78" width="16" height="22" rx="6" fill="#ff6d5c" filter="url(#glowOrange)"/>
+    <rect x="6" y="78" width="16" height="22" rx="6" fill="#ff6d5c" filter="url(#glowOrange)"/>
+  </g>
+
+  <!-- Furnace Carrier -->
+  <g transform="translate(570 535)">
+    <text x="0" y="-105" text-anchor="middle" fill="#ffd39d" font-size="26" font-family="Menlo, monospace">Furnace Carrier</text>
+    <polygon points="0,-84 76,-36 100,18 76,76 -76,76 -100,18 -76,-36" fill="url(#carrierHull)" stroke="#ffe1b5" stroke-width="4"/>
+    <polygon points="-130,0 -70,-22 -64,42 -96,82 -138,40" fill="#6d281a" stroke="#ff9e74" stroke-width="3"/>
+    <polygon points="130,0 70,-22 64,42 96,82 138,40" fill="#6d281a" stroke="#ff9e74" stroke-width="3"/>
+    <rect x="-40" y="-8" width="80" height="28" rx="10" fill="#ffd65e" stroke="#fff2b0" stroke-width="3"/>
+    <rect x="-28" y="30" width="56" height="28" rx="10" fill="#7f241a"/>
+    <rect x="-42" y="78" width="24" height="20" rx="6" fill="#ff7e3b" filter="url(#glowOrange)"/>
+    <rect x="-10" y="88" width="20" height="16" rx="6" fill="#ffce63" filter="url(#glowOrange)"/>
+    <rect x="18" y="78" width="24" height="20" rx="6" fill="#ff7e3b" filter="url(#glowOrange)"/>
+  </g>
+
+  <!-- Sentinel -->
+  <g transform="translate(940 535)">
+    <text x="0" y="-105" text-anchor="middle" fill="#bfffe0" font-size="26" font-family="Menlo, monospace">Abyss Core Sentinel</text>
+    <polygon points="0,-92 46,-40 38,10 18,78 -18,78 -38,10 -46,-40" fill="url(#sentinelHull)" stroke="#e1ffe9" stroke-width="4"/>
+    <polygon points="-98,14 -28,-24 -20,18 -70,66 -112,40" fill="#4a2d74" stroke="#8ff0c8" stroke-width="3"/>
+    <polygon points="98,14 28,-24 20,18 70,66 112,40" fill="#4a2d74" stroke="#8ff0c8" stroke-width="3"/>
+    <circle cx="0" cy="-20" r="22" fill="#d9ff96" stroke="#f5ffd2" stroke-width="4"/>
+    <circle cx="0" cy="-20" r="8" fill="#3b225e"/>
+    <rect x="-24" y="78" width="18" height="20" rx="6" fill="#84ffe5" filter="url(#glowBlue)"/>
+    <rect x="6" y="78" width="18" height="20" rx="6" fill="#84ffe5" filter="url(#glowBlue)"/>
+  </g>
+</svg>

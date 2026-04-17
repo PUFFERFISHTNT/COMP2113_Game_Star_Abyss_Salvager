@@ -12,14 +12,8 @@ using namespace ftxui;
 Element StarAbyssApp::RenderMainMenu() const {
     const int terminal_width = Terminal::Size().dimx;
     const bool compact_layout = terminal_width < 118;
-    Elements player_lines;
-    Elements enemy_lines;
-    for (const std::string& line : PlayerArt(engine_.state(), ambientTick_)) {
-        player_lines.push_back(text(line) | color(kHull));
-    }
-    for (const std::string& line : EnemyArt(engine_.state(), ambientTick_)) {
-        enemy_lines.push_back(text(line) | color(kEnemy));
-    }
+    Elements player_lines = PlayerArt(engine_.state(), ambientTick_);
+    Elements enemy_lines = EnemyArt(engine_.state(), ambientTick_);
 
     Element fleet_panels = compact_layout
                                ? vbox({

@@ -1,12 +1,24 @@
 #include "ui/ui_art.h"
 
 #include <algorithm>
+#include <string>
+#include <unordered_map>
 
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 #include <ftxui/screen/terminal.hpp>
 
 using namespace ftxui;
 
 namespace {
+
+struct GlyphStyle {
+    std::string glyph;
+    Color color = Color::White;
+    bool emphasized = false;
+};
+
+using Palette = std::unordered_map<char, GlyphStyle>;
 
 std::string RepeatPatternToWidth(const std::string& pattern, int width) {
     if (width <= 0 || pattern.empty()) {
@@ -28,86 +40,209 @@ int BoxWidth(const Box& box) {
     return box.x_max - box.x_min + 1;
 }
 
-}  // namespace
+std::string RepeatGlyph(const std::string& glyph, int count) {
+    std::string out;
+    out.reserve(glyph.size() * static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        out += glyph;
+    }
+    return out;
+}
 
-std::vector<std::string> PlayerArt(const RunState& state, int tick) {
-    const std::string flame_a = (tick % 2 == 0) ? "  vv  " : "  !!  ";
-    const std::string flame_b = (tick % 2 == 0) ? " v  v " : " !  ! ";
-    if (state.player.shipId == "iron_bastion") {
-        return {
-            "             /\\             ",
-            "        ____/##\\____        ",
-            "   ____/___/####\\___\\____   ",
-            " _/______/########\\______\\_ ",
-            "/_______/##########\\_______\\",
-            "\\_______\\##########/_______/",
-            " \\______/____##____\\______/ ",
-            "        /____||____\\        ",
-            "          " + flame_a + "          ",
-        };
+Element RenderSpriteRow(const std::string& row, const Palette& palette) {
+    Elements segments;
+    size_t cursor = 0;
+    while (cursor < row.size()) {
+        const char token = row[cursor];
+        size_t end = cursor + 1;
+        while (end < row.size() && row[end] == token) {
+            ++end;
+        }
+
+        const int count = static_cast<int>(end - cursor);
+        if (token == ' ') {
+            segments.push_back(text(std::string(static_cast<size_t>(count), ' ')));
+        } else {
+            const auto found = palette.find(token);
+            const GlyphStyle style = found != palette.end()
+                                         ? found->second
+                                         : GlyphStyle{"█", Color::White, false};
+            Element segment = text(RepeatGlyph(style.glyph, count)) | color(style.color);
+            if (style.emphasized) {
+                segment = segment | bold;
+            }
+            segments.push_back(segment);
+        }
+        cursor = end;
     }
-    if (state.player.shipId == "drift_fox") {
-        return {
-            "              /\\            ",
-            "        _____/::\\____       ",
-            "   _____/____/::::\\___\\__   ",
-            " _/_________/::::::\\_____\\_ ",
-            "/__________/::::::::\\______\\",
-            "\\__________\\::::::::/______/",
-            "      /_____\\::::::/_____\\  ",
-            "         /___\\__/___\\       ",
-            "          " + flame_b + "         ",
-        };
+    return hbox(std::move(segments));
+}
+
+Elements RenderSprite(const std::vector<std::string>& rows, const Palette& palette) {
+    Elements rendered;
+    rendered.reserve(rows.size());
+    for (const std::string& row : rows) {
+        rendered.push_back(RenderSpriteRow(row, palette));
     }
+    return rendered;
+}
+
+Palette VanguardPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(255, 156, 71) : Color::RGB(255, 214, 92);
     return {
-        "              /\\            ",
-        "       ______/::\\______     ",
-        "   ___/_____/::::\\_____\\__  ",
-        " _/________/::::::\\________\\",
-        "/_________/::::::::\\________\\",
-        "\\_________\\::::::::/________/",
-        "    /______\\::::::/______\\   ",
-        "        /___\\__/___\\         ",
-        "          " + flame_a + "          ",
+        {'a', {"█", Color::RGB(141, 228, 255), true}},
+        {'b', {"█", Color::RGB(70, 132, 209), false}},
+        {'c', {"█", Color::RGB(247, 208, 96), true}},
+        {'e', {"█", engine, true}},
     };
 }
 
-std::vector<std::string> EnemyArt(const RunState& state, int tick) {
-    const bool pulse = tick % 2 == 0;
+Palette DriftFoxPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(255, 146, 78) : Color::RGB(255, 196, 97);
+    return {
+        {'a', {"█", Color::RGB(168, 255, 241), true}},
+        {'b', {"█", Color::RGB(66, 190, 210), false}},
+        {'c', {"█", Color::RGB(255, 179, 94), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
+Palette IronBastionPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(255, 170, 99) : Color::RGB(255, 224, 120);
+    return {
+        {'a', {"█", Color::RGB(186, 206, 229), true}},
+        {'b', {"█", Color::RGB(95, 123, 166), false}},
+        {'c', {"█", Color::RGB(255, 214, 120), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
+Palette CommonEnemyPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(255, 101, 98) : Color::RGB(255, 169, 84);
+    return {
+        {'r', {"█", Color::RGB(230, 98, 109), true}},
+        {'m', {"█", Color::RGB(134, 53, 88), false}},
+        {'y', {"█", Color::RGB(255, 205, 102), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
+Palette FurnaceCarrierPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(255, 124, 73) : Color::RGB(255, 189, 101);
+    return {
+        {'r', {"█", Color::RGB(201, 89, 83), true}},
+        {'m', {"█", Color::RGB(109, 47, 54), false}},
+        {'y', {"█", Color::RGB(255, 186, 67), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
+Palette SentinelPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(163, 229, 136) : Color::RGB(125, 255, 209);
+    return {
+        {'m', {"█", Color::RGB(118, 77, 156), false}},
+        {'g', {"█", Color::RGB(112, 221, 176), true}},
+        {'y', {"█", Color::RGB(225, 255, 168), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
+std::vector<std::string> VanguardRows() {
+    return {
+        "          c          ",
+        "        ccccc        ",
+        "      bbaaaaabb      ",
+        "    bbbaaaaaaabbb    ",
+        "  bbbaaaaacaaaaabbb  ",
+        "    aaabccccccbaaa   ",
+        "      aaabbbbaaa     ",
+        "        e    e       ",
+    };
+}
+
+std::vector<std::string> DriftFoxRows() {
+    return {
+        "          c          ",
+        "        ccccc        ",
+        "      bbbaaaabbb     ",
+        "    bbbaaaaaaaaabbb  ",
+        " bbbbaaaaccccaaaabbbb",
+        "    aaaabbbbbbaaaa   ",
+        "      aaab  baaa     ",
+        "       e e  e e      ",
+    };
+}
+
+std::vector<std::string> IronBastionRows() {
+    return {
+        "        ccccc        ",
+        "      bbcccccbb      ",
+        "    bbbaaaaaaaabbb   ",
+        "  bbbaaaaaaaaaaaabbb ",
+        "  aaaabbbccccbbbaaaa ",
+        "  bbbaaaaaaaaaaaabbb ",
+        "      aaabbbbaaa     ",
+        "       eee eee       ",
+    };
+}
+
+std::vector<std::string> CommonEnemyRows() {
+    return {
+        "        yyyyy        ",
+        "      mmryrrymm      ",
+        "    mmrrrrrrrrrmm    ",
+        "   mmrrrrmmmrrrrmm   ",
+        "    rrrmmyyymmyrrr   ",
+        "      mmrrrrrmm      ",
+        "        rrerr        ",
+    };
+}
+
+std::vector<std::string> FurnaceCarrierRows() {
+    return {
+        "      yyyyyyyyy      ",
+        "   mmrrrrrrrrrrrmm   ",
+        "  mmrrrryyyyyrrrrmm  ",
+        " mmrrrrrmmmmmrrrrrmm ",
+        "  rrrrrmmyyymmrrrrr  ",
+        "    mmrrrrrrrrrmm    ",
+        "      rrreeerrr      ",
+    };
+}
+
+std::vector<std::string> SentinelRows() {
+    return {
+        "          y          ",
+        "       gyyyyyg       ",
+        "      mmgggggmm      ",
+        "    mmggmmmmmggmm    ",
+        "   mmggmmyyymmggmm   ",
+        "    mmggmmmmmggmm    ",
+        "      mmgggggmm      ",
+        "        e  e         ",
+    };
+}
+
+}  // namespace
+
+Elements PlayerArt(const RunState& state, int tick) {
+    if (state.player.shipId == "iron_bastion") {
+        return RenderSprite(IronBastionRows(), IronBastionPalette(tick));
+    }
+    if (state.player.shipId == "drift_fox") {
+        return RenderSprite(DriftFoxRows(), DriftFoxPalette(tick));
+    }
+    return RenderSprite(VanguardRows(), VanguardPalette(tick));
+}
+
+Elements EnemyArt(const RunState& state, int tick) {
     if (state.enemy.enemyId == "furnace_carrier") {
-        return {
-            "          .-========-.      ",
-            "      ___/##======##\\\\___  ",
-            "   .-<___############___>-. ",
-            " _/____/##############\\____\\",
-            "<_____\\##############/_____>",
-            " \\_____\\____####____/_____/ ",
-            "    \\\\____\\__##__/____//   ",
-            pulse ? "        `--.######.--'      " : "        `--.======.--'      ",
-        };
+        return RenderSprite(FurnaceCarrierRows(), FurnaceCarrierPalette(tick));
     }
     if (state.enemy.enemyId == "abyss_core_sentinel") {
-        return {
-            "           .-======-.       ",
-            "       .--'  _.._  '--.     ",
-            "     ./___./====\\.___\\.    ",
-            "    /_____/| [][] |\\_____\\ ",
-            "    \\_____\\\\_====_//_____/",
-            "       \\\\___\\____/___//    ",
-            "         '--.____.--'      ",
-            pulse ? "          .-::::::-.       " : "          .-......-.       ",
-        };
+        return RenderSprite(SentinelRows(), SentinelPalette(tick));
     }
-    return {
-        "           .-======-.       ",
-        "        .-'  _  _  '-.      ",
-        "      ./   _/ || \\_   \\.    ",
-        "     /___ /_  ||  _\\ ___\\   ",
-        "     |   | 0  || 0 |   |    ",
-        "     |   |   /__\\  |   |    ",
-        "      \\   \\__\\--/__ /   /   ",
-        pulse ? "        '--.______.--'      " : "        '--.======.--'      ",
-    };
+    return RenderSprite(CommonEnemyRows(), CommonEnemyPalette(tick));
 }
 
 int LaneWidthHint(const Box& lane_box) {
@@ -129,7 +264,7 @@ std::vector<std::string> LaneRows(const RunState& state, int tick, int width) {
     std::vector<std::string> rows = {
         RepeatPatternToWidth(stars[tick % 3], width),
         RepeatPatternToWidth(stars[(tick + 1) % 3], width),
-        std::string(width, '.'),
+        std::string(static_cast<size_t>(width), '.'),
         RepeatPatternToWidth(stars[(tick + 2) % 3], width),
         RepeatPatternToWidth(stars[tick % 3], width),
     };

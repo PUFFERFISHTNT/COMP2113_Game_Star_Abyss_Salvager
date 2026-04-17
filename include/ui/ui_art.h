@@ -4,12 +4,13 @@
 #include <string>
 #include <vector>
 
+#include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/box.hpp>
 
 #include "tui_game.h"
 
-std::vector<std::string> PlayerArt(const RunState& state, int tick);
-std::vector<std::string> EnemyArt(const RunState& state, int tick);
+ftxui::Elements PlayerArt(const RunState& state, int tick);
+ftxui::Elements EnemyArt(const RunState& state, int tick);
 int LaneWidthHint(const ftxui::Box& lane_box);
 std::vector<std::string> LaneRows(const RunState& state, int tick, int width);
 
