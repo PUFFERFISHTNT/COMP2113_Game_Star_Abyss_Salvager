@@ -18,8 +18,11 @@ bool GameEngine::canPlayCard(size_t index) const {
     if (index >= state_.player.hand.size()) {
         return false;
     }
-    const CardDef* card = cardById(state_.player.hand[index]);
-    return card != nullptr && card->cost <= state_.player.energy;
+    const CardDef* baseCard = cardById(state_.player.hand[index]);
+    if (baseCard == nullptr) {
+        return false;
+    }
+    return resolvedCard(state_.player.hand[index]).cost <= state_.player.energy;
 }
 
 void GameEngine::playCard(size_t index) {
@@ -29,20 +32,21 @@ void GameEngine::playCard(size_t index) {
     }
 
     const std::string cardId = state_.player.hand[index];
-    const CardDef* card = cardById(cardId);
-    if (card == nullptr) {
+    const CardDef* baseCard = cardById(cardId);
+    if (baseCard == nullptr) {
         return;
     }
+    const CardDef card = resolvedCard(cardId);
 
-    state_.player.energy -= card->cost;
+    state_.player.energy -= card.cost;
     state_.player.discardPile.push_back(cardId);
     state_.player.hand.erase(state_.player.hand.begin() + static_cast<long long>(index));
 
-    int outgoingDamage = card->damage;
-    if (card->comboBonus > 0 && state_.player.attacksPlayedThisTurn > 0) {
-        outgoingDamage += card->comboBonus;
+    int outgoingDamage = card.damage;
+    if (card.comboBonus > 0 && state_.player.attacksPlayedThisTurn > 0) {
+        outgoingDamage += card.comboBonus;
     }
-    if (card->shieldToDamage) {
+    if (card.shieldToDamage) {
         outgoingDamage += state_.player.shield;
         state_.player.shield = 0;
     }
@@ -51,72 +55,72 @@ void GameEngine::playCard(size_t index) {
         state_.player.nextAttackMultiplier = 1;
     }
 
-    log("You route " + card->name + ".");
+    log("You route " + card.name + ".");
 
-    if (card->attackMultiplier > 1) {
-        state_.player.nextAttackMultiplier *= card->attackMultiplier;
+    if (card.attackMultiplier > 1) {
+        state_.player.nextAttackMultiplier *= card.attackMultiplier;
         log("Target lock acquired. The next attack will strike harder.");
     }
-    if (card->shield > 0) {
-        state_.player.shield += card->shield;
-        log("Shield rises by " + std::to_string(card->shield) + ".");
+    if (card.shield > 0) {
+        state_.player.shield += card.shield;
+        log("Shield rises by " + std::to_string(card.shield) + ".");
     }
-    if (card->heal > 0) {
-        state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + card->heal);
-        log("Hull restores " + std::to_string(card->heal) + " HP.");
+    if (card.heal > 0) {
+        state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + card.heal);
+        log("Hull restores " + std::to_string(card.heal) + " HP.");
     }
-    if (card->draw > 0) {
-        drawCards(card->draw);
+    if (card.draw > 0) {
+        drawCards(card.draw);
     }
-    if (card->energy > 0) {
-        state_.player.energy += card->energy;
-        log("Reactor gain: +" + std::to_string(card->energy) + " energy.");
+    if (card.energy > 0) {
+        state_.player.energy += card.energy;
+        log("Reactor gain: +" + std::to_string(card.energy) + " energy.");
     }
-    if (card->nextTurnEnergy != 0) {
-        state_.player.nextTurnEnergy += card->nextTurnEnergy;
-        log("Next turn energy buffered: +" + std::to_string(card->nextTurnEnergy) + ".");
+    if (card.nextTurnEnergy != 0) {
+        state_.player.nextTurnEnergy += card.nextTurnEnergy;
+        log("Next turn energy buffered: +" + std::to_string(card.nextTurnEnergy) + ".");
     }
-    if (card->halveHeat) {
+    if (card.halveHeat) {
         state_.player.heat /= 2;
         log("Heat is cut in half.");
     }
-    if (card->clearHeat) {
+    if (card.clearHeat) {
         state_.player.heat = 0;
         log("All heat is vented from the reactor.");
     }
-    if (card->heat != 0) {
-        changeHeat(card->heat);
-        if (card->heat > 0) {
-            log("Heat climbs by " + std::to_string(card->heat) + ".");
+    if (card.heat != 0) {
+        changeHeat(card.heat);
+        if (card.heat > 0) {
+            log("Heat climbs by " + std::to_string(card.heat) + ".");
         } else {
-            log("Heat drops by " + std::to_string(-card->heat) + ".");
+            log("Heat drops by " + std::to_string(-card.heat) + ".");
         }
     }
-    if (card->selfDamage > 0) {
-        applyDamageToPlayer(card->selfDamage);
-        log("Feedback lashes your own hull for " + std::to_string(card->selfDamage) + ".");
+    if (card.selfDamage > 0) {
+        applyDamageToPlayer(card.selfDamage);
+        log("Feedback lashes your own hull for " + std::to_string(card.selfDamage) + ".");
     }
-    if (card->weakenTurns > 0) {
-        state_.enemy.weakenTurns = std::max(state_.enemy.weakenTurns, card->weakenTurns);
+    if (card.weakenTurns > 0) {
+        state_.enemy.weakenTurns = std::max(state_.enemy.weakenTurns, card.weakenTurns);
         log("Enemy fire-control is weakened.");
     }
-    if (card->removeEnemyShield > 0) {
-        const int removed = std::min(state_.enemy.shield, card->removeEnemyShield);
-        state_.enemy.shield = std::max(0, state_.enemy.shield - card->removeEnemyShield);
+    if (card.removeEnemyShield > 0) {
+        const int removed = std::min(state_.enemy.shield, card.removeEnemyShield);
+        state_.enemy.shield = std::max(0, state_.enemy.shield - card.removeEnemyShield);
         if (removed > 0) {
             log("Enemy shield stripped by " + std::to_string(removed) + ".");
         }
     }
-    if (card->shieldLockTurns > 0) {
-        state_.enemy.shieldLockTurns = std::max(state_.enemy.shieldLockTurns, card->shieldLockTurns);
+    if (card.shieldLockTurns > 0) {
+        state_.enemy.shieldLockTurns = std::max(state_.enemy.shieldLockTurns, card.shieldLockTurns);
         log("Enemy shield emitters are jammed.");
     }
-    if (card->salvageBonus > 0) {
-        state_.player.salvageBonus += card->salvageBonus;
-        log("Battle credit payout increased by " + std::to_string(card->salvageBonus) + ".");
+    if (card.salvageBonus > 0) {
+        state_.player.salvageBonus += card.salvageBonus;
+        log("Battle credit payout increased by " + std::to_string(card.salvageBonus) + ".");
     }
 
-    if (card->randomEffect) {
+    if (card.randomEffect) {
         std::uniform_int_distribution<int> outcome(0, 3);
         const int roll = outcome(rng_);
         if (roll == 0) {
@@ -139,21 +143,21 @@ void GameEngine::playCard(size_t index) {
     }
 
     if (outgoingDamage > 0) {
-        applyDamageToEnemy(outgoingDamage, card->ignoreShield, std::max(1, card->multiHit));
-        startAnimation("attack", card->name, outgoingDamage, true, 7);
-        if (card->multiHit > 1) {
-            log(card->name + " deals " + std::to_string(outgoingDamage) + " x " +
-                std::to_string(card->multiHit) + ".");
+        applyDamageToEnemy(outgoingDamage, card.ignoreShield, std::max(1, card.multiHit));
+        startAnimation("attack", card.name, outgoingDamage, true, 7);
+        if (card.multiHit > 1) {
+            log(card.name + " deals " + std::to_string(outgoingDamage) + " x " +
+                std::to_string(card.multiHit) + ".");
         } else {
-            log(card->name + " deals " + std::to_string(outgoingDamage) + ".");
+            log(card.name + " deals " + std::to_string(outgoingDamage) + ".");
         }
-    } else if (card->shield > 0) {
-        startAnimation("shield", card->name, card->shield, true, 5);
+    } else if (card.shield > 0) {
+        startAnimation("shield", card.name, card.shield, true, 5);
     } else {
-        startAnimation("support", card->name, std::max(card->heal, std::abs(card->heat)), true, 5);
+        startAnimation("support", card.name, std::max(card.heal, std::abs(card.heat)), true, 5);
     }
 
-    if (card->type == "Attack" || outgoingDamage > 0) {
+    if (card.type == "Attack" || outgoingDamage > 0) {
         ++state_.player.attacksPlayedThisTurn;
     }
 
@@ -162,7 +166,7 @@ void GameEngine::playCard(size_t index) {
     } else if (state_.player.hp <= 0) {
         handleDefeat();
     } else {
-        state_.statusLine = card->name + " resolved. " + std::to_string(state_.player.energy) + " energy remains.";
+        state_.statusLine = card.name + " resolved. " + std::to_string(state_.player.energy) + " energy remains.";
     }
 }
 
@@ -424,8 +428,7 @@ void GameEngine::drawCards(int count) {
         state_.player.drawPile.pop_back();
         if (state_.player.hand.size() >= kBattleHandLimit) {
             state_.player.discardPile.push_back(nextCard);
-            const CardDef* card = cardById(nextCard);
-            const std::string cardName = card != nullptr ? card->name : "card";
+            const std::string cardName = displayCardName(nextCard);
             log("Hand full. " + cardName + " is routed to discard.");
             continue;
         }

@@ -8,6 +8,8 @@
 
 inline constexpr int kBattleDrawCount = 5;
 inline constexpr int kBattleHandLimit = 10;
+inline constexpr int kMarketCardUpgradeBaseCost = 50;
+inline constexpr int kCardUpgradeMaxLevel = 1;
 
 enum class AppPage {
     MainMenu = 0,
@@ -20,11 +22,25 @@ enum class AppPage {
     Info,
 };
 
+enum class CardUpgradeSource {
+    RepairStation = 0,
+    Market,
+    EventReward,
+};
+
+enum class CardRarity {
+    Common = 0,
+    Uncommon,
+    Rare,
+};
+
 struct CardDef {
     std::string id;
     std::string name;
     std::string type;
     std::string description;
+    CardRarity rarity = CardRarity::Common;
+    int starterCopies = 0;
     int cost = 0;
     int damage = 0;
     int shield = 0;
@@ -46,6 +62,12 @@ struct CardDef {
     bool halveHeat = false;
     bool clearHeat = false;
     bool randomEffect = false;
+};
+
+struct CardView {
+    std::string ref;
+    CardDef def;
+    int upgradeLevel = 0;
 };
 
 struct NodeOption {
@@ -136,6 +158,8 @@ struct RunState {
     int depth = 0;
     int nodesPerSector = 3;
     int battleTurn = 0;
+    int marketUpgradeCount = 0;
+    bool marketPurgeUsed = false;
     bool firstTurnOfBattle = true;
     bool pendingSectorAdvance = false;
     bool pendingVictory = false;
@@ -144,6 +168,8 @@ struct RunState {
     std::string statusLine;
     PlayerState player;
     EnemyState enemy;
+    std::vector<std::string> upgradedCardTypes;
+    std::vector<std::string> marketOfferCardIds;
     std::vector<NodeOption> routeOptions;
     EncounterState encounter;
     RewardState reward;
@@ -175,6 +201,9 @@ public:
     void resolveEncounter(size_t index);
     bool canPlayCard(size_t index) const;
     void playCard(size_t index);
+    bool upgradeCard(const std::string& cardRef,
+                     CardUpgradeSource source = CardUpgradeSource::Market,
+                     std::string* error = nullptr);
     void endTurn();
     void chooseReward(int index);
     void returnToMenu();
@@ -182,8 +211,12 @@ public:
     void tickAnimation();
 
     const CardDef* cardById(const std::string& id) const;
-    std::vector<const CardDef*> rewardCards() const;
-    std::vector<const CardDef*> handCards() const;
+    CardDef resolvedCard(const std::string& cardRef) const;
+    std::string displayCardName(const std::string& cardRef) const;
+    int cardUpgradeLevel(const std::string& cardRef) const;
+    int cardUpgradeCost(CardUpgradeSource source) const;
+    std::vector<CardView> rewardCards() const;
+    std::vector<CardView> handCards() const;
 
     std::string difficultyName() const;
     std::string shipNameForId(const std::string& shipId) const;
@@ -227,6 +260,7 @@ private:
     AppPage resumePage_ = AppPage::Map;
     std::mt19937 rng_;
     std::vector<CardDef> cardPool_;
+    std::vector<CardDef> upgradedCardPool_;
     std::vector<EnemyTemplate> enemyPool_;
     std::vector<ShipTemplate> ships_;
     std::vector<RelicDef> relicPool_;
@@ -236,6 +270,16 @@ private:
     void setupPlayerForShip(const ShipTemplate& ship, int difficulty);
     void grantRelic(const std::string& relicId);
     bool hasRelic(const std::string& relicId) const;
+    const CardDef* upgradedCardByBaseId(const std::string& cardId) const;
+    void storeUpgradedCard(const std::string& cardId);
+    void rebuildUpgradedCardPool();
+    bool isCardTypeUpgraded(const std::string& cardId) const;
+    void markCardTypeUpgraded(const std::string& cardId);
+    void normalizeUpgradedCards();
+    bool cardTypeSupportsUpgrade(const std::string& cardId) const;
+    std::string baseCardId(const std::string& cardRef) const;
+    std::string makeCardRef(const std::string& cardId, int upgradeLevel) const;
+    CardDef applyUpgrade(const CardDef& baseCard, int upgradeLevel) const;
 
     void generateRouteOptions();
     void startEncounterForNode(const NodeOption& node);
@@ -269,9 +313,19 @@ private:
 
     void fillHelpInfo();
     void fillSummary(bool victory);
+    void openMarketShop();
+    void clearMarketState();
+    bool resolvePurgeSelection(size_t index);
+    bool resolveUpgradeSelection(size_t index);
     void enterMarketPurge(size_t offset);
+    void enterMarketUpgrade(size_t offset);
+    void enterRepairUpgrade(size_t offset);
+    void enterEventPurge(size_t offset);
+    void enterEventUpgrade(size_t offset);
     std::vector<std::pair<std::string, int>> purgeableCards() const;
+    std::vector<std::pair<std::string, int>> upgradeableCards() const;
     bool purgeCardFromDeck(const std::string& cardId);
+    bool upgradeRandomCard(CardUpgradeSource source, std::string* upgradedCardName, std::string* error);
 };
 
 #endif

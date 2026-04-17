@@ -24,6 +24,7 @@ const RunState& GameEngine::state() const {
 
 void GameEngine::resetRunState() {
     state_ = RunState{};
+    upgradedCardPool_.clear();
     state_.difficulty = 1;
     state_.page = AppPage::MainMenu;
     state_.statusLine = "Abyss link stable. Choose a route.";
@@ -46,8 +47,9 @@ void GameEngine::tickAnimation() {
 }
 
 const CardDef* GameEngine::cardById(const std::string& id) const {
+    const std::string baseId = baseCardId(id);
     const auto found = std::find_if(cardPool_.begin(), cardPool_.end(), [&](const CardDef& card) {
-        return card.id == id;
+        return card.id == baseId;
     });
     return found == cardPool_.end() ? nullptr : &(*found);
 }

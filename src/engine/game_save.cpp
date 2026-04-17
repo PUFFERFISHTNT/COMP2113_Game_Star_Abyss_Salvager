@@ -1,6 +1,8 @@
 #include "engine/game_save.h"
+#include "engine/game_card_json.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -75,6 +77,12 @@ AppPage PageFromString(const std::string& value) {
     return AppPage::MainMenu;
 }
 
+std::string UpgradedCardsJsonPath(const std::string& save_path) {
+    namespace fs = std::filesystem;
+    const fs::path path(save_path);
+    return (path.parent_path() / (path.stem().string() + ".cards.json")).string();
+}
+
 }  // namespace
 
 bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
@@ -93,13 +101,15 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|3\n";
+    output << "VERSION|8\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
     output << "DEPTH|" << state_.depth << "\n";
     output << "NODES|" << state_.nodesPerSector << "\n";
     output << "BATTLETURN|" << state_.battleTurn << "\n";
+    output << "MARKETUPGRADES|" << state_.marketUpgradeCount << "\n";
+    output << "MARKETPURGEUSED|" << BoolToken(state_.marketPurgeUsed) << "\n";
     output << "FIRSTTURN|" << BoolToken(state_.firstTurnOfBattle) << "\n";
     output << "PENDINGSECTOR|" << BoolToken(state_.pendingSectorAdvance) << "\n";
     output << "PENDINGVICTORY|" << BoolToken(state_.pendingVictory) << "\n";
@@ -145,6 +155,11 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
                << "|" << option.danger << "\n";
     }
 
+    output << "MARKETOFFERS|" << state_.marketOfferCardIds.size() << "\n";
+    for (const std::string& card : state_.marketOfferCardIds) {
+        output << "MARKETOFFER|" << card << "\n";
+    }
+
     output << "ENCOUNTER|" << state_.encounter.typeId << "|" << state_.encounter.encounterId
            << "|" << state_.encounter.title << "|" << state_.encounter.description << "|"
            << state_.encounter.choices.size() << "\n";
@@ -177,6 +192,14 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << state_.animation.magnitude << "|" << BoolToken(state_.animation.playerToEnemy) << "|"
            << state_.animation.tick << "|" << state_.animation.duration << "|"
            << BoolToken(state_.animation.active) << "\n";
+
+    std::string upgraded_error;
+    if (!SaveUpgradedCardsToJsonFile(UpgradedCardsJsonPath(path), upgradedCardPool_, &upgraded_error)) {
+        if (error != nullptr) {
+            *error = upgraded_error;
+        }
+        return false;
+    }
 
     if (error != nullptr) {
         *error = "";
@@ -217,6 +240,10 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.nodesPerSector = ToInt(parts[1], 3);
         } else if (key == "BATTLETURN" && parts.size() >= 2) {
             loaded.battleTurn = ToInt(parts[1], 0);
+        } else if (key == "MARKETUPGRADES" && parts.size() >= 2) {
+            loaded.marketUpgradeCount = ToInt(parts[1], 0);
+        } else if (key == "MARKETPURGEUSED" && parts.size() >= 2) {
+            loaded.marketPurgeUsed = parts[1] == "1";
         } else if (key == "FIRSTTURN" && parts.size() >= 2) {
             loaded.firstTurnOfBattle = parts[1] == "1";
         } else if (key == "PENDINGSECTOR" && parts.size() >= 2) {
@@ -255,6 +282,8 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             }
         } else if (key == "RELIC" && parts.size() >= 2) {
             loaded.player.relics.push_back(parts[1]);
+        } else if (key == "UPGRADEDTYPE" && parts.size() >= 2) {
+            loaded.upgradedCardTypes.push_back(parts[1]);
         } else if (key == "DRAW") {
             loaded.player.drawPile.clear();
             activePile = &loaded.player.drawPile;
@@ -283,6 +312,8 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             }
         } else if (key == "NODE" && parts.size() >= 5) {
             loaded.routeOptions.push_back({parts[1], parts[2], parts[3], ToInt(parts[4], 1)});
+        } else if (key == "MARKETOFFER" && parts.size() >= 2) {
+            loaded.marketOfferCardIds.push_back(parts[1]);
         } else if (key == "ENCOUNTER" && parts.size() >= 5) {
             loaded.encounter.typeId = parts[1];
             loaded.encounter.encounterId = parts[2];
@@ -324,6 +355,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.nodesPerSector = std::max(1, loaded.nodesPerSector);
     loaded.depth = std::max(0, loaded.depth);
     loaded.battleTurn = std::max(0, loaded.battleTurn);
+    loaded.marketUpgradeCount = std::max(0, loaded.marketUpgradeCount);
     loaded.player.maxHp = std::max(1, loaded.player.maxHp);
     loaded.player.hp = std::max(0, std::min(loaded.player.hp, loaded.player.maxHp));
     loaded.player.maxEnergy = std::max(1, loaded.player.maxEnergy);
@@ -351,8 +383,17 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             return false;
         }
     }
+    for (const std::string& cardId : loaded.upgradedCardTypes) {
+        if (cardById(cardId) == nullptr) {
+            if (error != nullptr) {
+                *error = "Save file references an unknown upgraded card.";
+            }
+            return false;
+        }
+    }
     const std::vector<std::vector<std::string>*> piles = {
-        &loaded.player.drawPile, &loaded.player.hand, &loaded.player.discardPile, &loaded.reward.cardIds,
+        &loaded.player.drawPile, &loaded.player.hand, &loaded.player.discardPile,
+        &loaded.reward.cardIds, &loaded.marketOfferCardIds,
     };
     for (const std::vector<std::string>* pile : piles) {
         for (const std::string& cardId : *pile) {
@@ -379,6 +420,27 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     }
 
     state_ = loaded;
+    upgradedCardPool_.clear();
+
+    std::string upgraded_error;
+    const std::string upgraded_json_path = UpgradedCardsJsonPath(path);
+    if (std::filesystem::exists(upgraded_json_path)) {
+        if (!LoadUpgradedCardsFromJsonFile(upgraded_json_path, &upgradedCardPool_, &upgraded_error)) {
+            if (error != nullptr) {
+                *error = upgraded_error;
+            }
+            return false;
+        }
+        for (const CardDef& card : upgradedCardPool_) {
+            if (cardById(card.id) == nullptr) {
+                if (error != nullptr) {
+                    *error = "Upgraded card JSON references an unknown base card.";
+                }
+                return false;
+            }
+        }
+    }
+    normalizeUpgradedCards();
     resumePage_ = (state_.page == AppPage::MainMenu) ? AppPage::Map : state_.page;
     if (error != nullptr) {
         *error = "";
