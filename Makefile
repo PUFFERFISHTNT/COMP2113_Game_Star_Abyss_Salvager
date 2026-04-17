@@ -7,6 +7,8 @@ APP_SOURCES := \
 	src/tui_app.cpp \
 	src/tui_game.cpp \
 	src/engine/game_battle.cpp \
+	src/engine/game_card_services.cpp \
+	src/engine/game_card_json.cpp \
 	src/engine/game_content.cpp \
 	src/engine/game_encounter.cpp \
 	src/engine/game_info.cpp \
