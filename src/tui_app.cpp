@@ -80,7 +80,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     mainMenuPage_ = Renderer(Container::Vertical(std::vector<Component>(menuButtons_.begin(), menuButtons_.end())), [&] { return RenderMainMenu(); });
     setupPage_ = Renderer(Container::Vertical({difficultyToggle_, shipToggle_, startRunButton_, setupBackButton_}), [&] { return RenderSetup(); });
     mapPage_ = Renderer(Container::Vertical({mapButtons_[0], mapButtons_[1], mapButtons_[2], mapSaveButton_, mapMenuButton_}), [&] { return RenderMap(); });
-    encounterPage_ = Renderer(Container::Vertical({encounterButtons_[0], encounterButtons_[1], encounterButtons_[2], encounterButtons_[3], encounterButtons_[4], encounterSaveButton_, encounterMenuButton_}),
+    encounterPage_ = Renderer(Container::Vertical({encounterButtons_[0], encounterButtons_[1], encounterButtons_[2], encounterButtons_[3], encounterButtons_[4], encounterButtons_[5], encounterSaveButton_, encounterMenuButton_}),
                               [&] { return RenderEncounter(); });
     {
         std::vector<Component> battle_components(battleCardButtons_.begin(), battleCardButtons_.end());

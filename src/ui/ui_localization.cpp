@@ -25,6 +25,13 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         return text;
     }
 
+    if (!text.empty() && text.back() == '+') {
+        const size_t base_end = text.find_last_not_of('+');
+        if (base_end != std::string::npos) {
+            return TranslateGameText(language, text.substr(0, base_end + 1)) + text.substr(base_end + 1);
+        }
+    }
+
     static const std::pair<const char*, const char*> kTranslations[] = {
         {"Vanguard", "先锋号"},
         {"Drift Fox", "漂移狐"},
@@ -155,6 +162,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Reliable, clean repairs for a bruised ship.", "为受损飞船提供稳定而干净的修复。"},
         {"Stabilize the core and harden your next engagement.", "稳定核心，让下一场战斗更稳健。"},
         {"Trade time for permanent hull reinforcement.", "花时间换取永久性的船体强化。"},
+        {"Use the station fabricators to upgrade one card for free.", "使用维修站的制造设备，免费升级 1 种卡牌。"},
         {"Strip Scrap", "拆解废料"},
         {"Recover Module Rack", "回收模块架"},
         {"Leave It", "不去碰它"},
@@ -162,13 +170,26 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Turn the wreck into a fresh card reward.", "把残骸转化为一组新的卡牌奖励。"},
         {"Avoid the unknown and conserve resources.", "避开未知风险，保留现有资源。"},
         {"A broker crackles through the static with contraband cards and a purge service.", "一名掮客在静电中接通讯号，兜售走私卡牌和移除服务。"},
+        {"A broker crackles through the static with contraband cards and ship services.", "一名掮客在静电中接通讯号，兜售走私卡牌与舰船服务。"},
+        {"Upgrade 1 card", "升级 1 张卡牌"},
+        {"Open the upgrade console and improve one card in your deck.", "打开升级终端，强化你卡组中的 1 张牌。"},
+        {"Open the purge console. Each market visit allows only one purge.", "打开删牌终端。每次进入商店只能删 1 张牌。"},
         {"Purge 1 card", "移除 1 张卡牌"},
         {"Pay 20 scrap to permanently remove one card from your deck.", "支付 20 废料，永久移除卡组中的 1 张牌。"},
         {"Leave the broker", "离开掮客频道"},
         {"Cut the transmission and keep moving.", "切断传输，继续前进。"},
+        {"Black Market Upgrade", "黑市升级终端"},
+        {"Repair Station Retrofit", "维修站改装终端"},
         {"Select one card to erase from your deck. The black market visit ends immediately after the purge.", "选择 1 张卡牌从卡组中彻底抹除。执行移除后，本次黑市访问会立刻结束。"},
         {"More purge targets", "更多可移除目标"},
+        {"More upgrade targets", "更多可升级目标"},
+        {"Previous purge targets", "上一页可移除目标"},
+        {"Previous upgrade targets", "上一页可升级目标"},
         {"Cycle to the next page of cards that can be removed.", "切换到下一页可移除卡牌。"},
+        {"Return to the previous page of cards that can be removed.", "返回上一页可移除卡牌。"},
+        {"Return to the previous page of cards that can be upgraded.", "返回上一页可升级卡牌。"},
+        {"Back to broker", "返回商店"},
+        {"Return to the black market offers.", "返回黑市商店列表。"},
         {"Abort the purge and close the channel.", "取消移除并关闭频道。"},
         {"Distress Beacon", "求救信标"},
         {"A damaged salvage tug is limping between asteroids.", "一艘受损的打捞拖船正蹒跚穿过小行星带。"},
@@ -176,6 +197,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Strip the derelict", "拆解残舰"},
         {"Ignore the call", "忽略求救"},
         {"Gain a modest reward and some goodwill.", "获得一份稳定奖励和一点善意。"},
+        {"Gain a modest reward, some goodwill, and a random card upgrade.", "获得一份稳定奖励、一点善意，以及一次随机卡牌升级。"},
         {"Take a bigger haul, but risk heat from a stressed reactor.", "可以拿到更大的收益，但反应堆会承受额外热量风险。"},
         {"Keep your run clean and your conscience murky.", "继续你的航程，只留下有点复杂的良心。"},
         {"A harmonic transmission keeps syncing to your nav core.", "一段谐波信号不断与你的导航核心同步。"},
@@ -183,6 +205,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Ride the signal", "借力信号"},
         {"Mute it", "静音处理"},
         {"Dig for blueprints and possible reward cards.", "挖掘蓝图，并可能得到奖励卡牌。"},
+        {"Decode the lattice and choose one card to upgrade.", "解码调谐阵列，并自选 1 张卡牌升级。"},
         {"Bank an extra energy spike for the next battle.", "为下一场战斗储存一股额外能量尖峰。"},
         {"Stay safe and keep moving.", "保持安全，继续前进。"},
         {"Reactor Leak", "反应堆泄漏"},
@@ -194,13 +217,26 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Cash out hard, but pay in reactor heat.", "收益更高，但要承受更多反应堆热量。"},
         {"A safe choice that restores a little hull.", "稳妥的选择，可以恢复一点船体。"},
         {"Smuggler Cache", "走私者藏匿点"},
+        {"Smuggler Purge Rig", "走私者删牌终端"},
         {"A hidden cargo pod blinks with black market encryption.", "一个隐藏货舱正闪烁着黑市加密信号。"},
         {"Force it open", "强行开启"},
         {"Bribe the lock (10 scrap)", "贿赂锁芯（10 废料）"},
         {"Leave it", "离开这里"},
         {"High-risk relic grab with self-inflicted damage.", "高风险获取遗物，但会承受自伤。"},
         {"Trade 10 scrap for a controlled card reward.", "花费 10 废料，换取一次可控的卡牌奖励。"},
+        {"Trade 10 credits for a controlled purge reward.", "花费 10 金币，换取一次可控的删牌奖励。"},
         {"No risk, no gain.", "无风险，也无收益。"},
+        {"Signal Calibration", "信号校准"},
+        {"Skip reward", "跳过奖励"},
+        {"Leave the purge rig untouched and continue.", "不使用删牌终端，直接继续前进。"},
+        {"Leave the tuning lattice unused and continue.", "不使用调谐阵列，直接继续前进。"},
+        {"Leave the retrofit console unused and continue.", "不使用改装终端，直接继续前进。"},
+        {"Upgrade Service", "升级服务"},
+        {"Price Free", "价格：免费"},
+        {"Purge service already used on this visit.", "本次进店的删牌服务已使用。"},
+        {"Upgrade service cost rises: 50, 100, then doubles each time.", "升级服务价格递增：50、100，之后每次翻倍。"},
+        {"Buy a card, upgrade a card, purge once, or leave the channel.", "购买卡牌、升级卡牌、删一次牌，或直接离开频道。"},
+        {"Pick a target card, browse more pages, or go back to the broker.", "选择目标卡牌、浏览更多页面，或返回商店。"},
         {"Battle reward", "战斗奖励"},
         {"Elite salvage secured", "精英战利品到手"},
         {"Boss cache recovered", "Boss 宝藏已回收"},
@@ -251,7 +287,10 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Save file references an unknown ship.", "存档引用了未知飞船。"},
         {"Save file references an unknown relic.", "存档引用了未知遗物。"},
         {"Save file references an unknown card.", "存档引用了未知卡牌。"},
+        {"Save file references an unknown upgraded card.", "存档引用了未知的已升级卡牌类型。"},
         {"Save file references an unknown enemy.", "存档引用了未知敌人。"},
+        {"Unable to write upgraded card JSON file.", "无法写入升级卡牌 JSON 文件。"},
+        {"Upgraded card JSON references an unknown base card.", "升级卡牌 JSON 引用了未知的原始卡牌。"},
         {"No card drawn", "此槽位暂无手牌"},
         {"No module loaded.", "没有装填模块。"},
         {"Empty Slot", "空槽位"},
@@ -454,6 +493,42 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (StartsWith(text, "The reactor vents cleanly. Your next battle starts with +4 shield.")) {
         return "反应堆排热顺畅。你的下一场战斗将以 +4 护盾开始。";
     }
+    if (StartsWith(text, "The broker opens an upgrade console. Choose one module to improve.")) {
+        return "掮客打开了升级终端。请选择 1 张要强化的模块牌。";
+    }
+    if (StartsWith(text, "The station opens a retrofit console. Choose one card to upgrade for free.")) {
+        return "维修站打开了改装终端。请选择 1 种卡牌免费升级。";
+    }
+    if (StartsWith(text, "The broker has already performed one purge this visit.")) {
+        return "掮客本次进店已经执行过一次删牌服务。";
+    }
+    if (StartsWith(text, "The service cannot find that module in your active deck.")) {
+        return "服务终端无法在当前卡组中找到这张模块牌。";
+    }
+    if (StartsWith(text, "You return to the broker's main trade feed.")) {
+        return "你回到了掮客的主交易频道。";
+    }
+    if (StartsWith(text, "You leave the purge console untouched.")) {
+        return "你没有使用删牌终端。";
+    }
+    if (StartsWith(text, "You leave the upgrade console untouched.")) {
+        return "你没有使用升级终端。";
+    }
+    if (StartsWith(text, "You leave the retrofit console unused.")) {
+        return "你没有使用改装终端。";
+    }
+    if (StartsWith(text, "Signal decryption reveals a precision tuning pattern. Choose one card to upgrade.")) {
+        return "信号解密后显露出一套精密调谐图样。请选择 1 张卡牌升级。";
+    }
+    if (StartsWith(text, "The bribe exposes a silent purge rig. Remove one card from your deck.")) {
+        return "贿赂成功后，一台隐蔽的删牌终端显露出来。请选择 1 张卡牌移除。";
+    }
+    if (StartsWith(text, "You leave the purge rig untouched.")) {
+        return "你没有使用这台删牌终端。";
+    }
+    if (StartsWith(text, "You leave the tuning lattice unused.")) {
+        return "你没有使用这组调谐阵列。";
+    }
     if (StartsWith(text, "Abyss link stable. Choose a route.")) {
         return "深渊链路稳定。请选择一条航线。";
     }
@@ -466,8 +541,32 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (StartsWith(text, "No save files are available.")) {
         return "当前没有可读取的存档。";
     }
+    if (StartsWith(text, "No active run to upgrade.")) {
+        return "当前没有可升级的航程。";
+    }
+    if (StartsWith(text, "No cards can be upgraded right now.")) {
+        return "当前没有可升级的卡牌。";
+    }
+    if (StartsWith(text, "That card is not in the current deck.")) {
+        return "当前卡组中找不到这张牌。";
+    }
+    if (StartsWith(text, "That card does not have an upgrade effect.")) {
+        return "这张牌没有可升级的数值效果。";
+    }
+    if (StartsWith(text, "That card is already fully upgraded.")) {
+        return "这张牌已经升到最高级。";
+    }
+    if (StartsWith(text, "Not enough credits to upgrade that card.")) {
+        return "金币不足，无法升级这张牌。";
+    }
     if (StartsWith(text, "Purge 1 copy from the deck. Copies owned: ") && EndsWith(text, ".")) {
         return "从卡组中移除 1 张。当前持有：" + text.substr(39, text.size() - 40) + "。";
+    }
+    if (StartsWith(text, "Upgrade 1 copy in the deck. Copies owned: ") && EndsWith(text, ".")) {
+        return "从卡组中升级 1 张。当前持有：" + text.substr(40, text.size() - 41) + "。";
+    }
+    if (StartsWith(text, "Upgrade 1 card type in the deck. Copies owned: ") && EndsWith(text, ".")) {
+        return "升级该种卡牌。当前持有：" + text.substr(45, text.size() - 46) + "。";
     }
     if (StartsWith(text, "Purge 1 copy from the deck. Copies owned: ")) {
         const size_t split = text.find(". ", 39);
@@ -479,6 +578,50 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         if (EndsWith(text, ".")) {
             return "从卡组中移除 1 张。当前持有：" + text.substr(39, text.size() - 40) + "。";
         }
+    }
+    if (StartsWith(text, "Select one card to upgrade. Current price: ") &&
+        text.find(" credits. Page ") != std::string::npos &&
+        text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t price_start = std::string("Select one card to upgrade. Current price: ").size();
+        const size_t price_end = text.find(" credits. Page ");
+        const size_t page_start = price_end + std::string(" credits. Page ").size();
+        const size_t page_end = text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "选择 1 张卡牌升级。当前价格：" + text.substr(price_start, price_end - price_start) +
+               " 金币。第 " + text.substr(page_start, page_end - page_start) +
+               " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (StartsWith(text, "A hidden rig can erase one card from your deck for free. Page ") &&
+        text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t page_start = std::string("A hidden rig can erase one card from your deck for free. Page ").size();
+        const size_t page_end = text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "一台隐藏终端可以免费移除你卡组中的 1 张牌。第 " +
+               text.substr(page_start, page_end - page_start) +
+               " 页。初始卡可能会出现在后续页面。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (StartsWith(text, "A tuning lattice lets you upgrade one card for free. Page ") &&
+        text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t page_start = std::string("A tuning lattice lets you upgrade one card for free. Page ").size();
+        const size_t page_end = text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "一组调谐阵列可以免费升级你卡组中的 1 张牌。第 " +
+               text.substr(page_start, page_end - page_start) +
+               " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (StartsWith(text, "Select one card to upgrade for free at the repair station. Page ") &&
+        text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t page_start = std::string("Select one card to upgrade for free at the repair station. Page ").size();
+        const size_t page_end = text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "选择 1 种卡牌在维修站免费升级。第 " +
+               text.substr(page_start, page_end - page_start) +
+               " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (StartsWith(text, "Select one card to erase from your deck. Price: 20 credits. Each market visit allows only one purge. Page ") &&
+        text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
+        const size_t page_start =
+            std::string("Select one card to erase from your deck. Price: 20 credits. Each market visit allows only one purge. Page ").size();
+        const size_t page_end = text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.");
+        return "选择 1 张卡牌从卡组中彻底抹除。价格 20 金币，每次进店只能使用一次删牌服务。第 " +
+               text.substr(page_start, page_end - page_start) +
+               " 页。初始卡可能会出现在后续页面。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
     }
     if (StartsWith(text, "Select one card to erase from your deck. The black market visit ends immediately after the purge. Page ") &&
         text.find(". Starter cards may appear on later pages.") != std::string::npos) {
@@ -500,6 +643,18 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         const size_t suffix_length = std::string(". Scroll controls stay available while browsing.").size();
         return "切换到下一页可移除卡牌。下一页：" + text.substr(prefix, text.size() - prefix - suffix_length) +
                "。浏览时滚动控制仍然可用。";
+    }
+    if (StartsWith(text, "Return to the previous page of cards that can be removed. Previous page: ") && EndsWith(text, ".")) {
+        const size_t prefix = std::string("Return to the previous page of cards that can be removed. Previous page: ").size();
+        return "返回上一页可移除卡牌。上一页：" + text.substr(prefix, text.size() - prefix - 1) + "。";
+    }
+    if (StartsWith(text, "Return to the previous page of cards that can be upgraded. Previous page: ") && EndsWith(text, ".")) {
+        const size_t prefix = std::string("Return to the previous page of cards that can be upgraded. Previous page: ").size();
+        return "返回上一页可升级卡牌。上一页：" + text.substr(prefix, text.size() - prefix - 1) + "。";
+    }
+    if (StartsWith(text, "Cycle to the next page of cards that can be upgraded. Next page: ") && EndsWith(text, ".")) {
+        const size_t prefix = std::string("Cycle to the next page of cards that can be upgraded. Next page: ").size();
+        return "切换到下一页可升级卡牌。下一页：" + text.substr(prefix, text.size() - prefix - 1) + "。";
     }
     if (StartsWith(text, "Cycle to the next page of cards that can be removed. Next page: ") && EndsWith(text, ".")) {
         const size_t prefix = std::string("Cycle to the next page of cards that can be removed. Next page: ").size();
@@ -553,6 +708,26 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (EndsWith(text, " has been integrated into your deck.")) {
         const std::string name = text.substr(0, text.size() - 33);
         return TranslateGameText(language, name) + " 已加入你的卡组。";
+    }
+    if (text.find(" upgraded for ") != std::string::npos && EndsWith(text, " credits.")) {
+        const size_t pos = text.find(" upgraded for ");
+        return TranslateGameText(language, text.substr(0, pos)) + " 已升级，花费 " +
+               text.substr(pos + 14, text.size() - pos - 23) + " 金币。";
+    }
+    if (EndsWith(text, " upgraded for free.")) {
+        const std::string suffix = " upgraded for free.";
+        const std::string name = text.substr(0, text.size() - suffix.size());
+        return TranslateGameText(language, name) + " 已免费升级。";
+    }
+    if (EndsWith(text, " upgraded for free at the repair station.")) {
+        const std::string suffix = " upgraded for free at the repair station.";
+        const std::string name = text.substr(0, text.size() - suffix.size());
+        return TranslateGameText(language, name) + " 已在维修站免费升级。";
+    }
+    if (StartsWith(text, "The stranded crew transfers 8 credits, patch gel, and upgrades ") && EndsWith(text, ".")) {
+        const std::string prefix = "The stranded crew transfers 8 credits, patch gel, and upgrades ";
+        const std::string name = text.substr(prefix.size(), text.size() - prefix.size() - 1);
+        return "被困船员转交了 8 金币、修补胶，并升级了 " + TranslateGameText(language, name) + "。";
     }
     if (EndsWith(text, " has been purged from your deck.")) {
         const std::string name = text.substr(0, text.size() - 30);

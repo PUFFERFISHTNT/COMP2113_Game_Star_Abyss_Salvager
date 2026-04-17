@@ -127,11 +127,13 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
             "Patch Hull (+10 HP)",
             "Vent Reactor (-6 Heat, +4 Shield)",
             "Install Plating (+4 Max HP)",
+            "Upgrade 1 card",
         };
         state_.encounter.details = {
             "Reliable, clean repairs for a bruised ship.",
             "Stabilize the core and harden your next engagement.",
             "Trade time for permanent hull reinforcement.",
+            "Use the station fabricators to upgrade one card for free.",
         };
         return;
     }
@@ -151,31 +153,9 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
     }
 
     if (node.typeId == "market") {
-        state_.encounter.encounterId = "market_shop";
-        state_.encounter.description = "A broker crackles through the static with contraband cards and a purge service.";
-        const std::vector<std::string> offers = randomCardChoices(3);
-        state_.encounter.choices.clear();
-        state_.encounter.details.clear();
-        state_.encounter.payloadIds.clear();
-        state_.encounter.payloadValues.clear();
-
-        for (const std::string& cardId : offers) {
-            const CardDef* card = cardById(cardId);
-            if (card != nullptr) {
-                state_.encounter.choices.push_back(card->name);
-                state_.encounter.details.push_back(card->description);
-                state_.encounter.payloadIds.push_back("card:" + card->id);
-                state_.encounter.payloadValues.push_back(28);
-            }
-        }
-        state_.encounter.choices.push_back("Purge 1 card");
-        state_.encounter.details.push_back("Pay 20 credits to permanently remove one card from your deck.");
-        state_.encounter.payloadIds.push_back("purge");
-        state_.encounter.payloadValues.push_back(20);
-        state_.encounter.choices.push_back("Leave the broker");
-        state_.encounter.details.push_back("Cut the transmission and keep moving.");
-        state_.encounter.payloadIds.push_back("leave");
-        state_.encounter.payloadValues.push_back(0);
+        clearMarketState();
+        state_.marketOfferCardIds = randomCardChoices(3);
+        openMarketShop();
         return;
     }
 
@@ -187,7 +167,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.description = "A damaged salvage tug is limping between asteroids.";
         state_.encounter.choices = {"Aid the tug", "Strip the derelict", "Ignore the call"};
         state_.encounter.details = {
-            "Gain a modest reward and some goodwill.",
+            "Gain a modest reward, some goodwill, and a random card upgrade.",
             "Take a bigger haul, but risk heat from a stressed reactor.",
             "Keep your run clean and your conscience murky.",
         };
@@ -197,7 +177,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.description = "A harmonic transmission keeps syncing to your nav core.";
         state_.encounter.choices = {"Investigate", "Ride the signal", "Mute it"};
         state_.encounter.details = {
-            "Dig for blueprints and possible reward cards.",
+            "Decode the lattice and choose one card to upgrade.",
             "Bank an extra energy spike for the next battle.",
             "Stay safe and keep moving.",
         };
@@ -218,7 +198,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.choices = {"Force it open", "Bribe the lock (10 credits)", "Leave it"};
         state_.encounter.details = {
             "High-risk relic grab with self-inflicted damage.",
-            "Trade 10 credits for a controlled card reward.",
+            "Trade 10 credits for a controlled purge reward.",
             "No risk, no gain.",
         };
     }
@@ -228,6 +208,7 @@ void GameEngine::finishCurrentNode() {
     state_.encounter = {};
     state_.reward = {};
     state_.animation = {};
+    clearMarketState();
     state_.battleLog.clear();
     state_.player.shield = 0;
     state_.player.nextTurnEnergy = 0;

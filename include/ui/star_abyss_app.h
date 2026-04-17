@@ -25,7 +25,7 @@ public:
 private:
     static constexpr size_t kBattleSlots = static_cast<size_t>(kBattleHandLimit);
     static constexpr size_t kMapSlots = 3;
-    static constexpr size_t kEncounterSlots = 5;
+    static constexpr size_t kEncounterSlots = 6;
     static constexpr size_t kRewardSlots = 3;
 
     void SyncUi();

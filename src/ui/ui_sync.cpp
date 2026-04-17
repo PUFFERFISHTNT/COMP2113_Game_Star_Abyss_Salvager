@@ -51,13 +51,13 @@ void StarAbyssApp::SyncUi() {
     for (size_t i = 0; i < state.encounter.choices.size() && i < encounterLabels_.size(); ++i) {
         encounterLabels_[i] = TranslateGameText(language_, state.encounter.choices[i]);
     }
-    const std::vector<const CardDef*> hand = engine_.handCards();
+    const std::vector<CardView> hand = engine_.handCards();
     for (size_t i = 0; i < hand.size() && i < battleCardLabels_.size(); ++i) {
-        battleCardLabels_[i] = TranslateGameText(language_, hand[i]->name);
+        battleCardLabels_[i] = TranslateGameText(language_, hand[i].def.name);
     }
-    const std::vector<const CardDef*> rewards = engine_.rewardCards();
+    const std::vector<CardView> rewards = engine_.rewardCards();
     for (size_t i = 0; i < rewards.size() && i < rewardLabels_.size(); ++i) {
-        rewardLabels_[i] = TranslateGameText(language_, rewards[i]->name);
+        rewardLabels_[i] = TranslateGameText(language_, rewards[i].def.name);
     }
     if (saveDialogVisible_) {
         RefreshSaveEntries();
