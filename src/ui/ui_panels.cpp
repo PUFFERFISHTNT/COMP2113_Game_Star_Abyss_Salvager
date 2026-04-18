@@ -223,7 +223,7 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
 }
 
 std::vector<std::string> CardDescriptionLines(UiLanguage language, const CardDef& card) {
-    return SplitDisplayTextByPunctuation(TranslateGameText(language, card.description));
+    return SplitDisplayTextByPunctuation(CardDescriptionText(language, card));
 }
 
 std::string CompactFactText(UiLanguage language, const std::vector<std::string>& facts) {
@@ -264,6 +264,21 @@ Color CardAccent(const CardDef* card) {
         return Color::RGB(255, 152, 82);
     }
     return kHull;
+}
+
+Color CardFrameColor(const CardDef* card) {
+    if (card == nullptr) {
+        return Color::RGB(214, 222, 232);
+    }
+    switch (card->rarity) {
+    case CardRarity::Common:
+        return Color::RGB(232, 238, 247);
+    case CardRarity::Uncommon:
+        return Color::RGB(92, 163, 255);
+    case CardRarity::Rare:
+        return Color::RGB(246, 196, 91);
+    }
+    return Color::RGB(232, 238, 247);
 }
 
 Color CardBackground(const CardDef* card, bool playable) {
