@@ -1,6 +1,28 @@
 CXX ?= g++
-OBJDIR := obj
 TARGET := star_abyss_salvager
+
+ifeq ($(OS),Windows_NT)
+BUILD_TAG := windows
+TARGET := $(TARGET).exe
+WINDOWS_DEFINES := -DUNICODE -D_UNICODE
+MKDIR_P = @if not exist "$(@D)" mkdir "$(@D)"
+RUN_TARGET = .\$(TARGET)
+CLEAN_TARGET = @if exist "$(TARGET)" del /q "$(TARGET)"
+CLEAN_OBJDIR = @if exist "obj" rmdir /s /q "obj"
+else
+CXX_TARGET := $(shell $(CXX) -dumpmachine 2>/dev/null)
+ifeq ($(strip $(CXX_TARGET)),)
+CXX_TARGET := posix
+endif
+BUILD_TAG := $(CXX_TARGET)
+WINDOWS_DEFINES :=
+MKDIR_P = @mkdir -p "$(@D)"
+RUN_TARGET = ./$(TARGET)
+CLEAN_TARGET = @rm -f "$(TARGET)"
+CLEAN_OBJDIR = @rm -rf "obj"
+endif
+
+OBJDIR := obj/$(BUILD_TAG)
 
 APP_SOURCES := \
 	src/tui_main.cpp \
@@ -115,8 +137,8 @@ FTXUI_COMPONENT_SOURCES := \
 ALL_SOURCES := $(APP_SOURCES) $(FTXUI_SCREEN_SOURCES) $(FTXUI_DOM_SOURCES) $(FTXUI_COMPONENT_SOURCES)
 OBJECTS := $(patsubst %.cpp,$(OBJDIR)/%.o,$(ALL_SOURCES))
 
-APP_CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -finput-charset=UTF-8 -fexec-charset=UTF-8 -Iinclude -isystem vendor/FTXUI/include
-FTXUI_CXXFLAGS := -std=c++17 -finput-charset=UTF-8 -fexec-charset=UTF-8 -isystem vendor/FTXUI/include -Ivendor/FTXUI/src
+APP_CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -finput-charset=UTF-8 -fexec-charset=UTF-8 $(WINDOWS_DEFINES) -Iinclude -isystem vendor/FTXUI/include
+FTXUI_CXXFLAGS := -std=c++17 -finput-charset=UTF-8 -fexec-charset=UTF-8 $(WINDOWS_DEFINES) -isystem vendor/FTXUI/include -Ivendor/FTXUI/src
 LDFLAGS :=
 LDLIBS := -pthread
 
@@ -134,15 +156,16 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS) $(LDLIBS)
 
 $(OBJDIR)/src/%.o: src/%.cpp
-	@mkdir -p "$(@D)"
+	$(MKDIR_P)
 	$(CXX) $(APP_CXXFLAGS) -c $< -o $@
 
 $(OBJDIR)/vendor/FTXUI/src/%.o: vendor/FTXUI/src/%.cpp
-	@mkdir -p "$(@D)"
+	$(MKDIR_P)
 	$(CXX) $(FTXUI_CXXFLAGS) -c $< -o $@
 
 run: $(TARGET)
-	./$(TARGET)
+	$(RUN_TARGET)
 
 clean:
-	rm -rf "$(OBJDIR)" "$(TARGET)"
+	$(CLEAN_OBJDIR)
+	$(CLEAN_TARGET)

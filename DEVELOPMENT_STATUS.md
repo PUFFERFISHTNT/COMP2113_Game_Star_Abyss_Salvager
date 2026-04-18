@@ -25,7 +25,7 @@ Included:
 - current gameplay engine
 - current UI controller
 - vendored offline FTXUI source
-- leaderboard data file
+- static card data file
 - runtime save directory
 - Linux-only build script
 
@@ -399,7 +399,7 @@ This is already one of the strongest systems in the current build.
 
 Implemented:
 
-- appending run results to `data/leaderboard.txt`
+- appending run results to a runtime-created `data/leaderboard.txt`
 - viewing leaderboard entries in the info screen
 
 ## 7. Content Database Status
@@ -677,7 +677,7 @@ The trimmed release has very small runtime file dependencies.
 
 Required relative paths:
 
-- `data/leaderboard.txt`
+- `data/leaderboard.txt` (created automatically after the first finished run)
 - `save/`
 
 Important detail:

@@ -18,12 +18,12 @@ This release intentionally keeps only the runtime-critical files:
 
 - the modularized TUI entry point, gameplay engine, and UI code in `src/`
 - the matching public headers in `include/`
-- the leaderboard data file in `data/`
+- the static card data in `data/`
 - an empty `save/` directory for runtime save files
 - the vendored FTXUI source and headers required for offline compilation
 - this `README.md`
 - `DEVELOPMENT_STATUS.md`
-- a Linux-only `Makefile`
+- a `Makefile` that keeps the Linux delivery flow intact and also works in the current Windows MinGW environment
 
 Legacy prototype files from the older non-TUI version are not included here.
 
@@ -59,8 +59,8 @@ This builds the executable:
 
 You should launch the game from this folder root so that the relative runtime paths continue to work:
 
-- `data/leaderboard.txt`
 - `save/*.sav`
+- `data/leaderboard.txt` will be created automatically after the first completed run
 
 ## Clean
 
@@ -118,7 +118,7 @@ github_release/
 |-- README.md
 |-- DEVELOPMENT_STATUS.md
 |-- data/
-|   `-- leaderboard.txt
+|   `-- cards.json
 |-- include/
 |   |-- engine/
 |   |   |-- game_battle.h

@@ -1,0 +1,5 @@
+obj/
+*.exe
+save/*.sav
+save/*.cards.json
+data/leaderboard.txt
