@@ -1,9 +1,11 @@
 #include "ui/ui_panels.h"
 
 #include <algorithm>
+#include <sstream>
 
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/string.hpp>
 
 using namespace ftxui;
 
@@ -105,6 +107,45 @@ std::string EnergyPips(int energy, int max_energy) {
     return out;
 }
 
+std::vector<std::string> WrapGlyphLines(const std::string& input, int width_hint) {
+    const int safe_width = std::max(1, width_hint);
+    std::vector<std::string> wrapped;
+    std::stringstream stream(input);
+    std::string raw_line;
+
+    while (std::getline(stream, raw_line, '\n')) {
+        if (raw_line.empty()) {
+            wrapped.push_back("");
+            continue;
+        }
+
+        std::string current_line;
+        int current_width = 0;
+        for (const std::string& glyph : Utf8ToGlyphs(raw_line)) {
+            const int glyph_width = std::max(0, string_width(glyph));
+            if (current_width > 0 && current_width + glyph_width > safe_width) {
+                wrapped.push_back(current_line);
+                current_line.clear();
+                current_width = 0;
+                if (glyph == " ") {
+                    continue;
+                }
+            }
+            current_line += glyph;
+            current_width += glyph_width;
+        }
+
+        if (!current_line.empty()) {
+            wrapped.push_back(current_line);
+        }
+    }
+
+    if (wrapped.empty()) {
+        wrapped.push_back("");
+    }
+    return wrapped;
+}
+
 std::string IntentSummary(UiLanguage language, const RunState& state) {
     const std::string label = TranslateGameText(language, state.enemy.intentLabel);
     if (state.enemy.intentKind == "attack") {
@@ -159,6 +200,14 @@ Element GaugePanel(const std::string& label, int value, int maxValue, Color gaug
                       gauge(ratio) | color(gauge_color),
                   })) |
            bgcolor(kPanel);
+}
+
+Element WrappedParagraph(const std::string& text_content, int width_hint) {
+    Elements lines;
+    for (const std::string& line : WrapGlyphLines(text_content, width_hint)) {
+        lines.push_back(text(line));
+    }
+    return vbox(std::move(lines));
 }
 
 Element InfoPanel(UiLanguage language, const std::string& title, const std::vector<std::string>& lines, Color accent) {

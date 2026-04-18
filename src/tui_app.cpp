@@ -121,5 +121,11 @@ StarAbyssApp::~StarAbyssApp() {
 
 ftxui::Component CreateApp(ftxui::ScreenInteractive& screen) {
     auto app = std::make_shared<StarAbyssApp>(screen);
-    return CatchEvent(app->root(), [app](Event) { return false; });
+    auto layered = Renderer(app->root(), [app] {
+        return dbox({
+            filler() | bgcolor(kAbyss),
+            app->root()->Render(),
+        });
+    });
+    return CatchEvent(layered, [app](Event) { return false; });
 }

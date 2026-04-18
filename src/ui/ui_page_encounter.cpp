@@ -15,6 +15,9 @@ Element StarAbyssApp::RenderEncounter() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;
     const bool compact_layout = terminal_width < 118;
+    const int status_panel_width = std::max(22, std::min(28, terminal_width / 5));
+    const int signal_text_width = compact_layout ? std::max(24, terminal_width - 10)
+                                                 : std::max(28, terminal_width - status_panel_width - 14);
     const size_t visible_options = std::min(state.encounter.choices.size(), encounterButtons_.size());
     Elements options;
     const bool is_upgrade_screen =
@@ -147,15 +150,16 @@ Element StarAbyssApp::RenderEncounter() const {
     Element signal_header = compact_layout
                                 ? vbox({
                                       window(text(Tr(language_, "Signal", "信号内容")) | color(kHull),
-                                             paragraph(TranslateGameText(language_, state.encounter.description)) | color(Color::White)) |
+                                             WrappedParagraph(TranslateGameText(language_, state.encounter.description), signal_text_width) | color(Color::White)) |
                                           bgcolor(kPanel),
                                       InfoPanel(language_, Tr(language_, "Ship Status", "飞船状态"), PlayerStatusLines(language_, state), kHull),
                                   })
                                 : hbox({
                                       window(text(Tr(language_, "Signal", "信号内容")) | color(kHull),
-                                             paragraph(TranslateGameText(language_, state.encounter.description)) | color(Color::White)) |
+                                             WrappedParagraph(TranslateGameText(language_, state.encounter.description), signal_text_width) | color(Color::White)) |
                                           flex | bgcolor(kPanel),
-                                      InfoPanel(language_, Tr(language_, "Ship Status", "飞船状态"), PlayerStatusLines(language_, state), kHull) | flex,
+                                      InfoPanel(language_, Tr(language_, "Ship Status", "飞船状态"), PlayerStatusLines(language_, state), kHull) |
+                                          size(WIDTH, EQUAL, status_panel_width),
                                   });
 
     Element content = vbox({
