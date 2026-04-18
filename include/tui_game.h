@@ -156,7 +156,7 @@ struct RunState {
     int difficulty = 1;
     int sector = 1;
     int depth = 0;
-    int nodesPerSector = 3;
+    int nodesPerSector = 5;
     int battleTurn = 0;
     int marketUpgradeCount = 0;
     bool marketPurgeUsed = false;
