@@ -45,15 +45,9 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
 Element StarAbyssApp::RenderBattle() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;
-    Elements ship_lines;
-    Elements enemy_lines;
+    Elements ship_lines = PlayerArt(state, ambientTick_);
+    Elements enemy_lines = EnemyArt(state, ambientTick_);
     Elements lane_lines;
-    for (const std::string& line : PlayerArt(state, ambientTick_)) {
-        ship_lines.push_back(text(line) | color(kHull));
-    }
-    for (const std::string& line : EnemyArt(state, ambientTick_)) {
-        enemy_lines.push_back(text(line) | color(kEnemy));
-    }
     for (const std::string& line : LaneRows(state, ambientTick_, LaneWidthHint(battleLaneRowsBox_))) {
         lane_lines.push_back(text(line) | color(kGold));
     }
@@ -67,14 +61,14 @@ Element StarAbyssApp::RenderBattle() const {
         log_lines.push_back(text(TranslateGameText(language_, "Awaiting the first exchange.")) | color(kDim));
     }
 
-    const std::vector<const CardDef*> hand = engine_.handCards();
+    const std::vector<CardView> hand = engine_.handCards();
     const size_t visible_slots = std::max<size_t>(5, std::min(hand.size(), battleCardButtons_.size()));
     const int cards_per_row = BattleCardsPerRow(terminal_width, visible_slots);
     const int card_width = BattleCardWidth(terminal_width, cards_per_row);
     Elements card_rows;
     Elements current_row;
     for (size_t i = 0; i < visible_slots; ++i) {
-        const CardDef* card = i < hand.size() ? hand[i] : nullptr;
+        const CardDef* card = i < hand.size() ? &hand[i].def : nullptr;
         const bool playable = card != nullptr && engine_.canPlayCard(i);
         std::vector<std::string> facts = card != nullptr ? CardFacts(language_, *card)
                                                          : std::vector<std::string>{TranslateGameText(language_, "No module loaded.")};
@@ -88,23 +82,25 @@ Element StarAbyssApp::RenderBattle() const {
             description_lines.push_back(text(Tr(language_, "Draw cards and route power to fill this slot.", "抽牌并调度能量来填满这个槽位。")) | color(kDim));
         }
         const Color accent = CardAccent(card);
-        Element panel = window(
-            text(BattleKeyLabel(i) + ". " + (card != nullptr ? TranslateGameText(language_, card->name)
-                                                             : TranslateGameText(language_, "Empty Slot"))) |
-                color(card != nullptr ? (playable ? accent : kDim) : kDim) | bold,
-            vbox({
-                battleCardButtons_[i]->Render(),
-                hbox({
-                    text(Tr(language_, "Cost ", "费用 ") + std::to_string(card != nullptr ? card->cost : 0)) | color(card != nullptr ? accent : kDim),
-                    filler(),
-                    text(card != nullptr ? TranslateGameText(language_, card->type) : TranslateGameText(language_, "No card drawn")) |
-                        color(card != nullptr ? (playable ? kHull : kDim) : kDim),
-                }),
-                separator(),
-                vbox(std::move(description_lines)),
-                paragraph(fact_text) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
-            })) |
+        const Color frame_color = CardFrameColor(card);
+        Element panel = vbox({
+                            text(BattleKeyLabel(i) + ". " + (card != nullptr ? TranslateGameText(language_, card->name)
+                                                                             : TranslateGameText(language_, "Empty Slot"))) |
+                                color(card != nullptr ? (playable ? accent : kDim) : kDim) | bold,
+                            separator(),
+                            battleCardButtons_[i]->Render(),
+                            hbox({
+                                text(Tr(language_, "Cost ", "费用 ") + std::to_string(card != nullptr ? card->cost : 0)) | color(card != nullptr ? accent : kDim),
+                                filler(),
+                                text(card != nullptr ? TranslateGameText(language_, card->type) : TranslateGameText(language_, "No card drawn")) |
+                                    color(card != nullptr ? (playable ? kHull : kDim) : kDim),
+                            }),
+                            separator(),
+                            vbox(std::move(description_lines)),
+                            paragraph(fact_text) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
+                        }) |
                         bgcolor(CardBackground(card, playable)) |
+                        borderStyled(ROUNDED, frame_color) |
                         size(WIDTH, EQUAL, card_width) |
                         size(HEIGHT, GREATER_THAN, 10);
 

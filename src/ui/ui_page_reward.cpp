@@ -38,7 +38,7 @@ int RewardCardWidth(int terminal_width, int cards_per_row) {
 // touching battle resolution or summary/info pages.
 Element StarAbyssApp::RenderReward() const {
     const RunState& state = engine_.state();
-    const std::vector<const CardDef*> reward_cards = engine_.rewardCards();
+    const std::vector<CardView> reward_cards = engine_.rewardCards();
     const int terminal_width = Terminal::Size().dimx;
     const size_t visible_slots = rewardButtons_.size();
     const int cards_per_row = RewardCardsPerRow(terminal_width, visible_slots);
@@ -46,7 +46,7 @@ Element StarAbyssApp::RenderReward() const {
     Elements reward_rows;
     Elements current_row;
     for (size_t i = 0; i < rewardButtons_.size(); ++i) {
-        const CardDef* card = i < reward_cards.size() ? reward_cards[i] : nullptr;
+        const CardDef* card = i < reward_cards.size() ? &reward_cards[i].def : nullptr;
         std::vector<std::string> fact_lines;
         if (card != nullptr) {
             fact_lines = CardFacts(language_, *card);
@@ -62,22 +62,25 @@ Element StarAbyssApp::RenderReward() const {
         } else {
             description_lines.push_back(text(TranslateGameText(language_, "Unavailable")) | color(Color::White));
         }
-        Element card_panel = window(text(std::to_string(i + 1) + ". " +
-                                         (card != nullptr ? (Tr(language_, "[Card Reward] ", "[卡牌奖励] ") + rewardLabels_[i]) : rewardLabels_[i])) |
-                                    color(kGold),
-                                    vbox({
-                                        rewardButtons_[i]->Render(),
-                                        separator(),
-                                        text(card != nullptr
-                                                 ? (Tr(language_, "Cost ", "费用 ") + std::to_string(card->cost) + "   " +
-                                                    Tr(language_, "Type: ", "类型：") + TranslateGameText(language_, card->type))
-                                                 : Tr(language_, "No card offered in this slot.", "这个槽位没有可选卡牌。")) |
-                                            color(card != nullptr ? kHull : kDim),
-                                        separator(),
-                                        vbox(std::move(description_lines)),
-                                        paragraph(fact_text) | color(kDim),
-                                    })) |
+        const Color frame_color = CardFrameColor(card);
+        Element card_panel = vbox({
+                                 text(std::to_string(i + 1) + ". " +
+                                      (card != nullptr ? (Tr(language_, "[Card Reward] ", "[卡牌奖励] ") + rewardLabels_[i]) : rewardLabels_[i])) |
+                                     color(kGold) | bold,
+                                 separator(),
+                                 rewardButtons_[i]->Render(),
+                                 separator(),
+                                 text(card != nullptr
+                                          ? (Tr(language_, "Cost ", "费用 ") + std::to_string(card->cost) + "   " +
+                                             Tr(language_, "Type: ", "类型：") + TranslateGameText(language_, card->type))
+                                          : Tr(language_, "No card offered in this slot.", "这个槽位没有可选卡牌。")) |
+                                     color(card != nullptr ? kHull : kDim),
+                                 separator(),
+                                 vbox(std::move(description_lines)),
+                                 paragraph(fact_text) | color(kDim),
+                             }) |
                              bgcolor(kPanel) |
+                             borderStyled(ROUNDED, frame_color) |
                              size(WIDTH, EQUAL, card_width) |
                              size(HEIGHT, GREATER_THAN, 10);
         current_row.push_back(card_panel);
