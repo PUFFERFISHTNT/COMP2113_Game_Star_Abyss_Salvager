@@ -314,6 +314,213 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Starter Ship", "初始飞船"},
         {"Run Stats", "本轮状态"},
         {"Battle Bridge", "战斗舰桥"},
+
+        // ---- New event system: titles ----
+        {"Ghost Ship", "幽灵船"},
+        {"Space Fold", "空间折叠"},
+        {"Ark Beacon", "方舟信标"},
+        {"Hull Breach", "船体破损"},
+        {"Deck Chaos", "模块混乱"},
+        {"Wandering Trader", "流浪商人"},
+        {"Cryo Pod", "冷冻舱"},
+        {"Federal Patrol Outpost", "联邦巡逻哨站"},
+        {"Abandoned Smuggling Port", "废弃走私港"},
+        {"Deep Space Radiation Belt", "深空辐射带"},
+        {"Pirate Pursuit Ship", "海盗追击舰"},
+        {"Drifting Escape Pod", "漂流逃生舱"},
+        {"Unstable Jump Point", "不稳定跃迁点"},
+        {"Star Abyss Edge Barrier", "星渊边界屏障"},
+        {"Temporary Safe Station", "临时安全站"},
+        {"Memory Remnant", "记忆残片"},
+        {"Rogue Maintenance AI", "失控维护 AI"},
+        {"Phantom Guardian", "幻影守卫"},
+        {"Space Ripper", "空间撕裂者"},
+        {"Pseudo-God Apostle", "伪神使徒"},
+        {"Creation Core Guardian", "创世核心守卫"},
+        {"Creation Memory Fragment", "创世记忆碎片"},
+        {"Rogue Guardian AI", "失控守卫 AI"},
+        {"First Captain's Consciousness", "初代舰长的意识"},
+        {"Spatial Collapse Point", "空间坍缩点"},
+        {"Star Abyss Birth Truth", "星渊诞生之真相"},
+
+        // ---- New event system: route descriptions ----
+        {"A federation checkpoint blocks the route. Patrol drones sweep the area.", "联邦检查站封锁了航路。巡逻无人机在区域内扫荡。"},
+        {"A deserted port with some supplies left behind.", "一座荒废的港口，留有一些补给。"},
+        {"A deadly band of cosmic radiation stretches across the path ahead.", "前方有一条致命的宇宙辐射带横贯航路。"},
+        {"A pirate craft locks onto your trail and closes in fast.", "一艘海盗船锁定了你的航迹，正在快速逼近。"},
+        {"A damaged escape pod tumbles through the void with intact supplies.", "一个损坏的逃生舱带着完好的补给在虚空中翻滚。"},
+        {"An unstable warp corridor shimmers ahead, offering a risky shortcut.", "前方闪烁着一条不稳定的跃迁走廊，提供了一条冒险的捷径。"},
+        {"An energy barrier marks the edge of the Star Abyss.", "一道能量屏障标志着星渊的边界。"},
+        {"A small outpost at the edge of the abyss offers one last chance to prepare.", "深渊边缘的一座小哨站，提供最后一次准备的机会。"},
+        {"A twisted echo of forgotten memories blocks the corridor ahead.", "一段扭曲的遗忘记忆回声挡住了前方走廊。"},
+        {"A malfunctioning AI system guards the old bridge with lethal force.", "一套失控的 AI 系统以致命武力守卫着旧舰桥。"},
+        {"An illusory sentinel materializes, defending the captain's sanctum.", "一位幻影哨兵凭空出现，守护着舰长的圣殿。"},
+        {"A spatial anomaly tears through reality, attacking anything in its path.", "一个空间异常正在撕裂现实，攻击路径上的一切。"},
+        {"A being of immense power emerges from the origin horizon.", "一个拥有巨大力量的存在从起源视界中浮现。"},
+        {"The ultimate guardian of the Ark's creation core unfolds in the void.", "方舟创世核心的终极守卫在虚空中缓缓展开。"},
+        {"The corridor pulses with ancient data streams from a lost civilization.", "走廊中脉动着来自失落文明的远古数据流。"},
+        {"The bridge's AI system lies defeated, its data banks exposed.", "舰桥的 AI 系统已被击败，数据库暴露在外。"},
+        {"An echo of the original captain lingers in the ship's neural network.", "初代舰长的回声残留在飞船的神经网络中。"},
+        {"Reality bends and tears around you. The fabric of space is failing.", "现实在你周围弯曲撕裂。空间结构正在崩溃。"},
+        {"You have reached the origin horizon. The truth of creation lies before you.", "你已抵达起源视界。创世的真相就在眼前。"},
+        {"A faint distress signal pulses from a wrecked fleet. Someone may still be alive.", "一段微弱的求救信号从残骸舰队中传来。或许还有人活着。"},
+        {"A derelict warship drifts silently. Its hull is intact but shows no life signs.", "一艘废弃战舰在寂静中漂流。船体完好却毫无生命迹象。"},
+        {"An anomalous frequency keeps syncing to your navigation core.", "一个异常频率不断与你的导航核心同步。"},
+        {"A spatial anomaly warps the region ahead. Energy readings are off the charts.", "前方空间异常正在扭曲区域。能量读数爆表。"},
+        {"A massive signal source emerges from the void. This is the Ark's beacon.", "一个巨大的信号源从虚空中浮现。这是方舟的信标。"},
+        {"Warning lights flash as unstable coolant leaks from the reactor.", "警示灯闪烁，不稳定冷却液正从反应堆中泄漏。"},
+        {"The ship's hull has been compromised. Atmosphere is venting fast.", "飞船船体已被破坏。大气正在快速泄漏。"},
+        {"The card module system has malfunctioned. Data corruption detected.", "卡牌模块系统发生故障。检测到数据损坏。"},
+        {"A hidden cargo pod blinks with black market encryption signals.", "一个隐藏的货舱正闪烁着黑市加密信号。"},
+        {"A lone merchant vessel emerges from the static, offering deals.", "一艘孤独的商船从静电中浮现，提供交易。"},
+        {"A pirate interceptor drops out of warp and hails you with demands.", "一艘海盗截击舰脱离跃迁，向你发出勒索通信。"},
+        {"A drifting cryo pod with a faint life sign. Someone is in deep freeze.", "一个漂浮的冷冻舱中有微弱生命信号。有人处于深度冷冻中。"},
+
+        // ---- New event system: choices ----
+        {"Go to rescue", "前往救援"},
+        {"Relay coordinates", "转发坐标"},
+        {"Ignore and leave", "无视并离开"},
+        {"Board and explore", "登船探索"},
+        {"Send a hail", "发送问候"},
+        {"Open fire", "开火攻击"},
+        {"Trace the signal", "追踪信号"},
+        {"Block interference", "屏蔽干扰"},
+        {"Record the spectrum", "记录频谱"},
+        {"Enter the fold", "进入折叠"},
+        {"Stabilize the space", "稳定空间"},
+        {"Steer clear", "绕道避开"},
+        {"Activate the beacon", "激活信标"},
+        {"Dismantle the beacon", "拆解信标"},
+        {"Block the beacon", "封锁信标"},
+        {"Manual voltage stabilization", "手动电压稳定"},
+        {"Activate emergency cooling", "启动紧急冷却"},
+        {"Silence the alarm", "关闭警报"},
+        {"Emergency welding", "紧急焊接"},
+        {"Dump cargo to seal", "抛弃货物封堵"},
+        {"Leave it", "放置不管"},
+        {"Manual sorting", "手动分拣"},
+        {"Reboot the system", "重启系统"},
+        {"Force format", "强制格式化"},
+        {"Take everything", "全部拿走"},
+        {"Take only essentials", "只取必需品"},
+        {"Leave it alone", "不去理会"},
+        {"Buy cards cheap", "低价购买卡牌"},
+        {"Sell junk cards", "卖掉废牌"},
+        {"Decline the deal", "拒绝交易"},
+        {"Pay the ransom", "支付赎金"},
+        {"Fight back", "反击"},
+        {"Full speed escape", "全速逃跑"},
+        {"Wake the sleeper", "唤醒沉睡者"},
+        {"Drain cryo energy", "抽取冷冻能量"},
+        {"Scavenge supplies", "搜刮补给"},
+        {"Pay transit fee", "支付通行费"},
+        {"Power down and drift", "关闭动力漂移通过"},
+        {"Force through", "强行突破"},
+        {"Emergency repairs", "紧急维修"},
+        {"Clean heat exchangers", "清洁热交换器"},
+        {"Full speed through", "全速穿越"},
+        {"Slow detour", "缓速绕行"},
+        {"Activate anti-rad shield", "启动防辐射护盾"},
+        {"Pay them off", "花钱打发"},
+        {"Jettison cargo", "抛弃货物"},
+        {"Counter-attack", "反击"},
+        {"Take medical kit", "取走医疗包"},
+        {"Drain fuel", "抽取燃料"},
+        {"Take emergency chip", "取走应急芯片"},
+        {"Force jump", "强制跃迁"},
+        {"Stabilize coordinates", "稳定坐标"},
+        {"Abandon jump", "放弃跃迁"},
+        {"Energy breach", "能量突破"},
+        {"Spend supplies to breach", "消耗物资突破"},
+        {"Find a gap", "寻找缺口"},
+        {"Repair hull", "修复船体"},
+        {"Optimize engines", "优化引擎"},
+        {"Remove junk cards", "移除废牌"},
+        {"Merge memories", "融合记忆"},
+        {"Extract energy", "提取能量"},
+        {"Save the log", "保存日志"},
+        {"Force breakthrough", "强行突破"},
+        {"Override permissions", "覆写权限"},
+        {"Sneak around", "潜行绕过"},
+        {"Listen to the truth", "聆听真相"},
+        {"Gain ship permissions", "获取飞船权限"},
+        {"Drain core energy", "抽取核心能量"},
+        {"Engines full to stabilize", "全力引擎稳定"},
+        {"Dump supplies to brace", "丢弃物资加固"},
+        {"Emergency dodge", "紧急闪避"},
+        {"Accept the truth", "接受真相"},
+        {"Extract the origin", "提取起源"},
+
+        // ---- New event system: details ----
+        {"Gain 10 HP and 12 credits.", "获得 10 生命和 12 金币。"},
+        {"Reduce 3 heat and gain 1 random card.", "减少 3 热量并获得 1 张随机卡牌。"},
+        {"Continue without delay.", "继续前进，不耽搁。"},
+        {"Lose 5 HP but gain 1 rare relic.", "失去 5 生命，但获得 1 件稀有遗物。"},
+        {"Gain 8 HP and 2 heat.", "获得 8 生命和 2 热量。"},
+        {"Forced into a small battle. Defeat: game over.", "被迫进入小型战斗。失败即结束。"},
+        {"Higher encounter chance next. Gain 1 random card.", "下一次遭遇概率提高。获得 1 张随机卡牌。"},
+        {"Reduce 4 heat.", "减少 4 热量。"},
+        {"Gain 8 credits.", "获得 8 金币。"},
+        {"Skip 1 segment, +5 heat, gain 1 rare card.", "跳过 1 个节点，+5 热量，获得 1 张稀有卡牌。"},
+        {"-4 heat, +2 permanent shield, costs 10 credits.", "-4 热量，+2 永久护盾，花费 10 金币。"},
+        {"Next battle charged attack enhanced.", "下一场战斗蓄力攻击增强。"},
+        {"Gain legendary card, +8 heat. Unlocks true ending.", "获得传说卡牌，+8 热量。解锁真结局。"},
+        {"+25 credits, gain relic, -6 HP.", "+25 金币，获得遗物，-6 生命。"},
+        {"Trigger escape route. No more bosses.", "触发逃离路线。不再有 Boss 战。"},
+        {"Lose 3 HP but reduce 4 heat.", "失去 3 生命，但减少 4 热量。"},
+        {"Costs 8 credits.", "花费 8 金币。"},
+        {"Heat builds faster next segment.", "下一段热量积累更快。"},
+        {"-4 HP, +3 heat, costs 10 credits.", "-4 生命，+3 热量，花费 10 金币。"},
+        {"Lose 8 HP.", "失去 8 生命。"},
+        {"Upgrade 2 random cards, lose 4 HP.", "升级 2 张随机卡牌，失去 4 生命。"},
+        {"-5 heat, delete 1 low-quality card, costs 10 credits.", "-5 热量，删除 1 张低品质卡牌，花费 10 金币。"},
+        {"Costs 15 credits. Clear all low-quality cards.", "花费 15 金币。清除所有低品质卡牌。"},
+        {"+16 credits and 1 random card.", "+16 金币和 1 张随机卡牌。"},
+        {"+6 HP.", "+6 生命。"},
+        {"Continue without risk.", "继续前进，无风险。"},
+        {"Costs 18 credits. Gain 2 random cards.", "花费 18 金币。获得 2 张随机卡牌。"},
+        {"Delete 1 random card. Gain 10 credits.", "删除 1 张随机卡牌。获得 10 金币。"},
+        {"Continue.", "继续。"},
+        {"Costs 12 credits.", "花费 12 金币。"},
+        {"Forced elite battle. Defeat: game over.", "强制精英战斗。失败即结束。"},
+        {"+6 heat.", "+6 热量。"},
+        {"Cards enhanced. Next fight must be elite.", "卡牌增强。下次战斗必为精英。"},
+        {"+5 heat, +6 HP, costs 8 credits.", "+5 热量，+6 生命，花费 8 金币。"},
+        {"+18 credits, gain card, -8 HP.", "+18 金币，获得卡牌，-8 生命。"},
+        {"+4 heat.", "+4 热量。"},
+        {"Forced normal battle. Defeat: game over.", "强制普通战斗。失败即结束。"},
+        {"+10 HP.", "+10 生命。"},
+        {"Reduce 6 heat.", "减少 6 热量。"},
+        {"+14 credits.", "+14 金币。"},
+        {"Skip 1 segment, lose 6 HP.", "跳过 1 个节点，失去 6 生命。"},
+        {"+3 heat.", "+3 热量。"},
+        {"+2 permanent max HP, costs 10 credits.", "+2 永久最大生命，花费 10 金币。"},
+        {"Costs 15 credits.", "花费 15 金币。"},
+        {"Delete 1 random card.", "删除 1 张随机卡牌。"},
+        {"+8 HP.", "+8 生命。"},
+        {"+2 initial energy next battle.", "下一场战斗初始能量 +2。"},
+        {"+3 HP recovery next battle.", "下一场战斗恢复 3 生命。"},
+        {"Skip 2 segments, +7 heat.", "跳过 2 个节点，+7 热量。"},
+        {"Reduce 5 heat, costs 8 credits.", "减少 5 热量，花费 8 金币。"},
+        {"Gain 1 random card, lose 5 HP.", "获得 1 张随机卡牌，失去 5 生命。"},
+        {"Costs 18 credits.", "花费 18 金币。"},
+        {"Lose 5 HP.", "失去 5 生命。"},
+        {"+5 HP, costs 12 credits.", "+5 生命，花费 12 金币。"},
+        {"+1 initial energy, +2 heat.", "+1 初始能量，+2 热量。"},
+        {"Delete 1 low-quality card, lose 4 HP.", "删除 1 张低品质卡牌，失去 4 生命。"},
+        {"Upgrade 2 random cards.", "升级 2 张随机卡牌。"},
+        {"Permanent max HP +6.", "永久最大生命 +6。"},
+        {"Gain 1 special Truth card.", "获得 1 张特殊真相卡牌。"},
+        {"Gain a rare relic, lose 8 HP.", "获得 1 件稀有遗物，失去 8 生命。"},
+        {"+2 initial energy next battle, +5 heat.", "下一场战斗初始能量 +2，+5 热量。"},
+        {"Gain 1 legendary card.", "获得 1 张传说卡牌。"},
+        {"+4 permanent opening shield.", "+4 永久初始护盾。"},
+        {"Reduce 10 heat, +10 HP.", "减少 10 热量，+10 生命。"},
+        {"+8 heat.", "+8 热量。"},
+        {"Costs 20 credits.", "花费 20 金币。"},
+        {"Lose 9 HP.", "失去 9 生命。"},
+        {"All cards permanently enhanced.", "所有卡牌永久增强。"},
+        {"Gain ultimate relic, lose 10 HP.", "获得终极遗物，失去 10 生命。"},
     };
     for (const auto& item : kTranslations) {
         if (text == item.first) {
@@ -789,6 +996,210 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         const std::string name = text.substr(0, text.size() - 29);
         return TranslateGameText(language, name) + " 正在蓄力，为更沉重的一击做准备。";
     }
+
+    // ---- New event system: status lines ----
+    // Repair station
+    if (text == "Repair crews patched the hull for 10 HP.") return "维修人员修补了船体，恢复 10 生命。";
+    if (text == "The reactor vents cleanly. Your next battle starts with +4 shield.") return "反应堆顺利排气。下一场战斗开局 +4 护盾。";
+    if (text == "New plating installed. Max HP increased by 4.") return "新装甲板安装完毕。最大生命增加 4。";
+    if (text == "The station opens a retrofit console. Choose one card to upgrade for free.") return "站点打开了改装控制台。选择 1 张卡牌免费升级。";
+    // Salvage
+    if (text == "A surviving module rack can be integrated into your deck.") return "一个幸存的模块架可以整合进你的卡组。";
+    if (text == "You leave the unstable hulk drifting in the dark.") return "你将不稳定的残骸留在黑暗中漂流。";
+    // Market
+    if (text == "You break contact with the black market broker.") return "你断开了与黑市掮客的通信。";
+    if (text == "The broker opens a purge console. Choose one module to erase.") return "掮客打开了清除控制台。选择 1 个模块抹除。";
+    if (text == "The broker opens an upgrade console. Choose one module to improve.") return "掮客打开了升级控制台。选择 1 个模块改良。";
+    if (text == "Not enough credits for that transaction.") return "金币不足，无法完成交易。";
+    if (text == "Module purchased and queued into your discard pile.") return "模块已购入，进入弃牌堆。";
+    if (text == "The broker closes the channel.") return "掮客关闭了通信频道。";
+    // Event A1 – Distress Beacon
+    if (text == "Rescued the stranded crew. Gained 10 HP and 12 credits.") return "救出了被困船员。获得 10 生命和 12 金币。";
+    if (text == "Relayed the coordinates. -3 heat and gained a card.") return "转发了坐标。-3 热量，获得 1 张卡牌。";
+    if (text == "You leave the signal fading behind you.") return "你将渐弱的信号抛在身后。";
+    // Event A2 – Ghost Ship
+    if (text == "Lost 5 HP exploring, but found a rare relic aboard the ghost ship.") return "探索中失去 5 生命，但在幽灵船上找到了稀有遗物。";
+    if (text == "The ghost ship responds with supplies. +8 HP, +2 heat.") return "幽灵船提供了补给。+8 生命，+2 热量。";
+    if (text == "The ghost ship's defenses activate! Battle!") return "幽灵船的防御系统启动了！战斗！";
+    // Event B1 – Strange Signal
+    if (text == "Locked onto the signal. Gained a card. Next encounter may be elite.") return "锁定了信号。获得 1 张卡牌。下次遭遇可能是精英。";
+    if (text == "Blocked the interference. -4 heat.") return "屏蔽了干扰。-4 热量。";
+    if (text == "Recorded the spectrum. +8 credits.") return "记录了频谱。+8 金币。";
+    // Event B2 – Space Fold
+    if (text == "Entered the fold. Skip 1 segment. +5 heat. Gained a rare card.") return "进入折叠。跳过 1 个节点。+5 热量。获得 1 张稀有卡牌。";
+    if (text == "Stabilized the space. -4 heat, +2 permanent shield. Costs 10 credits.") return "稳定了空间。-4 热量，+2 永久护盾。花费 10 金币。";
+    if (text == "Not enough credits. The space fold collapses.") return "金币不足。空间折叠坍缩了。";
+    if (text == "Steered clear. Next battle's first attack enhanced.") return "绕道避开。下场战斗首次攻击增强。";
+    // Event B3 – Ark Beacon
+    if (text == "The Ark's beacon activates. Gained a legendary card. +8 heat. Something awakens.") return "方舟信标激活。获得 1 张传说卡牌。+8 热量。有什么苏醒了。";
+    if (text == "Dismantled the beacon. +25 credits, gained a relic, -6 HP.") return "拆解了信标。+25 金币，获得遗物，-6 生命。";
+    if (text == "Blocked the beacon. Escape route initiated. No more boss encounters.") return "封锁了信标。逃离路线已启动。不再有 Boss 战。";
+    // Event C1 – Reactor Leak
+    if (text == "Manual stabilization. -3 HP, -4 heat.") return "手动稳定。-3 生命，-4 热量。";
+    if (text == "Emergency cooling activated. -8 credits.") return "紧急冷却已启动。-8 金币。";
+    if (text == "Not enough credits for emergency cooling.") return "金币不足，无法启动紧急冷却。";
+    if (text == "Alarm silenced. Heat will build faster next segment.") return "警报已关闭。下一段热量积累更快。";
+    // Event C2 – Hull Breach
+    if (text == "Emergency welding complete. -4 HP, +3 heat, -10 credits.") return "紧急焊接完成。-4 生命，+3 热量，-10 金币。";
+    if (text == "Not enough credits for welding supplies.") return "金币不足，无法购买焊接材料。";
+    if (text == "Dumped cargo to seal the breach. -8 credits.") return "抛弃货物封堵裂口。-8 金币。";
+    if (text == "Not enough credits to dump cargo.") return "金币不足，无法抛弃货物。";
+    if (text == "Left the breach open. Lost 8 HP from atmosphere venting.") return "放置裂口不管。因大气泄漏失去 8 生命。";
+    // Event C3 – Deck Chaos
+    if (text == "Manual sorting complete. 2 cards upgraded, -4 HP.") return "手动分拣完成。2 张卡牌已升级，-4 生命。";
+    if (text == "System rebooted. -5 heat, removed a low-quality card. -10 credits.") return "系统已重启。-5 热量，移除了 1 张低品质卡牌。-10 金币。";
+    if (text == "Not enough credits to reboot the system.") return "金币不足，无法重启系统。";
+    if (text == "Force format complete. All low-quality cards purged. -15 credits.") return "强制格式化完成。所有低品质卡牌已清除。-15 金币。";
+    if (text == "Not enough credits for force format.") return "金币不足，无法强制格式化。";
+    // Event D1 – Smuggler Cache
+    if (text == "Took everything. +16 credits and gained a card.") return "全部拿走。+16 金币，获得 1 张卡牌。";
+    if (text == "Took only essentials. +6 HP.") return "只取了必需品。+6 生命。";
+    if (text == "Left the cache alone. No risk, no reward.") return "没有碰藏匿点。无风险，也无收获。";
+    // Event D2 – Wandering Trader
+    if (text == "Bought 2 cards. -18 credits.") return "购买了 2 张卡牌。-18 金币。";
+    if (text == "Not enough credits to buy cards.") return "金币不足，无法购买卡牌。";
+    if (text == "Sold a junk card. +10 credits.") return "卖掉了 1 张废牌。+10 金币。";
+    if (text == "Declined the trader's offer.") return "拒绝了商人的交易。";
+    // Event D3 – Pirate Ambush
+    if (text == "Paid the ransom. -12 credits.") return "支付了赎金。-12 金币。";
+    if (text == "Not enough credits to pay the ransom.") return "金币不足，无法支付赎金。";
+    if (text == "You fight back against the pirates! Elite battle!") return "你反击海盗！精英战斗！";
+    if (text == "Escaped at full speed. +6 heat.") return "全速逃跑了。+6 热量。";
+    // Event D4 – Cryo Pod
+    if (text == "Woke the sleeper. Cards enhanced. Next encounter may be elite.") return "唤醒了沉睡者。卡牌增强。下次遭遇可能是精英。";
+    if (text == "Drained cryo energy. +5 heat, +6 HP, -8 credits.") return "抽取了冷冻能量。+5 热量，+6 生命，-8 金币。";
+    if (text == "Not enough credits to drain cryo energy.") return "金币不足，无法抽取冷冻能量。";
+    if (text == "Scavenged supplies. +18 credits, gained a card, -8 HP.") return "搜刮了补给。+18 金币，获得 1 张卡牌，-8 生命。";
+    // Escape route event status lines
+    if (text == "Paid the transit fee. -12 credits.") return "支付了通行费。-12 金币。";
+    if (text == "Not enough credits for the transit fee.") return "金币不足，无法支付通行费。";
+    if (text == "Powered down and drifted through. +4 heat.") return "关闭动力漂移通过。+4 热量。";
+    if (text == "Forced through the checkpoint! Battle!") return "强行突破了检查站！战斗！";
+    if (text == "Emergency repairs. +10 HP.") return "紧急维修。+10 生命。";
+    if (text == "Cleaned heat exchangers. -6 heat.") return "清洁了热交换器。-6 热量。";
+    if (text == "Scavenged supplies. +14 credits.") return "搜刮了补给。+14 金币。";
+    if (text == "Full speed through the radiation belt. Skip 1 segment, -6 HP.") return "全速穿越辐射带。跳过 1 个节点，-6 生命。";
+    if (text == "Slow detour around the belt. +3 heat.") return "绕道避开辐射带。+3 热量。";
+    if (text == "Anti-rad shield active. +2 permanent max HP, -10 credits.") return "防辐射护盾启动。+2 永久最大生命，-10 金币。";
+    if (text == "Not enough credits for the anti-rad shield.") return "金币不足，无法启动防辐射护盾。";
+    if (text == "Paid off the pirates. -15 credits.") return "花钱打发了海盗。-15 金币。";
+    if (text == "Not enough credits to pay off the pirates.") return "金币不足，无法打发海盗。";
+    if (text == "Jettisoned cargo. Lost 1 random card.") return "抛弃了货物。失去 1 张随机卡牌。";
+    if (text == "Counter-attacking the pirates! Elite battle!") return "反击海盗！精英战斗！";
+    if (text == "Took the medical kit. +8 HP.") return "取走了医疗包。+8 生命。";
+    if (text == "Drained fuel. +2 initial energy next battle.") return "抽取了燃料。下场战斗初始能量 +2。";
+    if (text == "Took the emergency chip. +3 HP recovery.") return "取走了应急芯片。+3 生命恢复。";
+    if (text == "Forced the jump. Skip 2 segments. +7 heat.") return "强制跃迁。跳过 2 个节点。+7 热量。";
+    if (text == "Stabilized coordinates. -5 heat, -8 credits.") return "稳定了坐标。-5 热量，-8 金币。";
+    if (text == "Not enough credits to stabilize.") return "金币不足，无法稳定坐标。";
+    if (text == "Abandoned the jump. Gained a card, -5 HP.") return "放弃了跃迁。获得 1 张卡牌，-5 生命。";
+    if (text == "Energy breach through the barrier. +6 heat.") return "能量突破屏障。+6 热量。";
+    if (text == "Spent supplies to breach the barrier. -18 credits.") return "消耗物资突破了屏障。-18 金币。";
+    if (text == "Not enough credits to breach.") return "金币不足，无法突破。";
+    if (text == "Found a gap. Lost 5 HP squeezing through.") return "找到了缺口。挤过去失去 5 生命。";
+    if (text == "Repaired hull. +5 HP, -12 credits.") return "修复了船体。+5 生命，-12 金币。";
+    if (text == "Not enough credits for repairs.") return "金币不足，无法修理。";
+    if (text == "Optimized engines. +1 initial energy, +2 heat.") return "优化了引擎。+1 初始能量，+2 热量。";
+    if (text == "Removed junk cards. -4 HP.") return "移除了废牌。-4 生命。";
+    // Truth route event status lines
+    if (text == "Merged memories. 2 cards upgraded.") return "融合了记忆。2 张卡牌已升级。";
+    if (text == "Extracted energy. Permanent max HP +6.") return "提取了能量。永久最大生命 +6。";
+    if (text == "Saved the log. Gained a Truth card.") return "保存了日志。获得 1 张真相卡牌。";
+    if (text == "Force breakthrough. Gained a rare relic. -8 HP.") return "强行突破。获得稀有遗物。-8 生命。";
+    if (text == "Override permissions. +2 initial energy next battle, +5 heat.") return "覆写权限。下场战斗初始能量 +2，+5 热量。";
+    if (text == "Sneaked around the AI. -12 credits.") return "潜行绕过了 AI。-12 金币。";
+    if (text == "Not enough credits to bypass.") return "金币不足，无法绕过。";
+    if (text == "Listened to the truth. Gained a legendary card.") return "聆听了真相。获得 1 张传说卡牌。";
+    if (text == "Gained ship permissions. +4 permanent opening shield.") return "获取了飞船权限。+4 永久初始护盾。";
+    if (text == "Drained core energy. -10 heat, +10 HP.") return "抽取了核心能量。-10 热量，+10 生命。";
+    if (text == "Engines full. +8 heat.") return "引擎全力运转。+8 热量。";
+    if (text == "Dumped supplies to brace. -20 credits.") return "丢弃物资加固。-20 金币。";
+    if (text == "Not enough credits.") return "金币不足。";
+    if (text == "Emergency dodge. -9 HP.") return "紧急闪避。-9 生命。";
+    if (text == "Accepted the truth. All cards permanently enhanced.") return "接受了真相。所有卡牌永久增强。";
+    if (text == "Extracted the origin. Gained ultimate relic, -10 HP.") return "提取了起源。获得终极遗物，-10 生命。";
+    if (text == "The signal fades. Nothing to be done.") return "信号消散了。无能为力。";
+    // Epilogues (Category A – Rescue & Exploration)
+    if (text == "The distress signal fades into deep space. You don't know if you did the right thing.") return "求救信号渐渐消失在深空中。你不知道自己做的是否正确。";
+    if (text == "Another wrecked ship left behind.") return "又一艘残骸被遗弃了。";
+    if (text == "People die in the Star Abyss every day. One more or less makes no difference.") return "星渊中每天都有人死去。多一个少一个并无区别。";
+    // Epilogues (Category C – Ship Malfunctions)
+    if (text == "Malfunction temporarily resolved. But the ship won't hold forever.") return "故障暂时排除。但飞船不会永远撑下去。";
+    if (text == "System alert cleared. The next breakdown could be the next jump away.") return "系统警报已清除。下一次故障也许就在下次跃迁。";
+    if (text == "You barely stabilized the hull. But danger never truly fades.") return "你勉强稳住了船体。但危险从未真正消散。";
+    // Epilogues (Category D – Black Market & Underworld)
+    if (text == "The pirate tracking signal vanishes. You're safe for now.") return "海盗追踪信号消失了。你暂时安全。";
+    if (text == "The shadow of black market forces always looms over you.") return "黑市势力的阴影始终笼罩着你。";
+    if (text == "You took what wasn't yours. Someday you'll pay it back.") return "你拿走了不属于你的东西。总有一天要还回去。";
+    // Ending info.lines — Escape ending
+    if (text == "You kept the Ark's call silenced.") return "你压下了方舟的呼唤。";
+    if (text == "No deeper descent, no revelations, no final stand.") return "不再深入，不再揭示，不再决战。";
+    if (text == "Your prow pierced the mist of the Star Abyss,") return "你的船头刺穿了星渊的迷雾，";
+    if (text == "and for the first time, the light of distant stars fell clearly upon the deck.") return "远方星光第一次清晰地洒落在甲板上。";
+    if (text == "You survived.") return "你活了下来。";
+    if (text == "The secrets of the Star Abyss remain buried,") return "星渊的秘密依旧被掩埋，";
+    if (text == "and you are among the very few salvagers to walk away whole.") return "而你是极少数全身而退的打捞者之一。";
+    // Ending info.lines — Normal ending
+    if (text == "You destroyed the guardian units of the Ark Core,") return "你摧毁了方舟核心的守卫单元，";
+    if (text == "and the turmoil of the Star Abyss gradually subsided.") return "星渊的动荡逐渐平息了。";
+    if (text == "The world will tell your tale: a salvager who ventured into the dead zone,") return "世人会传颂你的故事：一个闯入死区的打捞者，";
+    if (text == "quelled the catastrophe of the forbidden sector, and returned with glory.") return "平息了禁区的灾难，荣耀归来。";
+    if (text == "The Federation will seal this chapter of history,") return "联邦会封存这段历史，";
+    if (text == "the black market will whisper your name,") return "黑市会低语你的名字，";
+    if (text == "and you can finally shed your debts and leave behind this deep space.") return "而你终于可以甩掉债务，离开这片深空。";
+    if (text == "Yet in the silence of the return voyage, a faint shadow of doubt lingers.") return "然而在归途的沉寂中，一丝疑虑挥之不去。";
+    if (text == "Those undeciphered signals, the misaligned wreckage,") return "那些未解读的信号、错位的残骸、";
+    if (text == "the impossible spatial fluctuations...") return "不可能的空间波动……";
+    if (text == "They did not vanish with the battle's end,") return "它们并未随战斗结束而消失，";
+    if (text == "but transformed into a faint whisper left in your wake.") return "而是化作你身后一缕淡淡的低语。";
+    if (text == "You survived the Star Abyss, but never touched its truth.") return "你在星渊中幸存，却从未触及它的真相。";
+    // Ending info.lines — True ending
+    if (text == "You stand at the origin of everything.") return "你站在一切的起源之处。";
+    if (text == "Here there are no wrecks, no enemies, no pirates or federations.") return "这里没有残骸、没有敌人、没有海盗也没有联邦。";
+    if (text == "Before you is not a ship's core, nor the heart of a star sector,") return "你面前的不是飞船核心，也不是星区中枢，";
+    if (text == "but a universe that was just born and fell immediately into slumber.") return "而是一个刚刚诞生便立即陷入沉睡的宇宙。";
+    if (text == "The Ark fleet carried humanity's last hope for continuity,") return "方舟舰队承载着人类延续的最后希望，";
+    if (text == "attempting to pry open an entirely new habitable spacetime.") return "试图撬开一个全新的宜居时空。";
+    if (text == "They ignited the singularity but could not control its expansion.") return "他们点燃了奇点，却无法控制其膨胀。";
+    if (text == "The runaway energy tore apart the fleet, shredded space itself,") return "失控的能量撕裂了舰队、撕碎了空间本身，";
+    if (text == "and turned the ground into a chaotic, ever-expanding death zone --") return "将这片区域变成了一个混乱且不断扩张的死亡地带——";
+    if (text == "what would come to be known as the Star Abyss.") return "日后被称为星渊的地方。";
+    if (text == "The Federation buried the truth, declaring the area forbidden,") return "联邦掩埋了真相，将此区域宣布为禁区，";
+    if (text == "because they feared the world would learn:") return "因为他们害怕世人得知：";
+    if (text == "humanity once possessed the power of creation,") return "人类曾拥有创世之力，";
+    if (text == "and witnessed its collapse with their own hands.") return "并亲手见证了它的崩塌。";
+    if (text == "And you -- a debt-ridden salvager who entered the dead zone to survive --") return "而你——一个为了生存而闯入死区的负债打捞者——";
+    if (text == "became the only person to reach the singularity and touch the origin.") return "成为了唯一抵达奇点、触碰起源的人。";
+    // Route labels
+    if (text == "Escape Route") return "逃离路线";
+    if (text == "Truth Route") return "真相路线";
+    if (text == "Escape: ") return "逃离：";
+    if (StartsWith(text, "Escape: ")) return "逃离：" + TranslateGameText(language, text.substr(8));
+    if (StartsWith(text, "Truth: ")) return "真相：" + TranslateGameText(language, text.substr(7));
+    if (StartsWith(text, "Truth Battle: ")) return "真相战斗：" + TranslateGameText(language, text.substr(14));
+    // Costs 8 credits (for cargo dump)
+    if (text == "Costs 8 credits.") return "花费 8 金币。";
+    // Reward banner
+    if (text == "Recovered salvage module") return "回收的打捞模块";
+    // Truth route long descriptions
+    if (text == "What floats in the Star Abyss is not mere ship wreckage. They are the remains of the first interstellar colonization fleet, the Ark. Every anomalous signal you collected is its voice echoing across billions of spatial residues.") return "星渊中漂浮的并非普通船只残骸。它们是第一支星际殖民舰队——方舟的遗骸。你收集的每一个异常信号，都是它穿越数十亿空间残余的回声。";
+    if (text == "The Ark did not crash by accident. It entered this space deliberately. The Federation's Restricted Zone was created to conceal its existence and prevent anyone from discovering its true mission.") return "方舟并非意外坠毁。它是有意进入这片空间的。联邦的禁区就是为了掩盖它的存在，防止任何人发现它真正的使命。";
+    if (text == "The Ark's mission was not colonization but a creation experiment. Humanity attempted to use the Ark Core to forge a stable new universe. The Star Abyss is what remained after that experiment failed.") return "方舟的使命并非殖民，而是一次创世实验。人类试图利用方舟核心铸造一个稳定的新宇宙。星渊就是那次实验失败后的遗留。";
+    if (text == "The Star Abyss's expansion, spatial distortions, and ship malfunctions are not hazards but a newborn universe struggling and spiraling out of control. Every step deeper draws you closer to this new world's heart.") return "星渊的膨胀、空间扭曲和飞船故障并非灾害，而是一个新生宇宙在挣扎中失控。每深入一步，你都离这个新世界的心脏更近一分。";
+    if (text == "The Ark Core is neither an energy source nor a weapon. It is the cosmic singularity of a new world. Whoever controls it can dictate the rules of this space.") return "方舟核心既非能源也非武器。它是一个新世界的宇宙奇点。谁掌控了它，就能主宰这片空间的规则。";
+    // Dynamic status with number: "You strip the wreck for X credits."
+    if (StartsWith(text, "You strip the wreck for ") && EndsWith(text, " credits.")) {
+        const size_t prefix = std::string("You strip the wreck for ").size();
+        return "你拆解残骸获得了 " + text.substr(prefix, text.size() - prefix - 9) + " 金币。";
+    }
+    // Jump vector locked for <node name>.
+    if (StartsWith(text, "Jump vector locked for ") && EndsWith(text, ".")) {
+        const std::string name = text.substr(22, text.size() - 23);
+        return "跃迁矢量已锁定：" + TranslateGameText(language, name) + "。";
+    }
+    // Sector cleared
+    if (text == "Sector cleared. Your crew patches 6 HP while plotting the next route.") return "星区已清除。船员在规划下一航路时修补了 6 生命。";
+    if (text == "Run initialized. Chart your first jump.") return "航程已初始化。规划你的第一次跃迁。";
 
     return text;
 }
