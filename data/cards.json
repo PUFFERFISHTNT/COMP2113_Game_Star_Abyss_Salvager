@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "cards": [
+    {
+      "id": "laser_burst",
+      "name": "Laser Burst",
+      "type": "Attack",
+      "description": "Deal 6 damage.",
+      "rarity": "common",
+      "starterCopies": 4,
+      "cost": 1,
+      "damage": 6
+    },
+    {
+      "id": "raise_shield",
+      "name": "Raise Shield",
+      "type": "Defense",
+      "description": "Gain 5 shield.",
+      "rarity": "common",
+      "starterCopies": 4,
+      "cost": 1,
+      "shield": 5
+    },
+    {
+      "id": "coolant_flush",
+      "name": "Coolant Flush",
+      "type": "Utility",
+      "description": "Reduce 3 heat.",
+      "rarity": "common",
+      "starterCopies": 1,
+      "cost": 1,
+      "heat": -3
+    },
+    {
+      "id": "quick_patch",
+      "name": "Quick Patch",
+      "type": "Utility",
+      "description": "Recover 4 HP.",
+      "rarity": "common",
+      "starterCopies": 1,
+      "cost": 1,
+      "heal": 4
+    },
+    {
+      "id": "overclock",
+      "name": "Overclock",
+      "type": "Utility",
+      "description": "Gain 1 energy. Gain 1 heat.",
+      "rarity": "common",
+      "starterCopies": 1,
+      "cost": 0,
+      "energy": 1,
+      "heat": 1
+    },
+    {
+      "id": "scan_pulse",
+      "name": "Scan Pulse",
+      "type": "Utility",
+      "description": "Draw 2 cards.",
+      "rarity": "common",
+      "starterCopies": 1,
+      "cost": 1,
+      "draw": 2
+    },
+    {
+      "id": "missile_pod",
+      "name": "Missile Pod",
+      "type": "Attack",
+      "description": "Deal 11 damage.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "damage": 11
+    },
+    {
+      "id": "piercing_shot",
+      "name": "Piercing Shot",
+      "type": "Attack",
+      "description": "Deal 5 damage. Ignore shield.",
+      "rarity": "uncommon",
+      "cost": 1,
+      "damage": 5,
+      "ignoreShield": true
+    },
+    {
+      "id": "burst_fire",
+      "name": "Burst Fire",
+      "type": "Attack",
+      "description": "Deal 4 damage twice.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "damage": 4,
+      "multiHit": 2
+    },
+    {
+      "id": "emergency_barrier",
+      "name": "Emergency Barrier",
+      "type": "Defense",
+      "description": "Gain 10 shield.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "shield": 10
+    },
+    {
+      "id": "reactor_boost",
+      "name": "Reactor Boost",
+      "type": "Utility",
+      "description": "Next turn, gain 2 extra energy.",
+      "rarity": "uncommon",
+      "cost": 1,
+      "nextTurnEnergy": 2
+    },
+    {
+      "id": "reroute_power",
+      "name": "Reroute Power",
+      "type": "Utility",
+      "description": "Draw 1 card and gain 1 shield.",
+      "rarity": "common",
+      "cost": 1,
+      "draw": 1,
+      "shield": 1
+    },
+    {
+      "id": "stabilizer",
+      "name": "Stabilizer",
+      "type": "Utility",
+      "description": "Reduce 4 heat. Draw 1 card.",
+      "rarity": "common",
+      "cost": 1,
+      "draw": 1,
+      "heat": -4
+    },
+    {
+      "id": "salvage_drone",
+      "name": "Salvage Drone",
+      "type": "Utility",
+      "description": "If you win this battle, gain +6 credits.",
+      "rarity": "common",
+      "cost": 1,
+      "salvageBonus": 6
+    },
+    {
+      "id": "plasma_lance",
+      "name": "Plasma Lance",
+      "type": "Attack",
+      "description": "Deal 14 damage. Gain 2 heat.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "damage": 14,
+      "heat": 2
+    },
+    {
+      "id": "emp_pulse",
+      "name": "EMP Pulse",
+      "type": "Control",
+      "description": "Deal 4 damage. Enemy's next 2 attacks lose 2 damage.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "damage": 4,
+      "weakenTurns": 2
+    },
+    {
+      "id": "hack_jammer",
+      "name": "Hack Jammer",
+      "type": "Control",
+      "description": "Remove enemy shield. They cannot gain shield for 2 turns.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "removeEnemyShield": 999,
+      "shieldLockTurns": 2
+    },
+    {
+      "id": "chain_pulse",
+      "name": "Chain Pulse",
+      "type": "Attack",
+      "description": "Deal 5 damage. Deal +3 if another attack was played this turn.",
+      "rarity": "common",
+      "cost": 1,
+      "damage": 5,
+      "comboBonus": 3
+    },
+    {
+      "id": "heat_sink",
+      "name": "Heat Sink",
+      "type": "Utility",
+      "description": "Cut current heat in half.",
+      "rarity": "uncommon",
+      "cost": 1,
+      "halveHeat": true
+    },
+    {
+      "id": "system_flush",
+      "name": "System Flush",
+      "type": "Utility",
+      "description": "Reduce 5 heat. Draw 2 cards.",
+      "rarity": "uncommon",
+      "cost": 2,
+      "draw": 2,
+      "heat": -5
+    },
+    {
+      "id": "shield_converter",
+      "name": "Shield Converter",
+      "type": "Utility",
+      "description": "Deal damage equal to your current shield, then lose that shield.",
+      "rarity": "uncommon",
+      "cost": 1,
+      "shieldToDamage": true
+    },
+    {
+      "id": "overload_cannon",
+      "name": "Overload Cannon",
+      "type": "Attack",
+      "description": "Deal 22 damage. Gain 4 heat.",
+      "rarity": "rare",
+      "cost": 3,
+      "damage": 22,
+      "heat": 4
+    },
+    {
+      "id": "reactor_surge",
+      "name": "Reactor Surge",
+      "type": "Risk",
+      "description": "Gain 2 energy. Gain 3 heat.",
+      "rarity": "rare",
+      "cost": 0,
+      "energy": 2,
+      "heat": 3
+    },
+    {
+      "id": "nova_shield",
+      "name": "Nova Shield",
+      "type": "Defense",
+      "description": "Gain 14 shield.",
+      "rarity": "rare",
+      "cost": 2,
+      "shield": 14
+    },
+    {
+      "id": "target_lock",
+      "name": "Target Lock",
+      "type": "Control",
+      "description": "Your next attack card deals double damage.",
+      "rarity": "rare",
+      "cost": 1,
+      "attackMultiplier": 2
+    },
+    {
+      "id": "emergency_vent",
+      "name": "Emergency Vent",
+      "type": "Utility",
+      "description": "Remove all heat. Lose 2 HP.",
+      "rarity": "rare",
+      "cost": 0,
+      "clearHeat": true,
+      "selfDamage": 2
+    },
+    {
+      "id": "blind_jump_protocol",
+      "name": "Blind Jump Protocol",
+      "type": "Risk",
+      "description": "Trigger one strong but unpredictable effect.",
+      "rarity": "rare",
+      "cost": 2,
+      "randomEffect": true
+    }
+  ]
+}

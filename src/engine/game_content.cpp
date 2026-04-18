@@ -1,6 +1,8 @@
 #include "engine/game_content.h"
+#include "engine/game_card_json.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace {
 
@@ -16,104 +18,22 @@ bool HasString(const std::vector<std::string>& values, const std::string& needle
 }  // namespace
 
 void GameEngine::initializeData() {
-    cardPool_.clear();
-    auto addCard = [&](const std::string& id,
-                       const std::string& name,
-                       const std::string& type,
-                       const std::string& description,
-                       int cost) -> CardDef& {
-        cardPool_.push_back(CardDef{});
-        CardDef& card = cardPool_.back();
-        card.id = id;
-        card.name = name;
-        card.type = type;
-        card.description = description;
-        card.cost = cost;
-        return card;
-    };
-
-    addCard("laser_burst", "Laser Burst", "Attack", "Deal 6 damage.", 1).damage = 6;
-    addCard("raise_shield", "Raise Shield", "Defense", "Gain 5 shield.", 1).shield = 5;
-    addCard("coolant_flush", "Coolant Flush", "Utility", "Reduce 3 heat.", 1).heat = -3;
-    addCard("quick_patch", "Quick Patch", "Utility", "Recover 4 HP.", 1).heal = 4;
-    {
-        CardDef& card = addCard("overclock", "Overclock", "Utility", "Gain 1 energy. Gain 1 heat.", 0);
-        card.energy = 1;
-        card.heat = 1;
+    std::string error;
+    if (!LoadCardsFromJsonFile("data/cards.json", &cardPool_, &error)) {
+        std::cerr << "Failed to load card data from data/cards.json: " << error << "\n";
+        cardPool_.clear();
+    } else {
+        std::sort(cardPool_.begin(), cardPool_.end(), [](const CardDef& lhs, const CardDef& rhs) {
+            return lhs.id < rhs.id;
+        });
+        const auto duplicate = std::adjacent_find(cardPool_.begin(), cardPool_.end(), [](const CardDef& lhs, const CardDef& rhs) {
+            return lhs.id == rhs.id;
+        });
+        if (duplicate != cardPool_.end()) {
+            std::cerr << "Duplicate card id in data/cards.json: " << duplicate->id << "\n";
+            cardPool_.clear();
+        }
     }
-    addCard("scan_pulse", "Scan Pulse", "Utility", "Draw 2 cards.", 1).draw = 2;
-    addCard("missile_pod", "Missile Pod", "Attack", "Deal 11 damage.", 2).damage = 11;
-    {
-        CardDef& card = addCard("piercing_shot", "Piercing Shot", "Attack", "Deal 5 damage. Ignore shield.", 1);
-        card.damage = 5;
-        card.ignoreShield = true;
-    }
-    {
-        CardDef& card = addCard("burst_fire", "Burst Fire", "Attack", "Deal 4 damage twice.", 2);
-        card.damage = 4;
-        card.multiHit = 2;
-    }
-    addCard("emergency_barrier", "Emergency Barrier", "Defense", "Gain 10 shield.", 2).shield = 10;
-    {
-        CardDef& card = addCard("reactor_boost", "Reactor Boost", "Utility", "Next turn, gain 2 extra energy.", 1);
-        card.nextTurnEnergy = 2;
-    }
-    {
-        CardDef& card = addCard("reroute_power", "Reroute Power", "Utility", "Draw 1 card and gain 1 shield.", 1);
-        card.draw = 1;
-        card.shield = 1;
-    }
-    {
-        CardDef& card = addCard("stabilizer", "Stabilizer", "Utility", "Reduce 4 heat. Draw 1 card.", 1);
-        card.draw = 1;
-        card.heat = -4;
-    }
-    addCard("salvage_drone", "Salvage Drone", "Utility", "If you win this battle, gain +6 credits.", 1).salvageBonus = 6;
-    {
-        CardDef& card = addCard("plasma_lance", "Plasma Lance", "Attack", "Deal 14 damage. Gain 2 heat.", 2);
-        card.damage = 14;
-        card.heat = 2;
-    }
-    {
-        CardDef& card = addCard("emp_pulse", "EMP Pulse", "Control", "Deal 4 damage. Enemy's next 2 attacks lose 2 damage.", 2);
-        card.damage = 4;
-        card.weakenTurns = 2;
-    }
-    {
-        CardDef& card = addCard("hack_jammer", "Hack Jammer", "Control", "Remove enemy shield. They cannot gain shield for 2 turns.", 2);
-        card.removeEnemyShield = 999;
-        card.shieldLockTurns = 2;
-    }
-    {
-        CardDef& card = addCard("chain_pulse", "Chain Pulse", "Attack", "Deal 5 damage. Deal +3 if another attack was played this turn.", 1);
-        card.damage = 5;
-        card.comboBonus = 3;
-    }
-    addCard("heat_sink", "Heat Sink", "Utility", "Cut current heat in half.", 1).halveHeat = true;
-    {
-        CardDef& card = addCard("system_flush", "System Flush", "Utility", "Reduce 5 heat. Draw 2 cards.", 2);
-        card.draw = 2;
-        card.heat = -5;
-    }
-    addCard("shield_converter", "Shield Converter", "Utility", "Deal damage equal to your current shield, then lose that shield.", 1).shieldToDamage = true;
-    {
-        CardDef& card = addCard("overload_cannon", "Overload Cannon", "Attack", "Deal 22 damage. Gain 4 heat.", 3);
-        card.damage = 22;
-        card.heat = 4;
-    }
-    {
-        CardDef& card = addCard("reactor_surge", "Reactor Surge", "Risk", "Gain 2 energy. Gain 3 heat.", 0);
-        card.energy = 2;
-        card.heat = 3;
-    }
-    addCard("nova_shield", "Nova Shield", "Defense", "Gain 14 shield.", 2).shield = 14;
-    addCard("target_lock", "Target Lock", "Control", "Your next attack card deals double damage.", 1).attackMultiplier = 2;
-    {
-        CardDef& card = addCard("emergency_vent", "Emergency Vent", "Utility", "Remove all heat. Lose 2 HP.", 0);
-        card.clearHeat = true;
-        card.selfDamage = 2;
-    }
-    addCard("blind_jump_protocol", "Blind Jump Protocol", "Risk", "Trigger one strong but unpredictable effect.", 2).randomEffect = true;
 
     enemyPool_ = {
         {"pirate_scout", "Pirate Scout", "aggressive", 20, false, false, {{"attack", "Twin Lasers", 6}, {"attack", "Afterburner Strike", 7}, {"shield", "Brace", 4}}},
@@ -164,11 +84,12 @@ void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
 
     player.hp = player.maxHp;
     player.energy = player.maxEnergy;
-    player.drawPile = {
-        "laser_burst", "laser_burst", "laser_burst", "laser_burst",
-        "raise_shield", "raise_shield", "raise_shield", "raise_shield",
-        "coolant_flush", "quick_patch", "overclock", "scan_pulse",
-    };
+    player.drawPile.clear();
+    for (const CardDef& card : cardPool_) {
+        for (int copy = 0; copy < card.starterCopies; ++copy) {
+            player.drawPile.push_back(card.id);
+        }
+    }
     for (const std::string& card : ship.extraCards) {
         player.drawPile.push_back(card);
     }
