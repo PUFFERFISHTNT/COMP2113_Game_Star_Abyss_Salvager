@@ -126,5 +126,5 @@ Element StarAbyssApp::RenderReward() const {
         text(TranslateGameText(language_, state.statusLine)) | color(Color::White),
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Reward)]) | borderDouble | bgcolor(kAbyss);
 }

@@ -1,11 +1,24 @@
 #include "ui/star_abyss_app.h"
 
+#include <algorithm>
+
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/mouse.hpp>
+#include <ftxui/dom/elements.hpp>
 
 #include "ui/ui_localization.h"
 
 using namespace ftxui;
+
+Element StarAbyssApp::ApplyVerticalScrollFrame(Element content, int scroll_line) const {
+    return content | focusPosition(0, scroll_line) | vscroll_indicator | yframe;
+}
+
+bool StarAbyssApp::ScrollActiveView(int delta_lines) {
+    int& scroll_line = saveDialogVisible_ ? saveDialogScrollLine_ : pageScrollLines_[PageIndex(engine_.state().page)];
+    scroll_line = std::max(0, scroll_line + delta_lines);
+    return true;
+}
 
 bool StarAbyssApp::HandleEvent(Event event) {
     const auto active_scroll_component = [&]() -> Component {
@@ -51,10 +64,11 @@ bool StarAbyssApp::HandleEvent(Event event) {
         if (mouse_event.mouse().button != Mouse::WheelUp && mouse_event.mouse().button != Mouse::WheelDown) {
             return false;
         }
-        if (forward_scroll_event(mouse_event)) {
+        const int delta = mouse_event.mouse().button == Mouse::WheelUp ? -kWheelScrollLines : kWheelScrollLines;
+        if (saveDialogVisible_ && forward_scroll_event(mouse_event)) {
             return true;
         }
-        return forward_scroll_event(mouse_event.mouse().button == Mouse::WheelUp ? Event::PageUp : Event::PageDown);
+        return ScrollActiveView(delta);
     };
 
     if (event == Event::Custom) {
@@ -68,15 +82,34 @@ bool StarAbyssApp::HandleEvent(Event event) {
         return true;
     }
 
+    if (event == Event::PageUp || event == Event::PageDown) {
+        const int delta = event == Event::PageUp ? -kPageScrollLines : kPageScrollLines;
+        if (saveDialogVisible_ && forward_scroll_event(event)) {
+            return true;
+        }
+        return ScrollActiveView(delta);
+    }
+
     if (event == Event::ArrowUpCtrl || event == Event::ArrowDownCtrl) {
-        return forward_scroll_event(event == Event::ArrowUpCtrl ? Event::PageUp : Event::PageDown);
+        const Event forwarded = event == Event::ArrowUpCtrl ? Event::PageUp : Event::PageDown;
+        const int delta = event == Event::ArrowUpCtrl ? -kPageScrollLines : kPageScrollLines;
+        if (saveDialogVisible_ && forward_scroll_event(forwarded)) {
+            return true;
+        }
+        return ScrollActiveView(delta);
     }
 
     if (event == Event::Character('[') || event == Event::Character('{')) {
-        return forward_scroll_event(Event::PageUp);
+        if (saveDialogVisible_ && forward_scroll_event(Event::PageUp)) {
+            return true;
+        }
+        return ScrollActiveView(-kPageScrollLines);
     }
     if (event == Event::Character(']') || event == Event::Character('}')) {
-        return forward_scroll_event(Event::PageDown);
+        if (saveDialogVisible_ && forward_scroll_event(Event::PageDown)) {
+            return true;
+        }
+        return ScrollActiveView(kPageScrollLines);
     }
 
     if (saveDialogVisible_ && event == Event::Escape) {

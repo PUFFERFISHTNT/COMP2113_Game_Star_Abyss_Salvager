@@ -17,5 +17,5 @@ Element StarAbyssApp::RenderSetup() const {
         hbox({startRunButton_->Render() | flex, setupBackButton_->Render() | flex}),
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Setup)]) | borderDouble | bgcolor(kAbyss);
 }

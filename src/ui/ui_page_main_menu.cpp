@@ -55,5 +55,5 @@ Element StarAbyssApp::RenderMainMenu() const {
         text(Tr(language_, "Current language: English", "当前语言：中文")) | color(kHull) | center,
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::MainMenu)]) | borderDouble | bgcolor(kAbyss);
 }

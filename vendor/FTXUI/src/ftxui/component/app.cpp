@@ -264,6 +264,65 @@ class CapturedMouseImpl : public CapturedMouseInterface {
   std::function<void(void)> callback_;
 };
 
+#if defined(_WIN32)
+constexpr DWORD kEnableMouseInput = 0x0010;
+constexpr DWORD kEnableQuickEditMode = 0x0040;
+constexpr DWORD kEnableExtendedFlags = 0x0080;
+
+Mouse::Button WindowsMouseButton(DWORD button_state) {
+  if (button_state & FROM_LEFT_1ST_BUTTON_PRESSED) {
+    return Mouse::Left;
+  }
+  if (button_state & RIGHTMOST_BUTTON_PRESSED) {
+    return Mouse::Right;
+  }
+  if (button_state & FROM_LEFT_2ND_BUTTON_PRESSED) {
+    return Mouse::Middle;
+  }
+  return Mouse::None;
+}
+
+bool IsSupportedWindowsMouseEvent(const MOUSE_EVENT_RECORD& record) {
+  return record.dwEventFlags == 0 || record.dwEventFlags == DOUBLE_CLICK ||
+         record.dwEventFlags == MOUSE_MOVED ||
+         record.dwEventFlags == MOUSE_WHEELED ||
+         record.dwEventFlags == MOUSE_HWHEELED;
+}
+
+Event WindowsMouseEvent(const MOUSE_EVENT_RECORD& record) {
+  Mouse mouse;
+  mouse.x = record.dwMousePosition.X;
+  mouse.y = record.dwMousePosition.Y;
+  mouse.shift = (record.dwControlKeyState & SHIFT_PRESSED) != 0;
+  mouse.meta =
+      (record.dwControlKeyState & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
+  mouse.control =
+      (record.dwControlKeyState & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) !=
+      0;
+
+  if (record.dwEventFlags == MOUSE_WHEELED) {
+    const short delta = static_cast<short>(HIWORD(record.dwButtonState));
+    mouse.button = delta > 0 ? Mouse::WheelUp : Mouse::WheelDown;
+    mouse.motion = Mouse::Pressed;
+    return Event::Mouse("windows-mouse-wheel", mouse);
+  }
+
+  if (record.dwEventFlags == MOUSE_HWHEELED) {
+    const short delta = static_cast<short>(HIWORD(record.dwButtonState));
+    mouse.button = delta > 0 ? Mouse::WheelRight : Mouse::WheelLeft;
+    mouse.motion = Mouse::Pressed;
+    return Event::Mouse("windows-mouse-wheel-horizontal", mouse);
+  }
+
+  mouse.button = WindowsMouseButton(record.dwButtonState);
+  mouse.motion =
+      record.dwEventFlags == MOUSE_MOVED
+          ? Mouse::Moved
+          : (record.dwButtonState == 0 ? Mouse::Released : Mouse::Pressed);
+  return Event::Mouse("windows-mouse", mouse);
+}
+#endif
+
 }  // namespace
 
 App::App(Dimension dimension, int dimx, int dimy, bool use_alternative_screen)
@@ -580,8 +639,15 @@ void App::Install() {
   const int enable_window_input = 0x0008;
   in_mode &= ~enable_echo_input;
   in_mode &= ~enable_line_input;
+  in_mode |= kEnableExtendedFlags;
+  in_mode &= ~kEnableQuickEditMode;
   in_mode |= enable_virtual_terminal_input;
   in_mode |= enable_window_input;
+  if (track_mouse_) {
+    in_mode |= kEnableMouseInput;
+  } else {
+    in_mode &= ~kEnableMouseInput;
+  }
 
   SetConsoleMode(stdin_handle, in_mode);
   SetConsoleMode(stdout_handle, out_mode);
@@ -1137,9 +1203,14 @@ void App::FetchTerminalEvents() {
       case WINDOW_BUFFER_SIZE_EVENT:
         Post(Event::Special({0}));
         break;
+      case MOUSE_EVENT:
+        if (track_mouse_ &&
+            IsSupportedWindowsMouseEvent(r.Event.MouseEvent)) {
+          PostEvent(WindowsMouseEvent(r.Event.MouseEvent));
+        }
+        break;
       case MENU_EVENT:
       case FOCUS_EVENT:
-      case MOUSE_EVENT:
         // TODO(mauve): Implement later.
         break;
     }

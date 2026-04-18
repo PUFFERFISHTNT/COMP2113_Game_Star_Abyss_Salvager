@@ -42,5 +42,5 @@ Element StarAbyssApp::RenderSummary() const {
         action_buttons,
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Summary)]) | borderDouble | bgcolor(kAbyss);
 }

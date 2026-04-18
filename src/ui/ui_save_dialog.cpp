@@ -28,6 +28,7 @@ void StarAbyssApp::LoadRun() {
 void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
     saveDialogMode_ = mode;
     saveDialogVisible_ = true;
+    saveDialogScrollLine_ = 0;
     RefreshSaveEntries();
     if (mode == SaveDialogMode::Save && saveNameInput_.empty()) {
         saveNameInput_ = "save1";
@@ -248,6 +249,6 @@ Element StarAbyssApp::RenderSaveDialog() const {
                text(save_mode ? Tr(language_, "Save Manager", "存档管理")
                               : Tr(language_, "Load Manager", "读档管理")) |
                    color(kGold) | bold,
-               body | vscroll_indicator | yframe | size(HEIGHT, LESS_THAN, dialog_height)) |
+               ApplyVerticalScrollFrame(body, saveDialogScrollLine_) | size(HEIGHT, LESS_THAN, dialog_height)) |
            size(WIDTH, LESS_THAN, dialog_width) | bgcolor(kPanelAlt) | center;
 }

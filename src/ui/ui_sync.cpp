@@ -4,7 +4,11 @@
 
 void StarAbyssApp::SyncUi() {
     const RunState& state = engine_.state();
+    const int previous_page = activePage_;
     activePage_ = static_cast<int>(state.page);
+    if (previous_page != activePage_) {
+        pageScrollLines_[PageIndex(state.page)] = 0;
+    }
     difficultyEntries_[0] = Tr(language_, "Easy", "简单");
     difficultyEntries_[1] = Tr(language_, "Normal", "普通");
     difficultyEntries_[2] = Tr(language_, "Hard", "困难");

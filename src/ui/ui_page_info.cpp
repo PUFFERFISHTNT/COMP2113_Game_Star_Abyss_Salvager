@@ -22,5 +22,5 @@ Element StarAbyssApp::RenderInfo() const {
         infoBackButton_->Render(),
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Info)]) | borderDouble | bgcolor(kAbyss);
 }

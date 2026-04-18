@@ -141,7 +141,7 @@ Element StarAbyssApp::RenderEncounter() const {
             text(TranslateGameText(language_, state.statusLine)) | color(kHull),
             hbox({encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
         });
-        return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+        return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Encounter)]) | borderDouble | bgcolor(kAbyss);
     }
 
     Element signal_header = compact_layout
@@ -169,5 +169,5 @@ Element StarAbyssApp::RenderEncounter() const {
         hbox({encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Encounter)]) | borderDouble | bgcolor(kAbyss);
 }

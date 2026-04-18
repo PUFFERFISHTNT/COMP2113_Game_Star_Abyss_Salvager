@@ -27,9 +27,13 @@ private:
     static constexpr size_t kMapSlots = 3;
     static constexpr size_t kEncounterSlots = 6;
     static constexpr size_t kRewardSlots = 3;
+    static constexpr size_t kPageCount = static_cast<size_t>(AppPage::Info) + 1;
+    static constexpr int kWheelScrollLines = 4;
+    static constexpr int kPageScrollLines = 14;
 
     void SyncUi();
     bool HandleEvent(ftxui::Event event);
+    bool ScrollActiveView(int delta_lines);
     void SaveRun();
     void LoadRun();
     void BackFromInfo();
@@ -41,6 +45,8 @@ private:
     void AutoSave();
     std::string SanitizeSaveName(const std::string& raw_name) const;
     std::string SaveDisplayName(size_t index) const;
+    ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
+    static constexpr size_t PageIndex(AppPage page) { return static_cast<size_t>(page); }
 
     ftxui::Element RenderMainMenu() const;
     ftxui::Element RenderSetup() const;
@@ -62,8 +68,10 @@ private:
     int ambientTick_ = 0;
     bool infoReturnsToRun_ = false;
     UiLanguage language_ = UiLanguage::English;
+    std::array<int, kPageCount> pageScrollLines_{};
     SaveDialogMode saveDialogMode_ = SaveDialogMode::None;
     bool saveDialogVisible_ = false;
+    int saveDialogScrollLine_ = 0;
     int saveSelected_ = 0;
     std::string saveNameInput_ = "save1";
     mutable ftxui::Box battleLaneRowsBox_;

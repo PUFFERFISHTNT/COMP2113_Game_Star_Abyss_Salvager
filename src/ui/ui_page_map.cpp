@@ -79,5 +79,5 @@ Element StarAbyssApp::RenderMap() const {
         hbox({mapSaveButton_->Render() | flex, mapMenuButton_->Render() | flex}),
     });
 
-    return content | vscroll_indicator | yframe | borderDouble | bgcolor(kAbyss);
+    return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Map)]) | borderDouble | bgcolor(kAbyss);
 }
