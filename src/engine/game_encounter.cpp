@@ -43,6 +43,8 @@ extern bool g_sa_next_elite;
 extern bool g_sa_heat_accel;
 extern bool g_sa_no_boss;
 extern int g_sa_permanent_shield;
+extern bool g_sa_escape_battle_pending;
+extern bool g_sa_escape_intro_pending;
 extern std::string g_sa_event_epilogue;
 
 void GameEngine::resolveEncounter(size_t index) {
@@ -487,6 +489,15 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Scavenged supplies. +18 credits, gained a card, -8 HP.";
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
+            finishCurrentNode();
+            return;
+        }
+
+        // ====== Escape Route Prologue ======
+
+        if (eid == "escape_prologue") {
+            g_sa_escape_intro_pending = false;
+            state_.statusLine = "Engines engaged. The escape corridor opens ahead.";
             finishCurrentNode();
             return;
         }

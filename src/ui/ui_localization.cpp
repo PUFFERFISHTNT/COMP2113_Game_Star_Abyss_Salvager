@@ -331,6 +331,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Unstable Jump Point", "不稳定跃迁点"},
         {"Star Abyss Edge Barrier", "星渊边界屏障"},
         {"Temporary Safe Station", "临时安全站"},
+        {"Escape Skirmish", "逃离遇战"},
+        {"Escape Blockade", "逃离封锁"},
+        {"Escape Decision", "逃离抄择"},
         {"Memory Remnant", "记忆残片"},
         {"Rogue Maintenance AI", "失控维护 AI"},
         {"Phantom Guardian", "幻影守卫"},
@@ -352,6 +355,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"An unstable warp corridor shimmers ahead, offering a risky shortcut.", "前方闪烁着一条不稳定的跃迁走廊，提供了一条冒险的捷径。"},
         {"An energy barrier marks the edge of the Star Abyss.", "一道能量屏障标志着星渊的边界。"},
         {"A small outpost at the edge of the abyss offers one last chance to prepare.", "深渊边缘的一座小哨站，提供最后一次准备的机会。"},
+        {"Hostile contacts on the escape vector. No way around them.", "逃离航线上出现敌方目标。无法绕过。"},
+        {"A heavily armed ship blocks your escape route.", "一艘重武装舰船挡住了你的逃离航线。"},
+        {"The Ark's beacon falls silent. A new heading crystallizes on the nav console.", "方舟信标归于沉寂。导航台上凝聚出了一条新航向。"},
         {"A twisted echo of forgotten memories blocks the corridor ahead.", "一段扭曲的遗忘记忆回声挡住了前方走廊。"},
         {"A malfunctioning AI system guards the old bridge with lethal force.", "一套失控的 AI 系统以致命武力守卫着旧舰桥。"},
         {"An illusory sentinel materializes, defending the captain's sanctum.", "一位幻影哨兵凭空出现，守护着舰长的圣殿。"},
@@ -1070,6 +1076,11 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Drained cryo energy. +5 heat, +6 HP, -8 credits.") return "抽取了冷冻能量。+5 热量，+6 生命，-8 金币。";
     if (text == "Not enough credits to drain cryo energy.") return "金币不足，无法抽取冷冻能量。";
     if (text == "Scavenged supplies. +18 credits, gained a card, -8 HP.") return "搜刮了补给。+18 金币，获得 1 张卡牌，-8 生命。";
+    // Escape prologue
+    if (text == "You sealed the Ark's beacon and cut the signal dead. The surrounding space warps and groans as the abyss loses its anchor. Your navigation computer recalculates: a narrow corridor toward open space still exists, but it threads through hostile territory, federal patrols, radiation belts, and pirate hunting grounds. There will be no resupply, no allies, no second chances. You grip the helm and set the heading. The escape begins now.") return "你封锁了方舟信标，切断了信号。周围的空间随着星渊失去锚点而扭曲呻吟。导航计算机重新规划：通往开阔太空的狭窄走廊仍然存在，但它穿越了敌占区、联邦巡逻带、辐射带和海盗猎场。没有补给，没有盟友，没有第二次机会。你紧握舵盘，设定航向。逃离现在开始。";
+    if (text == "Engage engines") return "启动引擎";
+    if (text == "Commit to the escape route. There is no turning back.") return "踏上逃离路线。无法回头。";
+    if (text == "Engines engaged. The escape corridor opens ahead.") return "引擎已启动。逃离走廊在前方展开。";
     // Escape route event status lines
     if (text == "Paid the transit fee. -12 credits.") return "支付了通行费。-12 金币。";
     if (text == "Not enough credits for the transit fee.") return "金币不足，无法支付通行费。";

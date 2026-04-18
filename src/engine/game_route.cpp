@@ -23,6 +23,8 @@ bool g_sa_next_elite = false;
 bool g_sa_heat_accel = false;
 bool g_sa_no_boss = false;
 int g_sa_permanent_shield = 0;
+bool g_sa_escape_battle_pending = false;
+bool g_sa_escape_intro_pending = true;
 std::string g_sa_event_epilogue;
 
 void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
@@ -39,6 +41,8 @@ void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     g_sa_heat_accel = false;
     g_sa_no_boss = false;
     g_sa_permanent_shield = 0;
+    g_sa_escape_battle_pending = false;
+    g_sa_escape_intro_pending = true;
     g_sa_event_epilogue.clear();
 
     state_.hasRun = true;
@@ -97,6 +101,19 @@ void GameEngine::generateRouteOptions() {
 
     // --- Escape route ---
     if (g_sa_escape_stage >= 1 && g_sa_escape_stage <= 8) {
+        if (g_sa_escape_intro_pending) {
+            state_.routeOptions.push_back({"event", "Escape Decision", "The Ark's beacon falls silent. A new heading crystallizes on the nav console.", 1});
+            return;
+        }
+        if (g_sa_escape_battle_pending) {
+            std::uniform_int_distribution<int> typeRoll(1, 100);
+            if (typeRoll(rng_) <= 35) {
+                state_.routeOptions.push_back({"elite", "Escape Blockade", "A heavily armed ship blocks your escape route.", 3});
+            } else {
+                state_.routeOptions.push_back({"battle", "Escape Skirmish", "Hostile contacts on the escape vector. No way around them.", 2});
+            }
+            return;
+        }
         switch (g_sa_escape_stage) {
             case 1: state_.routeOptions.push_back({"event", "Federal Patrol Outpost", "A federation checkpoint blocks the route. Patrol drones sweep the area.", 3}); break;
             case 2: state_.routeOptions.push_back({"event", "Abandoned Smuggling Port", "A deserted port with some supplies left behind.", 1}); break;
@@ -229,6 +246,24 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         clearMarketState();
         state_.marketOfferCardIds = randomCardChoices(3);
         openMarketShop();
+        return;
+    }
+
+    // --- Escape Route Prologue ---
+    if (g_sa_escape_stage >= 1 && g_sa_escape_intro_pending) {
+        state_.encounter.typeId = "event";
+        state_.encounter.encounterId = "escape_prologue";
+        state_.encounter.title = "Escape Decision";
+        state_.encounter.description =
+            "You sealed the Ark's beacon and cut the signal dead. "
+            "The surrounding space warps and groans as the abyss loses its anchor. "
+            "Your navigation computer recalculates: a narrow corridor toward open space "
+            "still exists, but it threads through hostile territory, federal patrols, "
+            "radiation belts, and pirate hunting grounds. "
+            "There will be no resupply, no allies, no second chances. "
+            "You grip the helm and set the heading. The escape begins now.";
+        state_.encounter.choices = {"Engage engines"};
+        state_.encounter.details = {"Commit to the escape route. There is no turning back."};
         return;
     }
 
@@ -449,7 +484,18 @@ void GameEngine::finishCurrentNode() {
 
     // --- Escape Route ---
     if (g_sa_escape_stage >= 1 && g_sa_escape_stage <= 8) {
+        if (g_sa_escape_battle_pending) {
+            g_sa_escape_battle_pending = false;
+            skipNormalAdvance = true;
+        } else {
         g_sa_escape_stage++;
+        // Random chance of a battle before the next escape event
+        if (g_sa_escape_stage >= 2 && g_sa_escape_stage <= 8) {
+            std::uniform_int_distribution<int> battleRoll(1, 100);
+            if (battleRoll(rng_) <= 65) {
+                g_sa_escape_battle_pending = true;
+            }
+        }
         if (g_sa_escape_stage > 8) {
             fillSummary(true);
             state_.info.lines.push_back("");
@@ -464,6 +510,7 @@ void GameEngine::finishCurrentNode() {
             return;
         }
         skipNormalAdvance = true;
+        }
     }
 
     // --- Truth Route ---
