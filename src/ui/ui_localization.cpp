@@ -1211,6 +1211,12 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     // Sector cleared
     if (text == "Sector cleared. Your crew patches 6 HP while plotting the next route.") return "星区已清除。船员在规划下一航路时修补了 6 生命。";
     if (text == "Run initialized. Chart your first jump.") return "航程已初始化。规划你的第一次跃迁。";
+    // Game opening story
+    if (text == "Star Abyss Salvager") return "星渊打捞者";
+    if (text == "The year is 3071. Humanity spread across the stars centuries ago, but the golden age of expansion ended in silence. Deep in uncharted space lies the Star Abyss -- a vast, churning anomaly where ships vanish and space itself unravels. The Federation declared it a forbidden zone, but salvagers still slip through the cordon, drawn by the wrecks of lost fleets and the promise of fortune. You are one such salvager: broke, desperate, and deep in debt. Your ship is held together by scrap metal and stubbornness. One last haul in the Abyss could clear your ledger -- or bury you alongside the others. The entry vector is locked. Your reactor hums. Whatever lies inside, there is no turning back now.") return "公元3071年。人类在数百年前就已遍布星际，但扩张的黄金时代在沉寂中终结。在未知星域深处，横亘着星渊——一片巨大而动荡的异常区域，飞船在此消失，空间本身也在此崩解。联邦将其宣布为禁区，但打捞者们依然穿过封锁线潜入其中，被失落舰队的残骸和财富的承诺所吸引。你就是这样一名打捞者：身无分文、走投无路、债台高筑。你的飞船靠废铁和倔强勉强维持运转。在星渊中最后搏一把，或许能还清账单——也可能让你和其他人一起长眠于此。进入矢量已锁定。反应堆低声嗡鸣。无论深处有什么，都已无法回头。";
+    if (text == "Begin voyage") return "开始航程";
+    if (text == "Enter the Star Abyss and start your salvage run.") return "进入星渊，开始你的打捞航程。";
+    if (text == "The Abyss awaits. Chart your first jump.") return "星渊在等待。规划你的第一次跃迁。";
 
     return text;
 }

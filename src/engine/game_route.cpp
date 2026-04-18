@@ -25,6 +25,7 @@ bool g_sa_no_boss = false;
 int g_sa_permanent_shield = 0;
 bool g_sa_escape_battle_pending = false;
 bool g_sa_escape_intro_pending = true;
+bool g_sa_game_intro_pending = true;
 std::string g_sa_event_epilogue;
 
 void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
@@ -43,17 +44,42 @@ void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     g_sa_permanent_shield = 0;
     g_sa_escape_battle_pending = false;
     g_sa_escape_intro_pending = true;
+    g_sa_game_intro_pending = true;
     g_sa_event_epilogue.clear();
 
     state_.hasRun = true;
     state_.difficulty = difficulty;
     state_.sector = 1;
     state_.depth = 0;
-    state_.nodesPerSector = 3;
+    state_.nodesPerSector = 5;
     setupPlayerForShip(chosenShip, difficulty);
     generateRouteOptions();
-    state_.page = AppPage::Map;
-    resumePage_ = AppPage::Map;
+
+    if (g_sa_game_intro_pending) {
+        state_.encounter = {};
+        state_.encounter.typeId = "event";
+        state_.encounter.encounterId = "game_intro";
+        state_.encounter.title = "Star Abyss Salvager";
+        state_.encounter.description =
+            "The year is 3071. Humanity spread across the stars centuries ago, "
+            "but the golden age of expansion ended in silence. "
+            "Deep in uncharted space lies the Star Abyss -- a vast, churning anomaly "
+            "where ships vanish and space itself unravels. "
+            "The Federation declared it a forbidden zone, but salvagers still slip through the cordon, "
+            "drawn by the wrecks of lost fleets and the promise of fortune. "
+            "You are one such salvager: broke, desperate, and deep in debt. "
+            "Your ship is held together by scrap metal and stubbornness. "
+            "One last haul in the Abyss could clear your ledger -- or bury you alongside the others. "
+            "The entry vector is locked. Your reactor hums. "
+            "Whatever lies inside, there is no turning back now.";
+        state_.encounter.choices = {"Begin voyage"};
+        state_.encounter.details = {"Enter the Star Abyss and start your salvage run."};
+        state_.page = AppPage::Encounter;
+        resumePage_ = AppPage::Encounter;
+    } else {
+        state_.page = AppPage::Map;
+        resumePage_ = AppPage::Map;
+    }
     state_.statusLine = "Run initialized. Chart your first jump.";
 }
 

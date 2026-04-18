@@ -45,6 +45,7 @@ extern bool g_sa_no_boss;
 extern int g_sa_permanent_shield;
 extern bool g_sa_escape_battle_pending;
 extern bool g_sa_escape_intro_pending;
+extern bool g_sa_game_intro_pending;
 extern std::string g_sa_event_epilogue;
 
 void GameEngine::resolveEncounter(size_t index) {
@@ -490,6 +491,17 @@ void GameEngine::resolveEncounter(size_t index) {
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
             finishCurrentNode();
+            return;
+        }
+
+        // ====== Game Opening Story ======
+
+        if (eid == "game_intro") {
+            g_sa_game_intro_pending = false;
+            state_.encounter = {};
+            state_.statusLine = "The Abyss awaits. Chart your first jump.";
+            state_.page = AppPage::Map;
+            resumePage_ = AppPage::Map;
             return;
         }
 
