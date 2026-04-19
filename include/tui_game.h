@@ -152,6 +152,8 @@ struct EnemyState {
     int hp = 0;
     int maxHp = 0;
     int shield = 0;
+    int heat = 0;
+    int maxHeat = 10;
     std::string intentKind;
     std::string intentLabel;
     int intentValue = 0;
@@ -254,6 +256,7 @@ private:
         bool elite = false;
         bool boss = false;
         std::vector<IntentDef> pattern;
+        int maxHeat = 10;
     };
 
     struct ShipTemplate {
@@ -314,6 +317,7 @@ private:
     void drawCards(int count);
     void reshuffleDiscardIntoDraw();
     void changeHeat(int delta);
+    void changeEnemyHeat(int delta);
     void log(const std::string& line);
     bool hasObtainedCard(const std::string& cardId) const;
     void recordObtainedCard(const std::string& cardRef);

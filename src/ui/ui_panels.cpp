@@ -425,7 +425,8 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
 std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunState& state) {
     std::vector<std::string> lines = {
         Tr(language, "Intent: ", "意图：") + IntentSummary(language, state),
-        Tr(language, "Shield ", "护盾 ") + std::to_string(state.enemy.shield),
+        Tr(language, "Shield ", "护盾 ") + std::to_string(state.enemy.shield) + "   " +
+            Tr(language, "Heat ", "热量 ") + std::to_string(state.enemy.heat) + "/" + std::to_string(state.enemy.maxHeat),
     };
     if (state.enemy.weakenTurns > 0) lines.push_back(Tr(language, "Weakened attacks remaining: ", "剩余削弱攻击次数：") + std::to_string(state.enemy.weakenTurns));
     if (state.enemy.shieldLockTurns > 0) lines.push_back(Tr(language, "Shield jam remaining: ", "剩余护盾封锁回合：") + std::to_string(state.enemy.shieldLockTurns));

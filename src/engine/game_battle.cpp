@@ -209,6 +209,8 @@ void GameEngine::startBattle(const std::string& nodeType) {
     state_.enemy.maxHp = enemy.baseHp + (state_.sector - 1) * (enemy.boss ? 8 : (enemy.elite ? 5 : 3));
     state_.enemy.hp = state_.enemy.maxHp;
     state_.enemy.shield = 0;
+    state_.enemy.heat = 0;
+    state_.enemy.maxHeat = enemy.maxHeat;
     state_.enemy.patternIndex = 0;
     state_.enemy.weakenTurns = 0;
     state_.enemy.shieldLockTurns = 0;
@@ -460,6 +462,17 @@ void GameEngine::changeHeat(int delta) {
         state_.player.heat = state_.player.maxHeat;
         applyDamageToPlayer(overflow + 1);
         log("Overheat! Feedback burns through the hull for " + std::to_string(overflow + 1) + ".");
+    }
+}
+
+void GameEngine::changeEnemyHeat(int delta) {
+    state_.enemy.maxHeat = std::max(1, state_.enemy.maxHeat);
+    state_.enemy.heat += delta;
+    if (state_.enemy.heat < 0) {
+        state_.enemy.heat = 0;
+    }
+    if (state_.enemy.heat > state_.enemy.maxHeat) {
+        state_.enemy.heat = state_.enemy.maxHeat;
     }
 }
 

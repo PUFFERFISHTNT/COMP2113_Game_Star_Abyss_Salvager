@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|8\n";
+    output << "VERSION|9\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -147,7 +147,8 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     output << "ENEMY|" << enemy.enemyId << "|" << enemy.name << "|" << enemy.behavior << "|"
            << enemy.hp << "|" << enemy.maxHp << "|" << enemy.shield << "|"
            << enemy.intentKind << "|" << enemy.intentLabel << "|" << enemy.intentValue << "|"
-           << enemy.patternIndex << "|" << enemy.weakenTurns << "|" << enemy.shieldLockTurns << "\n";
+           << enemy.patternIndex << "|" << enemy.weakenTurns << "|" << enemy.shieldLockTurns << "|"
+           << enemy.heat << "|" << enemy.maxHeat << "\n";
 
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
@@ -310,6 +311,10 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             if (parts.size() >= 13) {
                 loaded.enemy.shieldLockTurns = ToInt(parts[12], 0);
             }
+            if (parts.size() >= 15) {
+                loaded.enemy.heat = ToInt(parts[13], 0);
+                loaded.enemy.maxHeat = ToInt(parts[14], 10);
+            }
         } else if (key == "NODE" && parts.size() >= 5) {
             loaded.routeOptions.push_back({parts[1], parts[2], parts[3], ToInt(parts[4], 1)});
         } else if (key == "MARKETOFFER" && parts.size() >= 2) {
@@ -366,6 +371,8 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.nextAttackMultiplier = std::max(1, loaded.player.nextAttackMultiplier);
     loaded.enemy.hp = std::max(0, std::min(loaded.enemy.hp, loaded.enemy.maxHp));
     loaded.enemy.shield = std::max(0, loaded.enemy.shield);
+    loaded.enemy.maxHeat = std::max(1, loaded.enemy.maxHeat);
+    loaded.enemy.heat = std::max(0, std::min(loaded.enemy.heat, loaded.enemy.maxHeat));
     loaded.enemy.weakenTurns = std::max(0, loaded.enemy.weakenTurns);
     loaded.enemy.shieldLockTurns = std::max(0, loaded.enemy.shieldLockTurns);
 

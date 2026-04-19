@@ -4,3 +4,4 @@ save/*.sav
 save/*.cards.json
 data/leaderboard.txt
 star_abyss_salvager
+save/obtained_cards.txt
