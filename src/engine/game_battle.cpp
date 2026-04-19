@@ -54,7 +54,6 @@ void GameEngine::playCard(size_t index) {
         outgoingDamage *= state_.player.nextAttackMultiplier;
         state_.player.nextAttackMultiplier = 1;
     }
-
     log("You route " + card.name + ".");
 
     if (card.attackMultiplier > 1) {
@@ -82,10 +81,12 @@ void GameEngine::playCard(size_t index) {
     }
     if (card.halveHeat) {
         state_.player.heat /= 2;
+        syncPlayerOverheatState();
         log("Heat is cut in half.");
     }
     if (card.clearHeat) {
         state_.player.heat = 0;
+        syncPlayerOverheatState();
         log("All heat is vented from the reactor.");
     }
     if (card.heat != 0) {
@@ -150,6 +151,10 @@ void GameEngine::playCard(size_t index) {
         }
     }
 
+    if (outgoingDamage > 0 && playerOverheatStage() >= 2) {
+        outgoingDamage = (outgoingDamage * 3) / 4;
+    }
+
     if (outgoingDamage > 0) {
         applyDamageToEnemy(outgoingDamage, card.ignoreShield, std::max(1, card.multiHit));
         startAnimation("attack", card.name, outgoingDamage, true, 7);
@@ -190,7 +195,7 @@ void GameEngine::endTurn() {
     log("Your remaining hand is discarded.");
 
     if (hasRelic("auto_cooler") && state_.player.heat > 0) {
-        state_.player.heat = std::max(0, state_.player.heat - 1);
+        changeHeat(-1);
         log("Auto-Cooler bleeds 1 heat from the reactor.");
     }
 
@@ -206,6 +211,9 @@ void GameEngine::endTurn() {
 
     chooseEnemyIntent();
     startPlayerTurn();
+    if (state_.player.hp <= 0 || state_.page != AppPage::Battle) {
+        return;
+    }
     state_.statusLine = "Enemy cycle resolved. Your turn begins.";
 }
 
@@ -227,14 +235,16 @@ void GameEngine::startBattle(const std::string& nodeType) {
     state_.battleLog.clear();
     state_.battleTurn = 0;
     state_.firstTurnOfBattle = true;
+    state_.player.overheatRounds = 0;
     state_.player.nextAttackMultiplier = 1;
     state_.player.salvageBonus = 0;
     state_.player.attacksPlayedThisTurn = 0;
-    resetBattleDeck();
-    chooseEnemyIntent();
-    startPlayerTurn();
     state_.page = AppPage::Battle;
     resumePage_ = AppPage::Battle;
+    resetBattleDeck();
+    syncPlayerOverheatState();
+    chooseEnemyIntent();
+    startPlayerTurn();
     log("Hostile contact acquired: " + state_.enemy.name + ".");
 }
 
@@ -258,10 +268,26 @@ void GameEngine::startPlayerTurn() {
     state_.player.shield = 0;
 
     if (state_.battleTurn > 0) {
+        advancePlayerOverheatRound();
         advanceEnemyOverheatRound();
     }
 
-    const int drawTarget = state_.player.heat >= state_.player.maxHeat ? (kBattleDrawCount - 1) : kBattleDrawCount;
+    if (playerOverheatStage() >= 3) {
+        state_.player.hp -= 5;
+        if (state_.player.hp <= 0 && hasRelic("emergency_battery") && !state_.player.emergencyBatteryUsed) {
+            state_.player.hp = 1;
+            state_.player.emergencyBatteryUsed = true;
+            log("Emergency Battery triggers and keeps the ship alive at 1 HP.");
+        }
+        state_.player.hp = std::max(0, state_.player.hp);
+        log("Player overheat burns 5 HP.");
+        if (state_.player.hp == 0) {
+            handleDefeat();
+            return;
+        }
+    }
+
+    const int drawTarget = playerOverheatStage() >= 1 ? (kBattleDrawCount - 1) : kBattleDrawCount;
     int energy = state_.player.maxEnergy + state_.player.nextTurnEnergy;
     if (state_.firstTurnOfBattle && hasRelic("reactor_core")) {
         energy += 1;
@@ -409,6 +435,7 @@ void GameEngine::handleBattleVictory() {
     state_.player.shield = 0;
     state_.player.energy = state_.player.maxEnergy;
     state_.player.nextTurnEnergy = 0;
+    state_.player.overheatRounds = 0;
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
     state_.enemy.coolingCooldownTurns = 0;
@@ -421,6 +448,7 @@ void GameEngine::handleBattleVictory() {
 }
 
 void GameEngine::handleDefeat() {
+    state_.player.overheatRounds = 0;
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
     state_.enemy.coolingCooldownTurns = 0;
@@ -429,6 +457,9 @@ void GameEngine::handleDefeat() {
 
 void GameEngine::applyDamageToPlayer(int amount) {
     int remaining = amount;
+    if (playerOverheatStage() >= 2 && remaining > 0) {
+        remaining = (remaining * 5 + 3) / 4;
+    }
     if (state_.player.shield > 0) {
         const int blocked = std::min(state_.player.shield, remaining);
         state_.player.shield -= blocked;
@@ -506,6 +537,68 @@ void GameEngine::changeHeat(int delta) {
         state_.player.heat = state_.player.maxHeat;
         applyDamageToPlayer(overflow + 1);
         log("Overheat! Feedback burns through the hull for " + std::to_string(overflow + 1) + ".");
+    }
+    if (state_.page == AppPage::Battle) {
+        syncPlayerOverheatState();
+    } else {
+        state_.player.overheatRounds = 0;
+    }
+}
+
+bool GameEngine::playerIsOverheated() const {
+    return state_.player.heat >= state_.player.maxHeat;
+}
+
+int GameEngine::playerOverheatStage() const {
+    if (!playerIsOverheated()) {
+        return 0;
+    }
+    return std::max(1, std::min(3, state_.player.overheatRounds));
+}
+
+void GameEngine::syncPlayerOverheatState() {
+    if (state_.page != AppPage::Battle) {
+        state_.player.overheatRounds = 0;
+        return;
+    }
+
+    if (playerIsOverheated()) {
+        if (state_.player.overheatRounds == 0) {
+            state_.player.overheatRounds = 1;
+            log("Player overheat begins. Draw drops by 1.");
+        } else {
+            state_.player.overheatRounds = std::min(3, state_.player.overheatRounds);
+        }
+        return;
+    }
+
+    if (state_.player.overheatRounds != 0) {
+        state_.player.overheatRounds = 0;
+        log("Player overheat clears.");
+    }
+}
+
+void GameEngine::advancePlayerOverheatRound() {
+    if (!playerIsOverheated()) {
+        state_.player.overheatRounds = 0;
+        return;
+    }
+
+    if (state_.player.overheatRounds <= 0) {
+        state_.player.overheatRounds = 1;
+        return;
+    }
+
+    const int previous = state_.player.overheatRounds;
+    state_.player.overheatRounds = std::min(3, state_.player.overheatRounds + 1);
+    if (state_.player.overheatRounds == previous) {
+        return;
+    }
+
+    if (state_.player.overheatRounds == 2) {
+        log("Player overheat deepens. Outgoing damage drops by 25%, incoming damage rises by 25%.");
+    } else if (state_.player.overheatRounds == 3) {
+        log("Player overheat peaks. It will burn for 5 HP each turn.");
     }
 }
 

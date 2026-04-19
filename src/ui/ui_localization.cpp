@@ -594,6 +594,21 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Enemy overheat burns 5 HP.") {
         return "敌方因过热燃烧，失去 5 点生命。";
     }
+    if (text == "Player overheat begins. Draw drops by 1.") {
+        return "我方进入过热。抽牌减少 1 张。";
+    }
+    if (text == "Player overheat deepens. Outgoing damage drops by 25%, incoming damage rises by 25%.") {
+        return "我方过热加深。输出伤害降低 25%，受到伤害提高 25%。";
+    }
+    if (text == "Player overheat peaks. It will burn for 5 HP each turn.") {
+        return "我方过热达到峰值。此后每回合失去 5 点生命。";
+    }
+    if (text == "Player overheat clears.") {
+        return "我方过热已解除。";
+    }
+    if (text == "Player overheat burns 5 HP.") {
+        return "我方因过热失去 5 点生命。";
+    }
     if (StartsWith(text, "Cooling cooldown: ")) {
         return "冷却冷却中：" + text.substr(18);
     }
@@ -920,8 +935,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (StartsWith(text, "Shield is temporary: it protects you through the enemy turn, then collapses at the start of your next turn.")) {
         return "护盾是临时的：它会在敌方回合中保护你，并在你下个回合开始时消散。";
     }
-    if (StartsWith(text, "Heat is dangerous: overheat damages your hull and can reduce your next draw to 4 cards.")) {
-        return "热量非常危险：过热会伤害你的船体，并让你下回合只抽 4 张牌。";
+    if (StartsWith(text, "Heat is dangerous: overflow feedback damages your hull, and sustained overheat in battle cuts draw, lowers outgoing damage, raises incoming damage, and eventually burns 5 HP each turn.")) {
+        return "热量非常危险：超出上限的反馈会伤害你的船体，而战斗中的持续过热会减少抽牌、降低输出、提高受到伤害，并最终每回合失去 5 点生命。";
     }
     if (StartsWith(text, "Mouse clicks are enabled on compatible terminals, but some terminals do not forward mouse wheel events.")) {
         return "兼容的终端支持鼠标点击，但有些终端不会传递鼠标滚轮事件。";

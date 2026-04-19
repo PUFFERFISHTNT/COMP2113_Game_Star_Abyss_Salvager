@@ -81,7 +81,7 @@ void GameEngine::fillHelpInfo() {
         "Battle flow: start each turn with up to 5 cards, spend energy to play modules, then end turn with E.",
         "Cards can draw extra modules, but your hand caps at 10 cards just like a deckbuilder battle lane.",
         "Shield is temporary: it protects you through the enemy turn, then collapses at the start of your next turn.",
-        "Heat is dangerous: overheat damages your hull and can reduce your next draw to 4 cards.",
+        "Heat is dangerous: overflow feedback damages your hull, and sustained overheat in battle cuts draw, lowers outgoing damage, raises incoming damage, and eventually burns 5 HP each turn.",
         "Mouse clicks are enabled on compatible terminals, but some terminals do not forward mouse wheel events.",
         "If scrolling does not work in your terminal, use [ and ] or PgUp/PgDn instead.",
         "Save files now keep deck piles, relics, route state, enemy state, rewards, and encounter choices.",

@@ -438,6 +438,18 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
             Tr(language, "Discard ", "弃牌堆 ") + std::to_string(state.player.discardPile.size()),
         Tr(language, "Credits ", "金币 ") + std::to_string(state.player.scrap),
     };
+    const int player_overheat_stage =
+        state.player.heat < state.player.maxHeat ? 0 : std::max(1, std::min(3, state.player.overheatRounds));
+    if (player_overheat_stage >= 1) {
+        lines.push_back(Tr(language, "Signal Fray I: Draw -1", "信号紊流 I：抽牌 -1"));
+    }
+    if (player_overheat_stage >= 2) {
+        lines.push_back(Tr(language, "Weapon Bus Sag II: Outgoing -25%, Incoming +25%",
+                           "武器母线压降 II：输出伤害 -25%，受到伤害 +25%"));
+    }
+    if (player_overheat_stage >= 3) {
+        lines.push_back(Tr(language, "Core Bleed III: Lose 5 HP each turn", "核心失血 III：每回合失去 5 点生命"));
+    }
     if (state.player.nextTurnEnergy > 0) {
         lines.push_back(Tr(language, "Buffered next turn energy +", "下回合储能 +") + std::to_string(state.player.nextTurnEnergy));
     }

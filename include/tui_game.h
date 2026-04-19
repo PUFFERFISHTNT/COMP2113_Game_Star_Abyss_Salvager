@@ -132,6 +132,7 @@ struct PlayerState {
     int maxEnergy = 3;
     int heat = 0;
     int maxHeat = 10;
+    int overheatRounds = 0;
     int scrap = 0;
     int nextTurnEnergy = 0;
     int openingEnergyBonus = 0;
@@ -320,6 +321,10 @@ private:
     void drawCards(int count);
     void reshuffleDiscardIntoDraw();
     void changeHeat(int delta);
+    bool playerIsOverheated() const;
+    int playerOverheatStage() const;
+    void syncPlayerOverheatState();
+    void advancePlayerOverheatRound();
     void changeEnemyHeat(int delta);
     bool enemyIsOverheated() const;
     int enemyOverheatStage() const;

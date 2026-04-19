@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|11\n";
+    output << "VERSION|12\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -123,7 +123,8 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << player.maxHeat << "|" << player.scrap << "|" << player.nextTurnEnergy << "|"
            << player.openingEnergyBonus << "|" << player.openingShieldBonus << "|"
            << player.nextAttackMultiplier << "|" << player.salvageBonus << "|"
-           << player.attacksPlayedThisTurn << "|" << BoolToken(player.emergencyBatteryUsed) << "\n";
+           << player.attacksPlayedThisTurn << "|" << BoolToken(player.emergencyBatteryUsed) << "|"
+           << player.overheatRounds << "\n";
 
     output << "RELICS|" << player.relics.size() << "\n";
     for (const std::string& relic : player.relics) {
@@ -276,6 +277,9 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 loaded.player.salvageBonus = ToInt(parts[15], 0);
                 loaded.player.attacksPlayedThisTurn = ToInt(parts[16], 0);
                 loaded.player.emergencyBatteryUsed = parts[17] == "1";
+                if (parts.size() >= 19) {
+                    loaded.player.overheatRounds = ToInt(parts[18], 0);
+                }
             } else {
                 loaded.player.nextAttackMultiplier = ToInt(parts[12], 1);
                 loaded.player.salvageBonus = ToInt(parts[13], 0);
@@ -378,6 +382,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.heat = std::max(0, std::min(loaded.player.heat, loaded.player.maxHeat));
     loaded.player.shield = std::max(0, loaded.player.shield);
     loaded.player.nextAttackMultiplier = std::max(1, loaded.player.nextAttackMultiplier);
+    loaded.player.overheatRounds = std::max(0, std::min(loaded.player.overheatRounds, 3));
+    if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
+        loaded.player.overheatRounds = 0;
+    } else if (loaded.player.overheatRounds == 0) {
+        loaded.player.overheatRounds = 1;
+    }
     loaded.enemy.hp = std::max(0, std::min(loaded.enemy.hp, loaded.enemy.maxHp));
     loaded.enemy.shield = std::max(0, loaded.enemy.shield);
     loaded.enemy.maxHeat = std::max(1, loaded.enemy.maxHeat);
