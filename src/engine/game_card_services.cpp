@@ -271,6 +271,28 @@ std::vector<CardView> GameEngine::handCards() const {
     return result;
 }
 
+std::vector<CardView> GameEngine::drawPileCards() const {
+    std::vector<CardView> result;
+    result.reserve(state_.player.drawPile.size());
+    for (auto it = state_.player.drawPile.rbegin(); it != state_.player.drawPile.rend(); ++it) {
+        if (cardById(*it) != nullptr) {
+            result.push_back({*it, resolvedCard(*it), isCardTypeUpgraded(*it) ? 1 : cardUpgradeLevel(*it)});
+        }
+    }
+    return result;
+}
+
+std::vector<CardView> GameEngine::discardPileCards() const {
+    std::vector<CardView> result;
+    result.reserve(state_.player.discardPile.size());
+    for (auto it = state_.player.discardPile.rbegin(); it != state_.player.discardPile.rend(); ++it) {
+        if (cardById(*it) != nullptr) {
+            result.push_back({*it, resolvedCard(*it), isCardTypeUpgraded(*it) ? 1 : cardUpgradeLevel(*it)});
+        }
+    }
+    return result;
+}
+
 bool GameEngine::upgradeCard(const std::string& cardRef,
                              CardUpgradeSource source,
                              std::string* error) {

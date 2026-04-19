@@ -121,6 +121,12 @@ bool StarAbyssApp::HandleEvent(Event event) {
         return false;
     }
 
+    if (engine_.state().page == AppPage::Battle && battlePileInspector_ != BattlePileInspector::None && event == Event::Escape) {
+        CloseBattlePileInspector();
+        SyncUi();
+        return true;
+    }
+
     if (event == Event::Escape || event == Event::Character('q')) {
         if (engine_.state().page == AppPage::MainMenu) {
             screen_.ExitLoopClosure()();
@@ -215,6 +221,15 @@ bool StarAbyssApp::HandleEvent(Event event) {
         }
     }
     return false;
+}
+
+void StarAbyssApp::ToggleBattlePileInspector(BattlePileInspector target) {
+    battlePileInspector_ = battlePileInspector_ == target ? BattlePileInspector::None : target;
+    pageScrollLines_[PageIndex(AppPage::Battle)] = 0;
+}
+
+void StarAbyssApp::CloseBattlePileInspector() {
+    battlePileInspector_ = BattlePileInspector::None;
 }
 
 void StarAbyssApp::BackFromInfo() {

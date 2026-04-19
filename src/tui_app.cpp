@@ -64,6 +64,8 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     battleEndTurnButton_ = Button(&battleEndTurnLabel_, [&] { engine_.endTurn(); AutoSave(); SyncUi(); }, AccentButton(kGold));
     battleSaveButton_ = Button(&battleSaveLabel_, [&] { OpenSaveDialog(SaveDialogMode::Save); SyncUi(); }, AccentButton(kGold));
     battleMenuButton_ = Button(&battleMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
+    battleDrawPileButton_ = Button(&battleDrawPileLabel_, [&] { ToggleBattlePileInspector(BattlePileInspector::Draw); SyncUi(); }, AccentButton(kHull));
+    battleDiscardPileButton_ = Button(&battleDiscardPileLabel_, [&] { ToggleBattlePileInspector(BattlePileInspector::Discard); SyncUi(); }, AccentButton(kEnemy));
     rewardSkipButton_ = Button(&rewardSkipLabel_, [&] { engine_.chooseReward(-1); AutoSave(); SyncUi(); }, AccentButton(kEnemy));
     rewardMenuButton_ = Button(&rewardMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
     infoBackButton_ = Button(&infoBackLabel_, [&] { BackFromInfo(); }, AccentButton(kHull));
@@ -84,6 +86,8 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
                               [&] { return RenderEncounter(); });
     {
         std::vector<Component> battle_components(battleCardButtons_.begin(), battleCardButtons_.end());
+        battle_components.push_back(battleDrawPileButton_);
+        battle_components.push_back(battleDiscardPileButton_);
         battle_components.push_back(battleEndTurnButton_);
         battle_components.push_back(battleSaveButton_);
         battle_components.push_back(battleMenuButton_);

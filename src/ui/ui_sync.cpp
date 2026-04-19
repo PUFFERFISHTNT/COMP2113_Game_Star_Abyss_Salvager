@@ -24,6 +24,8 @@ void StarAbyssApp::SyncUi() {
     battleEndTurnLabel_ = Tr(language_, "End Turn", "结束回合");
     battleSaveLabel_ = Tr(language_, "Save Run", "保存航程");
     battleMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
+    battleDrawPileLabel_ = Tr(language_, "[Deck] Draw Pile", "[牌库] 抽牌堆");
+    battleDiscardPileLabel_ = Tr(language_, "[Scrap] Discard Pile", "[弃牌] 弃牌堆");
     rewardSkipLabel_ = Tr(language_, "Skip Card Reward", "跳过卡牌奖励");
     rewardMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
     infoBackLabel_ = Tr(language_, "Back", "返回");
@@ -58,6 +60,12 @@ void StarAbyssApp::SyncUi() {
     const std::vector<CardView> hand = engine_.handCards();
     for (size_t i = 0; i < hand.size() && i < battleCardLabels_.size(); ++i) {
         battleCardLabels_[i] = TranslateGameText(language_, hand[i].def.name);
+    }
+    if (state.page != AppPage::Battle) {
+        battlePileInspector_ = BattlePileInspector::None;
+    } else {
+        battleDrawPileLabel_ += " (" + std::to_string(state.player.drawPile.size()) + ")";
+        battleDiscardPileLabel_ += " (" + std::to_string(state.player.discardPile.size()) + ")";
     }
     const std::vector<CardView> rewards = engine_.rewardCards();
     for (size_t i = 0; i < rewards.size() && i < rewardLabels_.size(); ++i) {

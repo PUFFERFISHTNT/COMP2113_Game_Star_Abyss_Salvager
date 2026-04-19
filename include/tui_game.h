@@ -217,6 +217,8 @@ public:
     int cardUpgradeCost(CardUpgradeSource source) const;
     std::vector<CardView> rewardCards() const;
     std::vector<CardView> handCards() const;
+    std::vector<CardView> drawPileCards() const;
+    std::vector<CardView> discardPileCards() const;
 
     std::string difficultyName() const;
     std::string shipNameForId(const std::string& shipId) const;

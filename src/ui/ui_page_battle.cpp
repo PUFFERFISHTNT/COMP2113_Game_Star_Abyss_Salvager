@@ -62,6 +62,8 @@ Element StarAbyssApp::RenderBattle() const {
     }
 
     const std::vector<CardView> hand = engine_.handCards();
+    const bool inspecting_draw = battlePileInspector_ == BattlePileInspector::Draw;
+    const bool inspecting_discard = battlePileInspector_ == BattlePileInspector::Discard;
     const size_t visible_slots = std::max<size_t>(5, std::min(hand.size(), battleCardButtons_.size()));
     const int cards_per_row = BattleCardsPerRow(terminal_width, visible_slots);
     const int card_width = BattleCardWidth(terminal_width, cards_per_row);
@@ -122,6 +124,64 @@ Element StarAbyssApp::RenderBattle() const {
         command_deck_rows.push_back(std::move(card_rows[row_index]));
     }
 
+    const std::vector<CardView> inspected_pile =
+        inspecting_draw ? engine_.drawPileCards() : (inspecting_discard ? engine_.discardPileCards() : std::vector<CardView>{});
+    Elements inspected_cards;
+    if (!inspected_pile.empty()) {
+        for (size_t i = 0; i < inspected_pile.size(); ++i) {
+            const CardDef& card = inspected_pile[i].def;
+            Elements description_lines;
+            for (const std::string& line : CardDescriptionLines(language_, card)) {
+                description_lines.push_back(text(line) | color(Color::White));
+            }
+            if (description_lines.empty()) {
+                description_lines.push_back(text(TranslateGameText(language_, card.description)) | color(Color::White));
+            }
+            const std::vector<std::string> facts = CardFacts(language_, card);
+            const std::string fact_text = CompactFactText(language_, facts);
+            const std::string pile_position = i == 0
+                                                  ? Tr(language_, "Top card", "顶部卡牌")
+                                                  : (Tr(language_, "Position ", "位置 ") + std::to_string(i + 1));
+            inspected_cards.push_back(
+                vbox({
+                    text(pile_position + "  |  " + TranslateGameText(language_, card.name)) | color(CardAccent(&card)) | bold,
+                    text(Tr(language_, "Cost ", "费用 ") + std::to_string(card.cost) + "   " +
+                         Tr(language_, "Type: ", "类型：") + TranslateGameText(language_, card.type)) |
+                        color(kHull),
+                    vbox(std::move(description_lines)),
+                    paragraph(fact_text.empty() ? Tr(language_, "No additional card facts.", "没有额外卡牌信息。") : fact_text) | color(kDim),
+                }) |
+                borderStyled(ROUNDED, CardFrameColor(&card)) |
+                bgcolor(CardBackground(&card, true)));
+            if (i + 1 < inspected_pile.size()) {
+                inspected_cards.push_back(separator());
+            }
+        }
+    } else if (battlePileInspector_ != BattlePileInspector::None) {
+        inspected_cards.push_back(
+            text(inspecting_draw ? Tr(language_, "Draw pile empty. Reshuffle will wait for discard cards.", "抽牌堆为空。需要等待弃牌堆重洗。")
+                                 : Tr(language_, "Discard pile empty. Played and discarded cards will appear here.", "弃牌堆为空。打出或弃置的卡牌会出现在这里。")) |
+            color(kDim));
+    }
+
+    Element pile_inspector = text(Tr(language_, "Open a pile to inspect draw order or discarded cards during battle.", "在战斗中展开牌堆即可查看抽牌顺序或弃牌内容。")) |
+                             color(kDim) | center;
+    if (battlePileInspector_ != BattlePileInspector::None) {
+        pile_inspector =
+            window(text(inspecting_draw ? Tr(language_, "Draw Pile Inspector", "抽牌堆检视")
+                                        : Tr(language_, "Discard Pile Inspector", "弃牌堆检视")) |
+                       color(inspecting_draw ? kHull : kEnemy),
+                   vbox({
+                       text(inspecting_draw
+                                ? Tr(language_, "Cards are listed from the next card you will draw downward.", "卡牌按你下一张将要抽到的顺序向下排列。")
+                                : Tr(language_, "Cards are listed from the most recently discarded card downward.", "卡牌按最近弃置的顺序向下排列。")) |
+                           color(Color::White),
+                       separator(),
+                       vbox(std::move(inspected_cards)),
+                   })) |
+            bgcolor(kPanel);
+    }
+
     Element content = vbox({
         text(Tr(language_, "Battle Bridge", "战斗舰桥")) | bold | color(kEnemy) | center,
         text(Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
@@ -163,6 +223,20 @@ Element StarAbyssApp::RenderBattle() const {
         window(text(Tr(language_, "Command Deck", "指令手牌")) | color(kGold),
                vbox(std::move(command_deck_rows))) |
             bgcolor(kPanelAlt),
+        separator(),
+        hbox({
+            ActionPanel(inspecting_draw ? Tr(language_, "Draw Pile Open", "抽牌堆已展开") : Tr(language_, "Draw Pile", "抽牌堆"),
+                        inspecting_draw ? Tr(language_, "Click again to close. Top card is shown first in the inspector below.", "再次点击即可关闭。下方面板按顶部卡牌优先显示。")
+                                        : Tr(language_, "Click to inspect upcoming draw order and pile contents.", "点击查看即将抽到的顺序和牌堆内容。"),
+                        battleDrawPileButton_,
+                        kHull),
+            ActionPanel(inspecting_discard ? Tr(language_, "Discard Pile Open", "弃牌堆已展开") : Tr(language_, "Discard Pile", "弃牌堆"),
+                        inspecting_discard ? Tr(language_, "Click again to close. Most recently discarded card is shown first.", "再次点击即可关闭。最近弃置的卡牌会显示在最前。")
+                                           : Tr(language_, "Click to inspect discarded cards in most-recent-first order.", "点击查看弃置卡牌，按最近弃置优先显示。"),
+                        battleDiscardPileButton_,
+                        kEnemy),
+        }),
+        pile_inspector,
         separator(),
         hbox({
             ActionPanel(Tr(language_, "[E] End Turn", "[E] 结束回合"),

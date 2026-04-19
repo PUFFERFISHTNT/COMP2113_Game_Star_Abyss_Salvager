@@ -23,6 +23,12 @@ public:
     ftxui::Component root() const { return root_; }
 
 private:
+    enum class BattlePileInspector {
+        None = 0,
+        Draw,
+        Discard,
+    };
+
     static constexpr size_t kBattleSlots = static_cast<size_t>(kBattleHandLimit);
     static constexpr size_t kMapSlots = 3;
     static constexpr size_t kEncounterSlots = 6;
@@ -45,6 +51,8 @@ private:
     void AutoSave();
     std::string SanitizeSaveName(const std::string& raw_name) const;
     std::string SaveDisplayName(size_t index) const;
+    void ToggleBattlePileInspector(BattlePileInspector target);
+    void CloseBattlePileInspector();
     ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
     static constexpr size_t PageIndex(AppPage page) { return static_cast<size_t>(page); }
 
@@ -68,6 +76,7 @@ private:
     int ambientTick_ = 0;
     bool infoReturnsToRun_ = false;
     UiLanguage language_ = UiLanguage::English;
+    BattlePileInspector battlePileInspector_ = BattlePileInspector::None;
     std::array<int, kPageCount> pageScrollLines_{};
     SaveDialogMode saveDialogMode_ = SaveDialogMode::None;
     bool saveDialogVisible_ = false;
@@ -96,6 +105,8 @@ private:
     std::string battleEndTurnLabel_ = "End Turn";
     std::string battleSaveLabel_ = "Save Run";
     std::string battleMenuLabel_ = "Main Menu";
+    std::string battleDrawPileLabel_ = "Draw Pile";
+    std::string battleDiscardPileLabel_ = "Discard Pile";
     std::string rewardSkipLabel_ = "Skip Card Reward";
     std::string rewardMenuLabel_ = "Main Menu";
     std::string infoBackLabel_ = "Back";
@@ -124,6 +135,8 @@ private:
     ftxui::Component battleEndTurnButton_;
     ftxui::Component battleSaveButton_;
     ftxui::Component battleMenuButton_;
+    ftxui::Component battleDrawPileButton_;
+    ftxui::Component battleDiscardPileButton_;
     ftxui::Component rewardSkipButton_;
     ftxui::Component rewardMenuButton_;
     ftxui::Component infoBackButton_;
