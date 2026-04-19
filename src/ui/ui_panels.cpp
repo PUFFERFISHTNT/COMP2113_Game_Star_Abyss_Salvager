@@ -148,9 +148,31 @@ std::vector<std::string> WrapGlyphLines(const std::string& input, int width_hint
 
 std::string IntentSummary(UiLanguage language, const RunState& state) {
     const std::string label = TranslateGameText(language, state.enemy.intentLabel);
+    const auto enemy_overheat_stage = [&state]() {
+        if (state.enemy.heat < state.enemy.maxHeat) {
+            return 0;
+        }
+        return std::max(1, std::min(3, state.enemy.overheatRounds));
+    };
+    const auto effective_enemy_attack = [&state, &enemy_overheat_stage]() {
+        int value = state.enemy.intentValue;
+        if (state.enemy.weakenTurns > 0) {
+            value = std::max(0, value - 2);
+        }
+        if (enemy_overheat_stage() >= 1) {
+            value = (value * 3) / 4;
+        }
+        return std::max(0, value);
+    };
     if (state.enemy.intentKind == "attack") {
-        const int value = state.enemy.weakenTurns > 0 ? std::max(0, state.enemy.intentValue - 2) : state.enemy.intentValue;
-        const std::string suffix = state.enemy.weakenTurns > 0 ? Tr(language, " (weakened)", "（已削弱）") : "";
+        const int value = effective_enemy_attack();
+        std::string suffix;
+        if (state.enemy.weakenTurns > 0) {
+            suffix += Tr(language, " (weakened)", "（已削弱）");
+        }
+        if (enemy_overheat_stage() >= 1) {
+            suffix += Tr(language, " (overheated)", "（过热）");
+        }
         return label + " - " + Tr(language, "Attack ", "攻击 ") + std::to_string(value) + suffix;
     }
     if (state.enemy.intentKind == "shield") {
@@ -254,6 +276,8 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
                                                    Tr(language, " extra energy", " 点额外能量"));
     if (card.heat > 0) clauses.push_back(Tr(language, "Gain ", "增加 ") + std::to_string(card.heat) + Tr(language, " heat", " 点热量"));
     if (card.heat < 0) clauses.push_back(Tr(language, "Reduce ", "降低 ") + std::to_string(-card.heat) + Tr(language, " heat", " 点热量"));
+    if (card.enemyHeat > 0) clauses.push_back(Tr(language, "Add ", "使敌方增加 ") + std::to_string(card.enemyHeat) + Tr(language, " heat to the enemy", " 点热量"));
+    if (card.enemyHeat < 0) clauses.push_back(Tr(language, "Reduce enemy heat by ", "使敌方降低 ") + std::to_string(-card.enemyHeat) + Tr(language, "", " 点热量"));
     if (card.selfDamage > 0) clauses.push_back(Tr(language, "Lose ", "失去 ") + std::to_string(card.selfDamage) + Tr(language, " HP", " 点生命"));
     if (card.weakenTurns > 0) clauses.push_back(Tr(language, "Enemy's next ", "敌方接下来 ") + std::to_string(card.weakenTurns) +
                                                 Tr(language, " attacks lose 2 damage", " 次攻击各减少 2 点伤害"));
@@ -371,6 +395,8 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.nextTurnEnergy > 0) facts.push_back(Tr(language, "Next turn +", "下回合 +") + std::to_string(card.nextTurnEnergy) + Tr(language, " energy", " 能量"));
     if (card.heat > 0) facts.push_back(Tr(language, "Heat +", "热量 +") + std::to_string(card.heat));
     else if (card.heat < 0) facts.push_back(Tr(language, "Heat ", "热量 ") + std::to_string(card.heat));
+    if (card.enemyHeat > 0) facts.push_back(Tr(language, "Enemy heat +", "敌方热量 +") + std::to_string(card.enemyHeat));
+    else if (card.enemyHeat < 0) facts.push_back(Tr(language, "Enemy heat ", "敌方热量 ") + std::to_string(card.enemyHeat));
     if (card.selfDamage > 0) facts.push_back(Tr(language, "Self dmg ", "自伤 ") + std::to_string(card.selfDamage));
     if (card.ignoreShield) facts.push_back(Tr(language, "Ignores shield", "无视护盾"));
     if (card.weakenTurns > 0) facts.push_back(Tr(language, "Weaken x", "削弱 x") + std::to_string(card.weakenTurns));
@@ -428,6 +454,16 @@ std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunS
         Tr(language, "Shield ", "护盾 ") + std::to_string(state.enemy.shield) + "   " +
             Tr(language, "Heat ", "热量 ") + std::to_string(state.enemy.heat) + "/" + std::to_string(state.enemy.maxHeat),
     };
+    if (state.enemy.heat >= state.enemy.maxHeat) {
+        const int stage = std::max(1, std::min(3, state.enemy.overheatRounds));
+        if (stage == 1) {
+            lines.push_back(Tr(language, "Overheat I: Outgoing damage -25%", "过热 I：输出伤害 -25%"));
+        } else if (stage == 2) {
+            lines.push_back(Tr(language, "Overheat II: Outgoing -25%, Incoming +25%", "过热 II：输出 -25%，受到伤害 +25%"));
+        } else {
+            lines.push_back(Tr(language, "Overheat III: Outgoing -25%, Incoming +25%, Burn 5/turn", "过热 III：输出 -25%，受到伤害 +25%，每回合燃烧 5 点生命"));
+        }
+    }
     if (state.enemy.weakenTurns > 0) lines.push_back(Tr(language, "Weakened attacks remaining: ", "剩余削弱攻击次数：") + std::to_string(state.enemy.weakenTurns));
     if (state.enemy.shieldLockTurns > 0) lines.push_back(Tr(language, "Shield jam remaining: ", "剩余护盾封锁回合：") + std::to_string(state.enemy.shieldLockTurns));
     return lines;

@@ -96,6 +96,14 @@ void GameEngine::playCard(size_t index) {
             log("Heat drops by " + std::to_string(-card.heat) + ".");
         }
     }
+    if (card.enemyHeat != 0) {
+        changeEnemyHeat(card.enemyHeat);
+        if (card.enemyHeat > 0) {
+            log("Enemy heat climbs by " + std::to_string(card.enemyHeat) + ".");
+        } else {
+            log("Enemy heat drops by " + std::to_string(-card.enemyHeat) + ".");
+        }
+    }
     if (card.selfDamage > 0) {
         applyDamageToPlayer(card.selfDamage);
         log("Feedback lashes your own hull for " + std::to_string(card.selfDamage) + ".");
@@ -154,7 +162,7 @@ void GameEngine::playCard(size_t index) {
     } else if (card.shield > 0) {
         startAnimation("shield", card.name, card.shield, true, 5);
     } else {
-        startAnimation("support", card.name, std::max(card.heal, std::abs(card.heat)), true, 5);
+        startAnimation("support", card.name, std::max({card.heal, std::abs(card.heat), std::abs(card.enemyHeat)}), true, 5);
     }
 
     if (card.type == "Attack" || outgoingDamage > 0) {
@@ -211,6 +219,7 @@ void GameEngine::startBattle(const std::string& nodeType) {
     state_.enemy.shield = 0;
     state_.enemy.heat = 0;
     state_.enemy.maxHeat = enemy.maxHeat;
+    state_.enemy.overheatRounds = 0;
     state_.enemy.patternIndex = 0;
     state_.enemy.weakenTurns = 0;
     state_.enemy.shieldLockTurns = 0;
@@ -246,6 +255,10 @@ void GameEngine::startPlayerTurn() {
         log("Your temporary shield field dissipates.");
     }
     state_.player.shield = 0;
+
+    if (state_.battleTurn > 0) {
+        advanceEnemyOverheatRound();
+    }
 
     const int drawTarget = state_.player.heat >= state_.player.maxHeat ? (kBattleDrawCount - 1) : kBattleDrawCount;
     int energy = state_.player.maxEnergy + state_.player.nextTurnEnergy;
@@ -302,12 +315,19 @@ void GameEngine::resolveEnemyIntent() {
         state_.enemy.shield = 0;
     }
 
+    if (enemyOverheatStage() >= 3) {
+        state_.enemy.hp = std::max(0, state_.enemy.hp - 5);
+        log("Enemy overheat burns 5 HP.");
+        if (state_.enemy.hp == 0) {
+            return;
+        }
+    }
+
     log(state_.enemy.name + " executes " + state_.enemy.intentLabel + ".");
 
     if (state_.enemy.intentKind == "attack") {
-        int damage = state_.enemy.intentValue;
-        if (state_.enemy.weakenTurns > 0) {
-            damage = std::max(0, damage - 2);
+        const int damage = effectiveEnemyAttackDamage();
+        if (state_.enemy.weakenTurns > 0 && state_.enemy.intentValue > 0) {
             --state_.enemy.weakenTurns;
         }
         applyDamageToPlayer(damage);
@@ -374,6 +394,8 @@ void GameEngine::handleBattleVictory() {
     state_.player.shield = 0;
     state_.player.energy = state_.player.maxEnergy;
     state_.player.nextTurnEnergy = 0;
+    state_.enemy.heat = 0;
+    state_.enemy.overheatRounds = 0;
     state_.battleTurn = 0;
     state_.pendingSectorAdvance = state_.activeNodeType == "boss" && state_.sector < 3;
     state_.pendingVictory = state_.activeNodeType == "boss" && state_.sector >= 3;
@@ -383,6 +405,8 @@ void GameEngine::handleBattleVictory() {
 }
 
 void GameEngine::handleDefeat() {
+    state_.enemy.heat = 0;
+    state_.enemy.overheatRounds = 0;
     fillSummary(false);
 }
 
@@ -405,6 +429,9 @@ void GameEngine::applyDamageToPlayer(int amount) {
 void GameEngine::applyDamageToEnemy(int amount, bool ignoreShield, int hits) {
     for (int hit = 0; hit < hits; ++hit) {
         int remaining = amount;
+        if (enemyOverheatStage() >= 2 && remaining > 0) {
+            remaining = (remaining * 5 + 3) / 4;
+        }
         if (!ignoreShield && state_.enemy.shield > 0) {
             const int blocked = std::min(state_.enemy.shield, remaining);
             state_.enemy.shield -= blocked;
@@ -473,6 +500,70 @@ void GameEngine::changeEnemyHeat(int delta) {
     }
     if (state_.enemy.heat > state_.enemy.maxHeat) {
         state_.enemy.heat = state_.enemy.maxHeat;
+    }
+    syncEnemyOverheatState();
+}
+
+bool GameEngine::enemyIsOverheated() const {
+    return state_.enemy.heat >= state_.enemy.maxHeat;
+}
+
+int GameEngine::enemyOverheatStage() const {
+    if (!enemyIsOverheated()) {
+        return 0;
+    }
+    return std::max(1, std::min(3, state_.enemy.overheatRounds));
+}
+
+int GameEngine::effectiveEnemyAttackDamage() const {
+    int damage = state_.enemy.intentValue;
+    if (state_.enemy.weakenTurns > 0) {
+        damage = std::max(0, damage - 2);
+    }
+    if (enemyOverheatStage() >= 1) {
+        damage = (damage * 3) / 4;
+    }
+    return std::max(0, damage);
+}
+
+void GameEngine::syncEnemyOverheatState() {
+    if (enemyIsOverheated()) {
+        if (state_.enemy.overheatRounds == 0) {
+            state_.enemy.overheatRounds = 1;
+            log("Enemy overheat begins. Attack output drops by 25%.");
+        } else {
+            state_.enemy.overheatRounds = std::min(3, state_.enemy.overheatRounds);
+        }
+        return;
+    }
+
+    if (state_.enemy.overheatRounds != 0) {
+        state_.enemy.overheatRounds = 0;
+        log("Enemy overheat clears.");
+    }
+}
+
+void GameEngine::advanceEnemyOverheatRound() {
+    if (!enemyIsOverheated()) {
+        state_.enemy.overheatRounds = 0;
+        return;
+    }
+
+    if (state_.enemy.overheatRounds <= 0) {
+        state_.enemy.overheatRounds = 1;
+        return;
+    }
+
+    const int previous = state_.enemy.overheatRounds;
+    state_.enemy.overheatRounds = std::min(3, state_.enemy.overheatRounds + 1);
+    if (state_.enemy.overheatRounds == previous) {
+        return;
+    }
+
+    if (state_.enemy.overheatRounds == 2) {
+        log("Enemy overheat deepens. Incoming damage rises by 25%.");
+    } else if (state_.enemy.overheatRounds == 3) {
+        log("Enemy overheat peaks. It will burn for 5 HP each turn.");
     }
 }
 

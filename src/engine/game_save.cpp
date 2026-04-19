@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|9\n";
+    output << "VERSION|10\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -148,7 +148,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << enemy.hp << "|" << enemy.maxHp << "|" << enemy.shield << "|"
            << enemy.intentKind << "|" << enemy.intentLabel << "|" << enemy.intentValue << "|"
            << enemy.patternIndex << "|" << enemy.weakenTurns << "|" << enemy.shieldLockTurns << "|"
-           << enemy.heat << "|" << enemy.maxHeat << "\n";
+           << enemy.heat << "|" << enemy.maxHeat << "|" << enemy.overheatRounds << "\n";
 
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
@@ -315,6 +315,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 loaded.enemy.heat = ToInt(parts[13], 0);
                 loaded.enemy.maxHeat = ToInt(parts[14], 10);
             }
+            if (parts.size() >= 16) {
+                loaded.enemy.overheatRounds = ToInt(parts[15], 0);
+            } else if (loaded.enemy.heat >= loaded.enemy.maxHeat) {
+                loaded.enemy.overheatRounds = 1;
+            }
         } else if (key == "NODE" && parts.size() >= 5) {
             loaded.routeOptions.push_back({parts[1], parts[2], parts[3], ToInt(parts[4], 1)});
         } else if (key == "MARKETOFFER" && parts.size() >= 2) {
@@ -373,6 +378,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.enemy.shield = std::max(0, loaded.enemy.shield);
     loaded.enemy.maxHeat = std::max(1, loaded.enemy.maxHeat);
     loaded.enemy.heat = std::max(0, std::min(loaded.enemy.heat, loaded.enemy.maxHeat));
+    loaded.enemy.overheatRounds = std::max(0, std::min(loaded.enemy.overheatRounds, 3));
+    if (loaded.enemy.heat < loaded.enemy.maxHeat) {
+        loaded.enemy.overheatRounds = 0;
+    } else if (loaded.enemy.overheatRounds == 0) {
+        loaded.enemy.overheatRounds = 1;
+    }
     loaded.enemy.weakenTurns = std::max(0, loaded.enemy.weakenTurns);
     loaded.enemy.shieldLockTurns = std::max(0, loaded.enemy.shieldLockTurns);
 

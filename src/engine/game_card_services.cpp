@@ -167,6 +167,7 @@ bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
            card->energy != 0 ||
            card->nextTurnEnergy != 0 ||
            card->heat != 0 ||
+           card->enemyHeat != 0 ||
            card->selfDamage != 0 ||
            card->multiHit > 1 ||
            card->comboBonus != 0 ||
@@ -196,6 +197,7 @@ CardDef GameEngine::applyUpgrade(const CardDef& baseCard, int upgradeLevel) cons
         upgraded.energy = scale_value(upgraded.energy);
         upgraded.nextTurnEnergy = scale_value(upgraded.nextTurnEnergy);
         upgraded.heat = scale_value(upgraded.heat);
+        upgraded.enemyHeat = scale_value(upgraded.enemyHeat);
         upgraded.selfDamage = scale_value(upgraded.selfDamage);
         if (upgraded.multiHit > 1) {
             upgraded.multiHit = scale_value(upgraded.multiHit);

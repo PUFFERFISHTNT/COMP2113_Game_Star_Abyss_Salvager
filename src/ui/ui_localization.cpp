@@ -64,6 +64,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Plasma Lance", "等离子长枪"},
         {"EMP Pulse", "电磁脉冲"},
         {"Hack Jammer", "骇入干扰器"},
+        {"Thermal Lance", "热能长枪"},
+        {"Reactor Spike", "反应堆尖峰"},
         {"Chain Pulse", "连锁脉冲"},
         {"Heat Sink", "散热井"},
         {"System Flush", "系统冲洗"},
@@ -96,6 +98,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Deal 14 damage. Gain 2 heat.", "造成 14 点伤害，并增加 2 点热量。"},
         {"Deal 4 damage. Enemy's next 2 attacks lose 2 damage.", "造成 4 点伤害，敌人的接下来 2 次攻击各减少 2 点伤害。"},
         {"Remove enemy shield. They cannot gain shield for 2 turns.", "移除敌方护盾，并使其 2 回合内无法获得护盾。"},
+        {"Deal 7 damage. Add 3 heat to the enemy.", "造成 7 点伤害，并使敌方增加 3 点热量。"},
+        {"Add 6 heat to the enemy.", "使敌方增加 6 点热量。"},
         {"Deal 5 damage. Deal +3 if another attack was played this turn.", "造成 5 点伤害；若本回合已打出过其他攻击牌，则额外造成 3 点伤害。"},
         {"Cut current heat in half.", "将当前热量减半。"},
         {"Reduce 5 heat. Draw 2 cards.", "降低 5 点热量，并抽 2 张牌。"},
@@ -567,6 +571,27 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     }
     if (StartsWith(text, "Heat drops by ") && EndsWith(text, ".")) {
         return "热量下降 " + text.substr(14, text.size() - 15) + " 点。";
+    }
+    if (StartsWith(text, "Enemy heat climbs by ") && EndsWith(text, ".")) {
+        return "敌方热量上升 " + text.substr(21, text.size() - 22) + " 点。";
+    }
+    if (StartsWith(text, "Enemy heat drops by ") && EndsWith(text, ".")) {
+        return "敌方热量下降 " + text.substr(20, text.size() - 21) + " 点。";
+    }
+    if (text == "Enemy overheat begins. Attack output drops by 25%.") {
+        return "敌方进入过热。输出伤害降低 25%。";
+    }
+    if (text == "Enemy overheat deepens. Incoming damage rises by 25%.") {
+        return "敌方过热加深。受到伤害提高 25%。";
+    }
+    if (text == "Enemy overheat peaks. It will burn for 5 HP each turn.") {
+        return "敌方过热达到峰值。此后每回合燃烧 5 点生命。";
+    }
+    if (text == "Enemy overheat clears.") {
+        return "敌方过热已解除。";
+    }
+    if (text == "Enemy overheat burns 5 HP.") {
+        return "敌方因过热燃烧，失去 5 点生命。";
     }
     if (StartsWith(text, "Feedback lashes your own hull for ") && EndsWith(text, ".")) {
         return "反馈冲击自身船体，受到 " + text.substr(35, text.size() - 36) + " 点伤害。";

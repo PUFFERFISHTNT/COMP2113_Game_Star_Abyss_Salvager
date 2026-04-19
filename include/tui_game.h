@@ -49,6 +49,7 @@ struct CardDef {
     int energy = 0;
     int nextTurnEnergy = 0;
     int heat = 0;
+    int enemyHeat = 0;
     int selfDamage = 0;
     int multiHit = 1;
     int comboBonus = 0;
@@ -154,6 +155,7 @@ struct EnemyState {
     int shield = 0;
     int heat = 0;
     int maxHeat = 10;
+    int overheatRounds = 0;
     std::string intentKind;
     std::string intentLabel;
     int intentValue = 0;
@@ -318,6 +320,11 @@ private:
     void reshuffleDiscardIntoDraw();
     void changeHeat(int delta);
     void changeEnemyHeat(int delta);
+    bool enemyIsOverheated() const;
+    int enemyOverheatStage() const;
+    int effectiveEnemyAttackDamage() const;
+    void syncEnemyOverheatState();
+    void advanceEnemyOverheatRound();
     void log(const std::string& line);
     bool hasObtainedCard(const std::string& cardId) const;
     void recordObtainedCard(const std::string& cardRef);

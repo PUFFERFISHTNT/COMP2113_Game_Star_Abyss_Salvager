@@ -415,6 +415,7 @@ bool ParseCardList(const JsonValue& root,
         card.energy = GetIntField(entry.object_value, "energy", 0);
         card.nextTurnEnergy = GetIntField(entry.object_value, "nextTurnEnergy", 0);
         card.heat = GetIntField(entry.object_value, "heat", 0);
+        card.enemyHeat = GetIntField(entry.object_value, "enemyHeat", 0);
         card.selfDamage = GetIntField(entry.object_value, "selfDamage", 0);
         card.multiHit = GetIntField(entry.object_value, "multiHit", 1);
         card.comboBonus = GetIntField(entry.object_value, "comboBonus", 0);
@@ -543,6 +544,7 @@ bool SaveUpgradedCardsToJsonFile(const std::string& path,
         WriteInt(output, "energy", card.energy);
         WriteInt(output, "nextTurnEnergy", card.nextTurnEnergy);
         WriteInt(output, "heat", card.heat);
+        WriteInt(output, "enemyHeat", card.enemyHeat);
         WriteInt(output, "selfDamage", card.selfDamage);
         WriteInt(output, "multiHit", card.multiHit);
         WriteInt(output, "comboBonus", card.comboBonus);
