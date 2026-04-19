@@ -70,6 +70,16 @@ struct CardView {
     int upgradeLevel = 0;
 };
 
+struct CardOwnershipEntry {
+    CardView card;
+    int copies = 0;
+};
+
+struct CardLibraryEntry {
+    CardView card;
+    bool obtained = false;
+};
+
 struct NodeOption {
     std::string typeId;
     std::string name;
@@ -219,6 +229,10 @@ public:
     std::vector<CardView> handCards() const;
     std::vector<CardView> drawPileCards() const;
     std::vector<CardView> discardPileCards() const;
+    std::vector<CardOwnershipEntry> ownedCards() const;
+    std::vector<CardLibraryEntry> allCardLibraryEntries() const;
+    size_t obtainedCardCount() const;
+    size_t totalCardCount() const;
 
     std::string difficultyName() const;
     std::string shipNameForId(const std::string& shipId) const;
@@ -263,6 +277,7 @@ private:
     std::mt19937 rng_;
     std::vector<CardDef> cardPool_;
     std::vector<CardDef> upgradedCardPool_;
+    std::vector<std::string> obtainedCardIds_;
     std::vector<EnemyTemplate> enemyPool_;
     std::vector<ShipTemplate> ships_;
     std::vector<RelicDef> relicPool_;
@@ -300,6 +315,13 @@ private:
     void reshuffleDiscardIntoDraw();
     void changeHeat(int delta);
     void log(const std::string& line);
+    bool hasObtainedCard(const std::string& cardId) const;
+    void recordObtainedCard(const std::string& cardRef);
+    void recordCurrentOwnedCards();
+    void queueOwnedCardToDiscard(const std::string& cardRef);
+    void queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs);
+    void loadObtainedCardRegistry();
+    bool saveObtainedCardRegistry(std::string* error = nullptr) const;
     void startAnimation(const std::string& kind,
                         const std::string& label,
                         int magnitude,

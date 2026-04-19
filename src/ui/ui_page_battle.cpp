@@ -225,6 +225,10 @@ Element StarAbyssApp::RenderBattle() const {
             bgcolor(kPanelAlt),
         separator(),
         hbox({
+            ActionPanel(Tr(language_, "Owned Cards", "已拥有卡牌"),
+                        Tr(language_, "Open the current deck viewer with full card details.", "打开当前牌组查看器并浏览所有卡牌详情。"),
+                        battleOwnedCardsButton_,
+                        kHull),
             ActionPanel(inspecting_draw ? Tr(language_, "Draw Pile Open", "抽牌堆已展开") : Tr(language_, "Draw Pile", "抽牌堆"),
                         inspecting_draw ? Tr(language_, "Click again to close. Top card is shown first in the inspector below.", "再次点击即可关闭。下方面板按顶部卡牌优先显示。")
                                         : Tr(language_, "Click to inspect upcoming draw order and pile contents.", "点击查看即将抽到的顺序和牌堆内容。"),

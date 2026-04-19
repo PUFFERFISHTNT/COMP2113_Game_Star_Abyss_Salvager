@@ -441,6 +441,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
         }
     }
     normalizeUpgradedCards();
+    recordCurrentOwnedCards();
     resumePage_ = (state_.page == AppPage::MainMenu) ? AppPage::Map : state_.page;
     if (error != nullptr) {
         *error = "";

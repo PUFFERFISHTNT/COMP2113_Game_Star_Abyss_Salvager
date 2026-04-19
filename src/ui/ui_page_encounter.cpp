@@ -142,7 +142,7 @@ Element StarAbyssApp::RenderEncounter() const {
             vbox(std::move(options)),
             separator(),
             text(TranslateGameText(language_, state.statusLine)) | color(kHull),
-            hbox({encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
+            hbox({encounterOwnedCardsButton_->Render() | flex, encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
         });
         return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Encounter)]) | borderDouble | bgcolor(kAbyss);
     }
@@ -170,7 +170,7 @@ Element StarAbyssApp::RenderEncounter() const {
         vbox(std::move(options)),
         separator(),
         text(TranslateGameText(language_, state.statusLine)) | color(kHull),
-        hbox({encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
+        hbox({encounterOwnedCardsButton_->Render() | flex, encounterSaveButton_->Render() | flex, encounterMenuButton_->Render() | flex}),
     });
 
     return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Encounter)]) | borderDouble | bgcolor(kAbyss);

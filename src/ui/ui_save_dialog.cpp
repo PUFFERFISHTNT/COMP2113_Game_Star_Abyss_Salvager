@@ -26,6 +26,7 @@ void StarAbyssApp::LoadRun() {
 }
 
 void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
+    CloseCardViewer();
     saveDialogMode_ = mode;
     saveDialogVisible_ = true;
     saveDialogScrollLine_ = 0;
@@ -77,6 +78,9 @@ void StarAbyssApp::RefreshSaveEntries() {
             continue;
         }
         const fs::path path = entry.path();
+        if (path.filename() == "obtained_cards.txt") {
+            continue;
+        }
         const std::string extension = path.extension().string();
         if (extension == ".sav" || extension == ".txt") {
             paths.push_back(path);

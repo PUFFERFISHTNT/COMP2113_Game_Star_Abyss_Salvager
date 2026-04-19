@@ -61,31 +61,39 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     mapMenuButton_ = Button(&mapMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
     encounterSaveButton_ = Button(&encounterSaveLabel_, [&] { OpenSaveDialog(SaveDialogMode::Save); SyncUi(); }, AccentButton(kGold));
     encounterMenuButton_ = Button(&encounterMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
+    encounterOwnedCardsButton_ = Button(&encounterOwnedCardsLabel_, [&] { OpenCardViewer(CardViewerMode::OwnedCards); SyncUi(); }, AccentButton(kHull));
     battleEndTurnButton_ = Button(&battleEndTurnLabel_, [&] { engine_.endTurn(); AutoSave(); SyncUi(); }, AccentButton(kGold));
     battleSaveButton_ = Button(&battleSaveLabel_, [&] { OpenSaveDialog(SaveDialogMode::Save); SyncUi(); }, AccentButton(kGold));
     battleMenuButton_ = Button(&battleMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
+    battleOwnedCardsButton_ = Button(&battleOwnedCardsLabel_, [&] { OpenCardViewer(CardViewerMode::OwnedCards); SyncUi(); }, AccentButton(kHull));
     battleDrawPileButton_ = Button(&battleDrawPileLabel_, [&] { ToggleBattlePileInspector(BattlePileInspector::Draw); SyncUi(); }, AccentButton(kHull));
     battleDiscardPileButton_ = Button(&battleDiscardPileLabel_, [&] { ToggleBattlePileInspector(BattlePileInspector::Discard); SyncUi(); }, AccentButton(kEnemy));
     rewardSkipButton_ = Button(&rewardSkipLabel_, [&] { engine_.chooseReward(-1); AutoSave(); SyncUi(); }, AccentButton(kEnemy));
     rewardMenuButton_ = Button(&rewardMenuLabel_, [&] { engine_.returnToMenu(); SyncUi(); }, AccentButton(kEnemy));
+    rewardOwnedCardsButton_ = Button(&rewardOwnedCardsLabel_, [&] { OpenCardViewer(CardViewerMode::OwnedCards); SyncUi(); }, AccentButton(kHull));
     infoBackButton_ = Button(&infoBackLabel_, [&] { BackFromInfo(); }, AccentButton(kHull));
     summaryMenuButton_ = Button(&summaryMenuLabel_, [&] { engine_.showMainMenu(); SyncUi(); }, AccentButton(kHull));
     summaryNewRunButton_ = Button(&summaryNewRunLabel_, [&] { engine_.startAnotherRun(); SyncUi(); }, AccentButton(kGold));
     summaryExitButton_ = Button(&summaryExitLabel_, [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
+    menuLibraryButton_ = Button(&menuLibraryLabel_, [&] { OpenCardViewer(CardViewerMode::CardLibrary); SyncUi(); }, AccentButton(kHull));
+    mapOwnedCardsButton_ = Button(&mapOwnedCardsLabel_, [&] { OpenCardViewer(CardViewerMode::OwnedCards); SyncUi(); }, AccentButton(kHull));
     saveNameInputComponent_ = Input(&saveNameInput_, "");
     saveEntriesMenu_ = Menu(&saveEntries_, &saveSelected_);
     saveConfirmButton_ = Button(&saveConfirmLabel_, [&] { SaveRun(); SyncUi(); }, AccentButton(kGold));
     loadConfirmButton_ = Button(&loadConfirmLabel_, [&] { LoadRun(); SyncUi(); }, AccentButton(kHull));
     autoSaveButton_ = Button(&autoSaveLabel_, [&] { SaveToSlot("autosave", true); SyncUi(); }, AccentButton(kGold));
     closeDialogButton_ = Button(&closeDialogLabel_, [&] { CloseSaveDialog(); SyncUi(); }, AccentButton(kEnemy));
+    cardViewerCloseButton_ = Button(&cardViewerCloseLabel_, [&] { CloseCardViewer(); SyncUi(); }, AccentButton(kEnemy));
 
-    mainMenuPage_ = Renderer(Container::Vertical(std::vector<Component>(menuButtons_.begin(), menuButtons_.end())), [&] { return RenderMainMenu(); });
+    mainMenuPage_ = Renderer(Container::Vertical({menuButtons_[0], menuButtons_[1], menuButtons_[2], menuButtons_[3], menuButtons_[4], menuLibraryButton_, menuButtons_[5], menuButtons_[6]}),
+                             [&] { return RenderMainMenu(); });
     setupPage_ = Renderer(Container::Vertical({difficultyToggle_, shipToggle_, startRunButton_, setupBackButton_}), [&] { return RenderSetup(); });
-    mapPage_ = Renderer(Container::Vertical({mapButtons_[0], mapButtons_[1], mapButtons_[2], mapSaveButton_, mapMenuButton_}), [&] { return RenderMap(); });
-    encounterPage_ = Renderer(Container::Vertical({encounterButtons_[0], encounterButtons_[1], encounterButtons_[2], encounterButtons_[3], encounterButtons_[4], encounterButtons_[5], encounterSaveButton_, encounterMenuButton_}),
+    mapPage_ = Renderer(Container::Vertical({mapButtons_[0], mapButtons_[1], mapButtons_[2], mapOwnedCardsButton_, mapSaveButton_, mapMenuButton_}), [&] { return RenderMap(); });
+    encounterPage_ = Renderer(Container::Vertical({encounterButtons_[0], encounterButtons_[1], encounterButtons_[2], encounterButtons_[3], encounterButtons_[4], encounterButtons_[5], encounterOwnedCardsButton_, encounterSaveButton_, encounterMenuButton_}),
                               [&] { return RenderEncounter(); });
     {
         std::vector<Component> battle_components(battleCardButtons_.begin(), battleCardButtons_.end());
+        battle_components.push_back(battleOwnedCardsButton_);
         battle_components.push_back(battleDrawPileButton_);
         battle_components.push_back(battleDiscardPileButton_);
         battle_components.push_back(battleEndTurnButton_);
@@ -93,10 +101,11 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
         battle_components.push_back(battleMenuButton_);
         battlePage_ = Renderer(Container::Vertical(std::move(battle_components)), [&] { return RenderBattle(); });
     }
-    rewardPage_ = Renderer(Container::Vertical({rewardButtons_[0], rewardButtons_[1], rewardButtons_[2], rewardSkipButton_, rewardMenuButton_}),
+    rewardPage_ = Renderer(Container::Vertical({rewardButtons_[0], rewardButtons_[1], rewardButtons_[2], rewardOwnedCardsButton_, rewardSkipButton_, rewardMenuButton_}),
                            [&] { return RenderReward(); });
     summaryPage_ = Renderer(Container::Vertical({summaryMenuButton_, summaryNewRunButton_, summaryExitButton_}), [&] { return RenderSummary(); });
     infoPage_ = Renderer(Container::Vertical({infoBackButton_}), [&] { return RenderInfo(); });
+    cardViewerPage_ = Renderer(Container::Vertical({cardViewerCloseButton_}), [&] { return RenderCardViewer(); });
     saveDialogPage_ = Renderer(Container::Vertical({saveNameInputComponent_, saveEntriesMenu_, saveConfirmButton_, loadConfirmButton_, autoSaveButton_, closeDialogButton_}),
                                [&] { return RenderSaveDialog(); });
 
@@ -104,7 +113,8 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
         mainMenuPage_, setupPage_, mapPage_, encounterPage_, battlePage_, rewardPage_, summaryPage_, infoPage_,
     };
     pages_ = Container::Tab(std::move(page_list), &activePage_);
-    root_ = CatchEvent(Modal(pages_, saveDialogPage_, &saveDialogVisible_), [&](Event event) { return HandleEvent(event); });
+    root_ = CatchEvent(Modal(Modal(pages_, cardViewerPage_, &cardViewerVisible_), saveDialogPage_, &saveDialogVisible_),
+                       [&](Event event) { return HandleEvent(event); });
 
     RefreshSaveEntries();
     SyncUi();

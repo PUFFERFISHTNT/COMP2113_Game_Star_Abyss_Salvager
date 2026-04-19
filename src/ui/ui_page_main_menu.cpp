@@ -48,6 +48,7 @@ Element StarAbyssApp::RenderMainMenu() const {
                    menuButtons_[2]->Render(),
                    menuButtons_[3]->Render(),
                    menuButtons_[4]->Render(),
+                   menuLibraryButton_->Render(),
                    menuButtons_[5]->Render(),
                    menuButtons_[6]->Render(),
                })) |

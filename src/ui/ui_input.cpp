@@ -15,7 +15,9 @@ Element StarAbyssApp::ApplyVerticalScrollFrame(Element content, int scroll_line)
 }
 
 bool StarAbyssApp::ScrollActiveView(int delta_lines) {
-    int& scroll_line = saveDialogVisible_ ? saveDialogScrollLine_ : pageScrollLines_[PageIndex(engine_.state().page)];
+    int& scroll_line = saveDialogVisible_ ? saveDialogScrollLine_
+                                          : (cardViewerVisible_ ? cardViewerScrollLine_
+                                                                : pageScrollLines_[PageIndex(engine_.state().page)]);
     scroll_line = std::max(0, scroll_line + delta_lines);
     return true;
 }
@@ -24,6 +26,9 @@ bool StarAbyssApp::HandleEvent(Event event) {
     const auto active_scroll_component = [&]() -> Component {
         if (saveDialogVisible_) {
             return saveDialogPage_;
+        }
+        if (cardViewerVisible_) {
+            return cardViewerPage_;
         }
 
         switch (engine_.state().page) {
@@ -121,6 +126,24 @@ bool StarAbyssApp::HandleEvent(Event event) {
         return false;
     }
 
+    if (cardViewerVisible_) {
+        const AppPage page = engine_.state().page;
+        const bool owned_cards_page = page == AppPage::Map || page == AppPage::Encounter ||
+                                      page == AppPage::Battle || page == AppPage::Reward;
+        const bool close_owned_cards = event == Event::Character('d') &&
+                                       cardViewerMode_ == CardViewerMode::OwnedCards &&
+                                       owned_cards_page;
+        const bool close_library = event == Event::Character('c') &&
+                                   cardViewerMode_ == CardViewerMode::CardLibrary &&
+                                   page == AppPage::MainMenu;
+        if (event == Event::Escape || close_owned_cards || close_library) {
+            CloseCardViewer();
+            SyncUi();
+            return true;
+        }
+        return false;
+    }
+
     if (engine_.state().page == AppPage::Battle && battlePileInspector_ != BattlePileInspector::None && event == Event::Escape) {
         CloseBattlePileInspector();
         SyncUi();
@@ -146,6 +169,19 @@ bool StarAbyssApp::HandleEvent(Event event) {
     }
     if (event == Event::Character('l')) {
         OpenSaveDialog(SaveDialogMode::Load);
+        SyncUi();
+        return true;
+    }
+    if (event == Event::Character('d')) {
+        const AppPage page = engine_.state().page;
+        if (page == AppPage::Map || page == AppPage::Encounter || page == AppPage::Battle || page == AppPage::Reward) {
+            OpenCardViewer(CardViewerMode::OwnedCards);
+            SyncUi();
+            return true;
+        }
+    }
+    if (event == Event::Character('c') && engine_.state().page == AppPage::MainMenu) {
+        OpenCardViewer(CardViewerMode::CardLibrary);
         SyncUi();
         return true;
     }
@@ -221,6 +257,28 @@ bool StarAbyssApp::HandleEvent(Event event) {
         }
     }
     return false;
+}
+
+void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
+    if (saveDialogVisible_ || mode == CardViewerMode::None) {
+        return;
+    }
+    const AppPage page = engine_.state().page;
+    const bool owned_cards_page = page == AppPage::Map || page == AppPage::Encounter ||
+                                  page == AppPage::Battle || page == AppPage::Reward;
+    if ((mode == CardViewerMode::OwnedCards && !owned_cards_page) ||
+        (mode == CardViewerMode::CardLibrary && page != AppPage::MainMenu)) {
+        return;
+    }
+    cardViewerMode_ = mode;
+    cardViewerVisible_ = true;
+    cardViewerScrollLine_ = 0;
+}
+
+void StarAbyssApp::CloseCardViewer() {
+    cardViewerVisible_ = false;
+    cardViewerMode_ = CardViewerMode::None;
+    cardViewerScrollLine_ = 0;
 }
 
 void StarAbyssApp::ToggleBattlePileInspector(BattlePileInspector target) {

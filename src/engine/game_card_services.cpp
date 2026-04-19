@@ -293,6 +293,68 @@ std::vector<CardView> GameEngine::discardPileCards() const {
     return result;
 }
 
+std::vector<CardOwnershipEntry> GameEngine::ownedCards() const {
+    std::vector<std::string> owned_refs;
+    owned_refs.insert(owned_refs.end(), state_.player.drawPile.begin(), state_.player.drawPile.end());
+    owned_refs.insert(owned_refs.end(), state_.player.hand.begin(), state_.player.hand.end());
+    owned_refs.insert(owned_refs.end(), state_.player.discardPile.begin(), state_.player.discardPile.end());
+
+    for (std::string& ref : owned_refs) {
+        ref = baseCardId(ref);
+    }
+
+    std::sort(owned_refs.begin(), owned_refs.end(), [&](const std::string& lhs, const std::string& rhs) {
+        const std::string left_name = displayCardName(lhs);
+        const std::string right_name = displayCardName(rhs);
+        if (left_name != right_name) {
+            return left_name < right_name;
+        }
+        return lhs < rhs;
+    });
+
+    std::vector<CardOwnershipEntry> result;
+    for (const std::string& ref : owned_refs) {
+        if (cardById(ref) == nullptr) {
+            continue;
+        }
+        if (!result.empty() && baseCardId(result.back().card.ref) == ref) {
+            ++result.back().copies;
+            continue;
+        }
+        result.push_back({{ref, resolvedCard(ref), isCardTypeUpgraded(ref) ? 1 : cardUpgradeLevel(ref)}, 1});
+    }
+    return result;
+}
+
+std::vector<CardLibraryEntry> GameEngine::allCardLibraryEntries() const {
+    std::vector<const CardDef*> cards;
+    cards.reserve(cardPool_.size());
+    for (const CardDef& card : cardPool_) {
+        cards.push_back(&card);
+    }
+    std::sort(cards.begin(), cards.end(), [&](const CardDef* lhs, const CardDef* rhs) {
+        if (lhs->name != rhs->name) {
+            return lhs->name < rhs->name;
+        }
+        return lhs->id < rhs->id;
+    });
+
+    std::vector<CardLibraryEntry> result;
+    result.reserve(cards.size());
+    for (const CardDef* card : cards) {
+        result.push_back({{card->id, *card, 0}, hasObtainedCard(card->id)});
+    }
+    return result;
+}
+
+size_t GameEngine::obtainedCardCount() const {
+    return obtainedCardIds_.size();
+}
+
+size_t GameEngine::totalCardCount() const {
+    return cardPool_.size();
+}
+
 bool GameEngine::upgradeCard(const std::string& cardRef,
                              CardUpgradeSource source,
                              std::string* error) {

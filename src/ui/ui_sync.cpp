@@ -21,13 +21,16 @@ void StarAbyssApp::SyncUi() {
     mapMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
     encounterSaveLabel_ = Tr(language_, "Save Run", "保存航程");
     encounterMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
+    encounterOwnedCardsLabel_ = Tr(language_, "[Deck] Owned Cards", "[牌组] 已拥有卡牌");
     battleEndTurnLabel_ = Tr(language_, "End Turn", "结束回合");
     battleSaveLabel_ = Tr(language_, "Save Run", "保存航程");
     battleMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
+    battleOwnedCardsLabel_ = Tr(language_, "[Deck] Owned Cards", "[牌组] 已拥有卡牌");
     battleDrawPileLabel_ = Tr(language_, "[Deck] Draw Pile", "[牌库] 抽牌堆");
     battleDiscardPileLabel_ = Tr(language_, "[Scrap] Discard Pile", "[弃牌] 弃牌堆");
     rewardSkipLabel_ = Tr(language_, "Skip Card Reward", "跳过卡牌奖励");
     rewardMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
+    rewardOwnedCardsLabel_ = Tr(language_, "[Deck] Owned Cards", "[牌组] 已拥有卡牌");
     infoBackLabel_ = Tr(language_, "Back", "返回");
     summaryMenuLabel_ = Tr(language_, "Main Menu", "主菜单");
     summaryNewRunLabel_ = Tr(language_, "New Run", "新航程");
@@ -36,6 +39,9 @@ void StarAbyssApp::SyncUi() {
     loadConfirmLabel_ = Tr(language_, "Load", "读取");
     autoSaveLabel_ = Tr(language_, "Auto Save", "自动存档");
     closeDialogLabel_ = Tr(language_, "Close", "关闭");
+    menuLibraryLabel_ = Tr(language_, "[Archive] Card Library", "[档案] 卡牌图鉴");
+    mapOwnedCardsLabel_ = Tr(language_, "[Deck] Owned Cards", "[牌组] 已拥有卡牌");
+    cardViewerCloseLabel_ = Tr(language_, "Close", "关闭");
 
     menuLabels_[0] = state.hasRun ? Tr(language_, "Resume Current Run", "继续当前航程")
                                   : Tr(language_, "Resume Current Run (Unavailable)", "继续当前航程（不可用）");
@@ -66,6 +72,18 @@ void StarAbyssApp::SyncUi() {
     } else {
         battleDrawPileLabel_ += " (" + std::to_string(state.player.drawPile.size()) + ")";
         battleDiscardPileLabel_ += " (" + std::to_string(state.player.discardPile.size()) + ")";
+    }
+    const int owned_card_total = static_cast<int>(state.player.drawPile.size() + state.player.hand.size() + state.player.discardPile.size());
+    mapOwnedCardsLabel_ += " (" + std::to_string(owned_card_total) + ")";
+    encounterOwnedCardsLabel_ += " (" + std::to_string(owned_card_total) + ")";
+    battleOwnedCardsLabel_ += " (" + std::to_string(owned_card_total) + ")";
+    rewardOwnedCardsLabel_ += " (" + std::to_string(owned_card_total) + ")";
+    menuLibraryLabel_ += " (" + std::to_string(engine_.obtainedCardCount()) + "/" + std::to_string(engine_.totalCardCount()) + ")";
+    const bool owned_cards_page = state.page == AppPage::Map || state.page == AppPage::Encounter ||
+                                  state.page == AppPage::Battle || state.page == AppPage::Reward;
+    if ((cardViewerMode_ == CardViewerMode::OwnedCards && !owned_cards_page) ||
+        (cardViewerMode_ == CardViewerMode::CardLibrary && state.page != AppPage::MainMenu)) {
+        CloseCardViewer();
     }
     const std::vector<CardView> rewards = engine_.rewardCards();
     for (size_t i = 0; i < rewards.size() && i < rewardLabels_.size(); ++i) {

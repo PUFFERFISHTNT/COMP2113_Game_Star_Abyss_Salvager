@@ -76,7 +76,7 @@ Element StarAbyssApp::RenderMap() const {
         body_section,
         separator(),
         text(TranslateGameText(language_, state.statusLine)) | color(kGold),
-        hbox({mapSaveButton_->Render() | flex, mapMenuButton_->Render() | flex}),
+        hbox({mapOwnedCardsButton_->Render() | flex, mapSaveButton_->Render() | flex, mapMenuButton_->Render() | flex}),
     });
 
     return ApplyVerticalScrollFrame(content, pageScrollLines_[PageIndex(AppPage::Map)]) | borderDouble | bgcolor(kAbyss);

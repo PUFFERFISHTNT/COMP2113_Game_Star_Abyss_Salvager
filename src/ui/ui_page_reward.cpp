@@ -122,7 +122,7 @@ Element StarAbyssApp::RenderReward() const {
         separator(),
         text(ScrollHintLine(language_)) | color(kDim) | center,
         separator(),
-        hbox({rewardSkipButton_->Render() | flex, rewardMenuButton_->Render() | flex}),
+        hbox({rewardOwnedCardsButton_->Render() | flex, rewardSkipButton_->Render() | flex, rewardMenuButton_->Render() | flex}),
         text(TranslateGameText(language_, state.statusLine)) | color(Color::White),
     });
 

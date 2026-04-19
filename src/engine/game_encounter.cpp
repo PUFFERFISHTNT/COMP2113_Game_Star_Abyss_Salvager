@@ -145,7 +145,7 @@ void GameEngine::resolveEncounter(size_t index) {
 
         state_.player.scrap -= price;
         if (payload.rfind("card:", 0) == 0) {
-            state_.player.discardPile.push_back(payload.substr(5));
+            queueOwnedCardToDiscard(payload.substr(5));
             state_.statusLine = "Module purchased and queued into your discard pile.";
         } else {
             state_.statusLine = "The broker closes the channel.";
@@ -178,7 +178,7 @@ void GameEngine::resolveEncounter(size_t index) {
             } else if (index == 1) {
                 changeHeat(-3);
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Relayed the coordinates. -3 heat and gained a card.";
             } else {
                 state_.statusLine = "You leave the signal fading behind you.";
@@ -215,7 +215,7 @@ void GameEngine::resolveEncounter(size_t index) {
             if (index == 0) {
                 g_sa_next_elite = true;
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Locked onto the signal. Gained a card. Next encounter may be elite.";
             } else if (index == 1) {
                 changeHeat(-4);
@@ -233,7 +233,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 g_sa_skip_segments = 1;
                 changeHeat(5);
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Entered the fold. Skip 1 segment. +5 heat. Gained a rare card.";
             } else if (index == 1) {
                 changeHeat(-4);
@@ -259,7 +259,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 // Activate beacon: legendary card (approx: rare card + upgrade), +8 heat, unlock truth
                 auto cards = randomCardChoices(1);
                 if (!cards.empty()) {
-                    state_.player.discardPile.push_back(cards[0]);
+                    queueOwnedCardToDiscard(cards[0]);
                     std::string upgName, upgErr;
                     upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }
@@ -397,7 +397,7 @@ void GameEngine::resolveEncounter(size_t index) {
             if (index == 0) {
                 state_.player.scrap += 16;
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Took everything. +16 credits and gained a card.";
             } else if (index == 1) {
                 state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 6);
@@ -415,7 +415,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 if (state_.player.scrap >= 18) {
                     state_.player.scrap -= 18;
                     auto cards = randomCardChoices(2);
-                    for (auto& c : cards) state_.player.discardPile.push_back(c);
+                    queueOwnedCardsToDiscard(cards);
                     state_.statusLine = "Bought 2 cards. -18 credits.";
                 } else {
                     state_.statusLine = "Not enough credits to buy cards.";
@@ -485,7 +485,7 @@ void GameEngine::resolveEncounter(size_t index) {
             } else {
                 state_.player.scrap += 18;
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 applyDamageToPlayer(8);
                 state_.statusLine = "Scavenged supplies. +18 credits, gained a card, -8 HP.";
             }
@@ -636,7 +636,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 }
             } else {
                 auto cards = randomCardChoices(1);
-                if (!cards.empty()) state_.player.discardPile.push_back(cards[0]);
+                if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 applyDamageToPlayer(5);
                 state_.statusLine = "Abandoned the jump. Gained a card, -5 HP.";
             }
@@ -716,7 +716,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 // Gain 1 special card (approximation: rare card + upgrade)
                 auto cards = randomCardChoices(1);
                 if (!cards.empty()) {
-                    state_.player.discardPile.push_back(cards[0]);
+                    queueOwnedCardToDiscard(cards[0]);
                     std::string upgName, upgErr;
                     upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }
@@ -754,7 +754,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 // Gain 1 legendary card (approximation: rare card + upgrade)
                 auto cards = randomCardChoices(1);
                 if (!cards.empty()) {
-                    state_.player.discardPile.push_back(cards[0]);
+                    queueOwnedCardToDiscard(cards[0]);
                     std::string upgName, upgErr;
                     upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }

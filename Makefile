@@ -38,6 +38,7 @@ APP_SOURCES := \
 	src/engine/game_route.cpp \
 	src/engine/game_save.cpp \
 	src/ui/ui_art.cpp \
+	src/ui/ui_card_viewer.cpp \
 	src/ui/ui_input.cpp \
 	src/ui/ui_localization.cpp \
 	src/ui/ui_page_battle.cpp \

@@ -14,6 +14,7 @@ void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
 
 GameEngine::GameEngine() : rng_(std::random_device{}()) {
     initializeData();
+    loadObtainedCardRegistry();
     resetRunState();
     fillHelpInfo();
 }

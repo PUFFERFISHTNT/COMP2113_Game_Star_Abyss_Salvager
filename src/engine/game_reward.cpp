@@ -18,7 +18,7 @@ void GameEngine::chooseReward(int index) {
 
     if (index >= 0 && static_cast<size_t>(index) < state_.reward.cardIds.size()) {
         const std::string& cardId = state_.reward.cardIds[static_cast<size_t>(index)];
-        state_.player.discardPile.push_back(cardId);
+        queueOwnedCardToDiscard(cardId);
         const std::string cardName = displayCardName(cardId);
         state_.statusLine = cardName + " has been integrated into your deck.";
     } else {

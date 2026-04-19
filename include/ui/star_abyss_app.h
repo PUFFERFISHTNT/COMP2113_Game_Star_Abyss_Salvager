@@ -23,6 +23,12 @@ public:
     ftxui::Component root() const { return root_; }
 
 private:
+    enum class CardViewerMode {
+        None = 0,
+        OwnedCards,
+        CardLibrary,
+    };
+
     enum class BattlePileInspector {
         None = 0,
         Draw,
@@ -51,6 +57,8 @@ private:
     void AutoSave();
     std::string SanitizeSaveName(const std::string& raw_name) const;
     std::string SaveDisplayName(size_t index) const;
+    void OpenCardViewer(CardViewerMode mode);
+    void CloseCardViewer();
     void ToggleBattlePileInspector(BattlePileInspector target);
     void CloseBattlePileInspector();
     ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
@@ -65,6 +73,7 @@ private:
     ftxui::Element RenderSummary() const;
     ftxui::Element RenderInfo() const;
     ftxui::Element RenderSaveDialog() const;
+    ftxui::Element RenderCardViewer() const;
 
     ftxui::ScreenInteractive& screen_;
     GameEngine engine_;
@@ -76,10 +85,13 @@ private:
     int ambientTick_ = 0;
     bool infoReturnsToRun_ = false;
     UiLanguage language_ = UiLanguage::English;
+    CardViewerMode cardViewerMode_ = CardViewerMode::None;
+    bool cardViewerVisible_ = false;
     BattlePileInspector battlePileInspector_ = BattlePileInspector::None;
     std::array<int, kPageCount> pageScrollLines_{};
     SaveDialogMode saveDialogMode_ = SaveDialogMode::None;
     bool saveDialogVisible_ = false;
+    int cardViewerScrollLine_ = 0;
     int saveDialogScrollLine_ = 0;
     int saveSelected_ = 0;
     std::string saveNameInput_ = "save1";
@@ -102,13 +114,16 @@ private:
     std::string mapMenuLabel_ = "Main Menu";
     std::string encounterSaveLabel_ = "Save Run";
     std::string encounterMenuLabel_ = "Main Menu";
+    std::string encounterOwnedCardsLabel_ = "Owned Cards";
     std::string battleEndTurnLabel_ = "End Turn";
     std::string battleSaveLabel_ = "Save Run";
     std::string battleMenuLabel_ = "Main Menu";
+    std::string battleOwnedCardsLabel_ = "Owned Cards";
     std::string battleDrawPileLabel_ = "Draw Pile";
     std::string battleDiscardPileLabel_ = "Discard Pile";
     std::string rewardSkipLabel_ = "Skip Card Reward";
     std::string rewardMenuLabel_ = "Main Menu";
+    std::string rewardOwnedCardsLabel_ = "Owned Cards";
     std::string infoBackLabel_ = "Back";
     std::string summaryMenuLabel_ = "Main Menu";
     std::string summaryNewRunLabel_ = "New Run";
@@ -117,6 +132,9 @@ private:
     std::string loadConfirmLabel_ = "Load";
     std::string autoSaveLabel_ = "Auto Save";
     std::string closeDialogLabel_ = "Close";
+    std::string menuLibraryLabel_ = "Card Library";
+    std::string mapOwnedCardsLabel_ = "Owned Cards";
+    std::string cardViewerCloseLabel_ = "Close";
 
     std::array<ftxui::Component, 7> menuButtons_{};
     std::array<ftxui::Component, kMapSlots> mapButtons_{};
@@ -135,20 +153,26 @@ private:
     ftxui::Component battleEndTurnButton_;
     ftxui::Component battleSaveButton_;
     ftxui::Component battleMenuButton_;
+    ftxui::Component battleOwnedCardsButton_;
     ftxui::Component battleDrawPileButton_;
     ftxui::Component battleDiscardPileButton_;
     ftxui::Component rewardSkipButton_;
     ftxui::Component rewardMenuButton_;
+    ftxui::Component rewardOwnedCardsButton_;
     ftxui::Component infoBackButton_;
     ftxui::Component summaryMenuButton_;
     ftxui::Component summaryNewRunButton_;
     ftxui::Component summaryExitButton_;
+    ftxui::Component menuLibraryButton_;
+    ftxui::Component mapOwnedCardsButton_;
+    ftxui::Component encounterOwnedCardsButton_;
     ftxui::Component saveNameInputComponent_;
     ftxui::Component saveEntriesMenu_;
     ftxui::Component saveConfirmButton_;
     ftxui::Component loadConfirmButton_;
     ftxui::Component autoSaveButton_;
     ftxui::Component closeDialogButton_;
+    ftxui::Component cardViewerCloseButton_;
 
     ftxui::Component mainMenuPage_;
     ftxui::Component setupPage_;
@@ -158,6 +182,7 @@ private:
     ftxui::Component rewardPage_;
     ftxui::Component summaryPage_;
     ftxui::Component infoPage_;
+    ftxui::Component cardViewerPage_;
     ftxui::Component saveDialogPage_;
     ftxui::Component pages_;
     ftxui::Component root_;
