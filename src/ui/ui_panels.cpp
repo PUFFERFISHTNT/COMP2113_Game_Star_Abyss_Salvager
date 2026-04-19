@@ -192,6 +192,9 @@ std::string IntentSummary(UiLanguage language, const RunState& state) {
         return label + " - " + Tr(language, "Charge and gain ", "蓄力并获得 ") + std::to_string(state.enemy.intentValue) +
                Tr(language, " shield", " 点护盾");
     }
+    if (state.enemy.intentKind == "cool") {
+        return label + " - " + Tr(language, "Reduce own heat ", "自身热量 -") + std::to_string(state.enemy.intentValue);
+    }
     return label;
 }
 
@@ -457,12 +460,15 @@ std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunS
     if (state.enemy.heat >= state.enemy.maxHeat) {
         const int stage = std::max(1, std::min(3, state.enemy.overheatRounds));
         if (stage == 1) {
-            lines.push_back(Tr(language, "Overheat I: Outgoing damage -25%", "过热 I：输出伤害 -25%"));
+            lines.push_back(Tr(language, "Reactor Strain I: Outgoing damage -25%", "反应堆应力 I：输出伤害 -25%"));
         } else if (stage == 2) {
-            lines.push_back(Tr(language, "Overheat II: Outgoing -25%, Incoming +25%", "过热 II：输出 -25%，受到伤害 +25%"));
+            lines.push_back(Tr(language, "Containment Fracture II: Outgoing -25%, Incoming +25%", "约束层裂解 II：输出 -25%，受到伤害 +25%"));
         } else {
-            lines.push_back(Tr(language, "Overheat III: Outgoing -25%, Incoming +25%, Burn 5/turn", "过热 III：输出 -25%，受到伤害 +25%，每回合燃烧 5 点生命"));
+            lines.push_back(Tr(language, "Meltdown Cascade III: Outgoing -25%, Incoming +25%, Burn 5/turn", "熔毁级联 III：输出 -25%，受到伤害 +25%，每回合燃烧 5 点生命"));
         }
+    }
+    if (state.enemy.coolingCooldownTurns > 0) {
+        lines.push_back(Tr(language, "Cooling cooldown: ", "冷却冷却中：") + std::to_string(state.enemy.coolingCooldownTurns));
     }
     if (state.enemy.weakenTurns > 0) lines.push_back(Tr(language, "Weakened attacks remaining: ", "剩余削弱攻击次数：") + std::to_string(state.enemy.weakenTurns));
     if (state.enemy.shieldLockTurns > 0) lines.push_back(Tr(language, "Shield jam remaining: ", "剩余护盾封锁回合：") + std::to_string(state.enemy.shieldLockTurns));

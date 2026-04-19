@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|10\n";
+    output << "VERSION|11\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -148,7 +148,8 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << enemy.hp << "|" << enemy.maxHp << "|" << enemy.shield << "|"
            << enemy.intentKind << "|" << enemy.intentLabel << "|" << enemy.intentValue << "|"
            << enemy.patternIndex << "|" << enemy.weakenTurns << "|" << enemy.shieldLockTurns << "|"
-           << enemy.heat << "|" << enemy.maxHeat << "|" << enemy.overheatRounds << "\n";
+           << enemy.heat << "|" << enemy.maxHeat << "|" << enemy.overheatRounds << "|"
+           << enemy.coolingCooldownTurns << "\n";
 
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
@@ -320,6 +321,9 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             } else if (loaded.enemy.heat >= loaded.enemy.maxHeat) {
                 loaded.enemy.overheatRounds = 1;
             }
+            if (parts.size() >= 17) {
+                loaded.enemy.coolingCooldownTurns = ToInt(parts[16], 0);
+            }
         } else if (key == "NODE" && parts.size() >= 5) {
             loaded.routeOptions.push_back({parts[1], parts[2], parts[3], ToInt(parts[4], 1)});
         } else if (key == "MARKETOFFER" && parts.size() >= 2) {
@@ -384,6 +388,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     } else if (loaded.enemy.overheatRounds == 0) {
         loaded.enemy.overheatRounds = 1;
     }
+    loaded.enemy.coolingCooldownTurns = std::max(0, loaded.enemy.coolingCooldownTurns);
     loaded.enemy.weakenTurns = std::max(0, loaded.enemy.weakenTurns);
     loaded.enemy.shieldLockTurns = std::max(0, loaded.enemy.shieldLockTurns);
 

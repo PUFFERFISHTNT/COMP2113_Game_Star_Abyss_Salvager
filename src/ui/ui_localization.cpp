@@ -64,6 +64,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Plasma Lance", "等离子长枪"},
         {"EMP Pulse", "电磁脉冲"},
         {"Hack Jammer", "骇入干扰器"},
+        {"Emergency Cooling", "紧急冷却"},
         {"Thermal Lance", "热能长枪"},
         {"Reactor Spike", "反应堆尖峰"},
         {"Chain Pulse", "连锁脉冲"},
@@ -592,6 +593,18 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     }
     if (text == "Enemy overheat burns 5 HP.") {
         return "敌方因过热燃烧，失去 5 点生命。";
+    }
+    if (StartsWith(text, "Cooling cooldown: ")) {
+        return "冷却冷却中：" + text.substr(18);
+    }
+    if (StartsWith(text, "Reduce own heat ")) {
+        return "自身热量 -" + text.substr(16);
+    }
+    if (StartsWith(text, " vents reactor heat by ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" vents reactor heat by ");
+        const std::string name = text.substr(0, split);
+        const std::string value = text.substr(split + 22, text.size() - split - 23);
+        return TranslateGameText(language, name) + " 排出反应堆热量 " + value + " 点。";
     }
     if (StartsWith(text, "Feedback lashes your own hull for ") && EndsWith(text, ".")) {
         return "反馈冲击自身船体，受到 " + text.substr(35, text.size() - 36) + " 点伤害。";

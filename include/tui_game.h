@@ -156,6 +156,7 @@ struct EnemyState {
     int heat = 0;
     int maxHeat = 10;
     int overheatRounds = 0;
+    int coolingCooldownTurns = 0;
     std::string intentKind;
     std::string intentLabel;
     int intentValue = 0;
@@ -323,6 +324,9 @@ private:
     bool enemyIsOverheated() const;
     int enemyOverheatStage() const;
     int effectiveEnemyAttackDamage() const;
+    bool enemyShouldUseCooling() const;
+    int enemyCoolingAmount() const;
+    void triggerEnemyCooling();
     void syncEnemyOverheatState();
     void advanceEnemyOverheatRound();
     void log(const std::string& line);

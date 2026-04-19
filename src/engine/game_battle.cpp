@@ -220,6 +220,7 @@ void GameEngine::startBattle(const std::string& nodeType) {
     state_.enemy.heat = 0;
     state_.enemy.maxHeat = enemy.maxHeat;
     state_.enemy.overheatRounds = 0;
+    state_.enemy.coolingCooldownTurns = 0;
     state_.enemy.patternIndex = 0;
     state_.enemy.weakenTurns = 0;
     state_.enemy.shieldLockTurns = 0;
@@ -297,6 +298,13 @@ void GameEngine::chooseEnemyIntent() {
         return;
     }
 
+    if (enemyShouldUseCooling()) {
+        state_.enemy.intentKind = "cool";
+        state_.enemy.intentLabel = "Emergency Cooling";
+        state_.enemy.intentValue = enemyCoolingAmount();
+        return;
+    }
+
     int index = state_.enemy.patternIndex % static_cast<int>(enemy->pattern.size());
     if (enemy->behavior == "chaotic") {
         std::uniform_int_distribution<int> randomIndex(0, static_cast<int>(enemy->pattern.size()) - 1);
@@ -353,12 +361,19 @@ void GameEngine::resolveEnemyIntent() {
         state_.enemy.shield += state_.enemy.intentValue;
         startAnimation("support", state_.enemy.intentLabel, state_.enemy.intentValue, false, 5);
         log(state_.enemy.name + " charges for a heavier strike.");
+    } else if (state_.enemy.intentKind == "cool") {
+        triggerEnemyCooling();
     }
 
+    if (state_.enemy.intentKind != "cool" && state_.enemy.coolingCooldownTurns > 0) {
+        --state_.enemy.coolingCooldownTurns;
+    }
     if (state_.enemy.shieldLockTurns > 0) {
         --state_.enemy.shieldLockTurns;
     }
-    ++state_.enemy.patternIndex;
+    if (state_.enemy.intentKind != "cool") {
+        ++state_.enemy.patternIndex;
+    }
 }
 
 void GameEngine::handleBattleVictory() {
@@ -396,6 +411,7 @@ void GameEngine::handleBattleVictory() {
     state_.player.nextTurnEnergy = 0;
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
+    state_.enemy.coolingCooldownTurns = 0;
     state_.battleTurn = 0;
     state_.pendingSectorAdvance = state_.activeNodeType == "boss" && state_.sector < 3;
     state_.pendingVictory = state_.activeNodeType == "boss" && state_.sector >= 3;
@@ -407,6 +423,7 @@ void GameEngine::handleBattleVictory() {
 void GameEngine::handleDefeat() {
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
+    state_.enemy.coolingCooldownTurns = 0;
     fillSummary(false);
 }
 
@@ -524,6 +541,25 @@ int GameEngine::effectiveEnemyAttackDamage() const {
         damage = (damage * 3) / 4;
     }
     return std::max(0, damage);
+}
+
+bool GameEngine::enemyShouldUseCooling() const {
+    if (state_.enemy.coolingCooldownTurns > 0) {
+        return false;
+    }
+    return state_.enemy.heat >= std::max(1, state_.enemy.maxHeat - 1);
+}
+
+int GameEngine::enemyCoolingAmount() const {
+    return 2;
+}
+
+void GameEngine::triggerEnemyCooling() {
+    const int cooling = enemyCoolingAmount();
+    changeEnemyHeat(-cooling);
+    state_.enemy.coolingCooldownTurns = 2;
+    startAnimation("support", state_.enemy.intentLabel, cooling, false, 5);
+    log(state_.enemy.name + " vents reactor heat by " + std::to_string(cooling) + ".");
 }
 
 void GameEngine::syncEnemyOverheatState() {
