@@ -4,5 +4,6 @@ save/*.sav
 save/*.cards.json
 data/leaderboard.txt
 star_abyss_salvager
+battle_smoke_check
 save/obtained_cards.txt
 .DS_Store
