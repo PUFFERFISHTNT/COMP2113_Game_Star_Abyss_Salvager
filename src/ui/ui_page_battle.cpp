@@ -38,6 +38,83 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
     return std::max(22, std::min(34, computed_width));
 }
 
+std::string AuxiliaryShipSummary(UiLanguage language, const AuxiliaryShipState& ship) {
+    std::string summary = Tr(language, "ATK ", "攻击 ") + std::to_string(ship.attack) + " / " +
+                          Tr(language, "SHD ", "护盾 ") + std::to_string(ship.shield);
+    if (ship.remainingTurns > 0) {
+        summary += "  " + Tr(language, "T ", "回合 ") + std::to_string(ship.remainingTurns);
+    } else {
+        summary += "  " + Tr(language, "T INF", "回合 常驻");
+    }
+    return summary;
+}
+
+Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship) {
+    if (ship == nullptr) {
+        return vbox({
+                   text("[" + std::to_string(slot_index + 1) + "] " + Tr(language, "Empty Slot", "空槽位")) | color(kDim) | bold,
+                   text(Tr(language, "Reserve bay for support craft", "附属舰停机位待命")) | color(Color::RGB(108, 120, 142)),
+               }) |
+               borderStyled(ROUNDED, Color::RGB(76, 87, 110)) |
+               bgcolor(Color::RGB(10, 17, 31));
+    }
+
+    struct VisualStyle {
+        std::string icon;
+        Color accent;
+        Color background;
+    };
+    auto style_for_ship = [](const AuxiliaryShipState& value) {
+        if (value.unitId == "aux_interceptor") {
+            return VisualStyle{"^>", Color::RGB(255, 137, 137), Color::RGB(52, 20, 28)};
+        }
+        if (value.unitId == "aux_guardian") {
+            return VisualStyle{"[]", Color::RGB(124, 178, 255), Color::RGB(16, 31, 56)};
+        }
+        if (value.unitId == "aux_repair") {
+            return VisualStyle{"+", Color::RGB(130, 236, 164), Color::RGB(14, 37, 26)};
+        }
+        if (value.unitId == "aux_pulse") {
+            return VisualStyle{"~*", Color::RGB(246, 196, 91), Color::RGB(50, 34, 13)};
+        }
+        return VisualStyle{"<>", Color::RGB(146, 228, 255), Color::RGB(14, 31, 52)};
+    };
+    const VisualStyle style = style_for_ship(*ship);
+
+    // Keep each slot compact and scannable so the player can confirm support
+    // ship composition without opening extra panels.
+    return vbox({
+               text("[" + std::to_string(slot_index + 1) + "] " + style.icon + " " +
+                    TranslateGameText(language, ship->displayName)) |
+                   color(style.accent) | bold,
+               text(AuxiliaryShipSummary(language, *ship)) | color(Color::White),
+           }) |
+           borderStyled(ROUNDED, style.accent) |
+           bgcolor(style.background);
+}
+
+Element AuxiliaryShipPanel(UiLanguage language, const RunState& state) {
+    Elements slots;
+    for (int i = 0; i < 3; ++i) {
+        const AuxiliaryShipState* ship =
+            i < static_cast<int>(state.auxiliaryShips.size()) ? &state.auxiliaryShips[static_cast<size_t>(i)] : nullptr;
+        slots.push_back(AuxiliaryShipSlot(language, i, ship) | flex);
+        if (i < 2) {
+            slots.push_back(separator());
+        }
+    }
+
+    return window(text(Tr(language, "Auxiliary Bay", "附属舰机库")) | color(kHull) | bold,
+                  vbox({
+                      text(Tr(language, "Three support slots, newest summons replace the oldest when full.",
+                              "共 3 个支援位，满位时新召唤会替换最旧附属舰。")) |
+                          color(kDim),
+                      separator(),
+                      hbox(std::move(slots)),
+                  })) |
+           bgcolor(kPanel);
+}
+
 }  // namespace
 
 // Battle is the densest screen in the project. Splitting it out keeps combat
@@ -45,6 +122,12 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
 Element StarAbyssApp::RenderBattle() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;
+    const std::string battle_hint =
+        state.player.blackboxSelectionPending
+            ? Tr(language_, "Blackbox Protocol: click a hand card to exile as imprint",
+                 "黑箱协议：点击一张手牌作为放逐刻印目标")
+            : (Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
+               Tr(language_, "Play cards, then press E to end turn", "出牌后按 E 结束回合"));
     Elements ship_lines = PlayerArt(state, ambientTick_);
     Elements enemy_lines = EnemyArt(state, ambientTick_);
     Elements lane_lines;
@@ -184,8 +267,7 @@ Element StarAbyssApp::RenderBattle() const {
 
     Element content = vbox({
         text(Tr(language_, "Battle Bridge", "战斗舰桥")) | bold | color(kEnemy) | center,
-        text(Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
-             Tr(language_, "Play cards, then press E to end turn", "出牌后按 E 结束回合")) |
+        text(battle_hint) |
             color(kGold) | center,
         separatorDouble(),
         hbox({
@@ -217,8 +299,11 @@ Element StarAbyssApp::RenderBattle() const {
                            color(Color::White),
                    })) |
                 flex | bgcolor(kPanel),
-            window(text(TranslateGameText(language_, state.enemy.name)) | color(kEnemy), vbox(std::move(enemy_lines))) | flex | bgcolor(kPanel),
+            window(text(TranslateGameText(language_, state.enemy.name)) | color(kEnemy), vbox(std::move(enemy_lines))) |
+                flex | bgcolor(kPanel),
         }),
+        separator(),
+        AuxiliaryShipPanel(language_, state),
         separator(),
         window(text(Tr(language_, "Command Deck", "指令手牌")) | color(kGold),
                vbox(std::move(command_deck_rows))) |

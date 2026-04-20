@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|12\n";
+    output << "VERSION|16\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -124,7 +124,13 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << player.openingEnergyBonus << "|" << player.openingShieldBonus << "|"
            << player.nextAttackMultiplier << "|" << player.salvageBonus << "|"
            << player.attacksPlayedThisTurn << "|" << BoolToken(player.emergencyBatteryUsed) << "|"
-           << player.overheatRounds << "\n";
+           << player.overheatRounds << "|" << player.form << "\n";
+
+    output << "AUX|" << state_.auxiliaryShips.size() << "\n";
+    for (const AuxiliaryShipState& aux : state_.auxiliaryShips) {
+        output << "AUXUNIT|" << aux.unitId << "|" << aux.displayName << "|"
+               << aux.attack << "|" << aux.shield << "|" << aux.remainingTurns << "\n";
+    }
 
     output << "RELICS|" << player.relics.size() << "\n";
     for (const std::string& relic : player.relics) {
@@ -143,6 +149,42 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     for (const std::string& card : player.discardPile) {
         output << "CARD|" << card << "\n";
     }
+    output << "EXILE|" << player.exilePile.size() << "\n";
+    for (const std::string& card : player.exilePile) {
+        output << "CARD|" << card << "\n";
+    }
+    output << "BLACKBOX|" << player.blackboxImprintRef << "|" << player.blackboxCopyCount << "\n";
+    output << "BLACKBOXPENDING|" << BoolToken(player.blackboxSelectionPending) << "|"
+           << player.pendingBlackboxCopyCount << "\n";
+    output << "COND|" << player.summonCardPlayedDrawThisTurnBuff << "|"
+           << player.formChangesThisTurn << "|"
+           << player.firstEnterHighHeatEnergyThisBattle << "|"
+           << player.firstEnterHighHeatDrawThisBattle << "|"
+           << player.eachEnterHighHeatDrawThisBattle << "|"
+           << player.firstSummonEnemyHeatPerTurnThisBattle << "|"
+           << player.firstSummonEnemyHeatAttackBonusPerTurnThisBattle << "|"
+           << player.enterOverloadEnemyHeatThisBattle << "|"
+           << player.leaveDefenseEnemyHeatThisBattle << "|"
+           << BoolToken(player.firstEnterHighHeatTriggeredThisBattle) << "|"
+           << BoolToken(player.firstSummonEnemyHeatTriggeredThisTurn) << "\n";
+    output << "COND2|" << player.heatGainedThisTurn << "|"
+           << player.heatReducedThisTurn << "|"
+           << player.enemyHeatRaisedThisTurn << "|"
+           << player.nextHeatGainReductionThisTurn << "|"
+           << player.nextAttackEnemyHeatBonusThisTurn << "|"
+           << player.attackBonusPerHeatThisTurn << "|"
+           << player.attackBonusPerHeatCapThisTurn << "|"
+           << player.attackBonusFromHeatGainThisBattle << "|"
+           << player.attackBonusPerHeatGainPointThisBattle << "|"
+           << player.killAttackBonusThisBattle << "|"
+           << player.auxTriggerEnemyHeatBonusThisTurn << "|"
+           << player.formChangeDrawThisTurn << "|"
+           << player.overheatSelfDamageBlockThisTurn << "|"
+           << player.auxOnRemoveDrawThisBattle << "|"
+           << player.auxOnRemoveEnergyThisBattle << "|"
+           << BoolToken(player.enteredOverloadThisTurn) << "|"
+           << BoolToken(player.exitedDefenseThisTurn) << "|"
+           << BoolToken(player.exitedFormThisTurn) << "\n";
 
     const EnemyState& enemy = state_.enemy;
     output << "ENEMY|" << enemy.enemyId << "|" << enemy.name << "|" << enemy.behavior << "|"
@@ -280,12 +322,23 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 if (parts.size() >= 19) {
                     loaded.player.overheatRounds = ToInt(parts[18], 0);
                 }
+                if (parts.size() >= 20) {
+                    loaded.player.form = ToInt(parts[19], 0);
+                }
             } else {
                 loaded.player.nextAttackMultiplier = ToInt(parts[12], 1);
                 loaded.player.salvageBonus = ToInt(parts[13], 0);
                 loaded.player.attacksPlayedThisTurn = ToInt(parts[14], 0);
                 loaded.player.emergencyBatteryUsed = parts[15] == "1";
             }
+        } else if (key == "AUXUNIT" && parts.size() >= 6) {
+            AuxiliaryShipState aux;
+            aux.unitId = parts[1];
+            aux.displayName = parts[2];
+            aux.attack = ToInt(parts[3], 0);
+            aux.shield = ToInt(parts[4], 0);
+            aux.remainingTurns = ToInt(parts[5], -1);
+            loaded.auxiliaryShips.push_back(aux);
         } else if (key == "RELIC" && parts.size() >= 2) {
             loaded.player.relics.push_back(parts[1]);
         } else if (key == "UPGRADEDTYPE" && parts.size() >= 2) {
@@ -299,6 +352,46 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
         } else if (key == "DISCARD") {
             loaded.player.discardPile.clear();
             activePile = &loaded.player.discardPile;
+        } else if (key == "EXILE") {
+            loaded.player.exilePile.clear();
+            activePile = &loaded.player.exilePile;
+        } else if (key == "BLACKBOX" && parts.size() >= 3) {
+            loaded.player.blackboxImprintRef = parts[1];
+            loaded.player.blackboxCopyCount = ToInt(parts[2], 0);
+        } else if (key == "BLACKBOXPENDING" && parts.size() >= 3) {
+            loaded.player.blackboxSelectionPending = parts[1] == "1";
+            loaded.player.pendingBlackboxCopyCount = ToInt(parts[2], 0);
+        } else if (key == "COND" && parts.size() >= 12) {
+            loaded.player.summonCardPlayedDrawThisTurnBuff = ToInt(parts[1], 0);
+            loaded.player.formChangesThisTurn = ToInt(parts[2], 0);
+            loaded.player.firstEnterHighHeatEnergyThisBattle = ToInt(parts[3], 0);
+            loaded.player.firstEnterHighHeatDrawThisBattle = ToInt(parts[4], 0);
+            loaded.player.eachEnterHighHeatDrawThisBattle = ToInt(parts[5], 0);
+            loaded.player.firstSummonEnemyHeatPerTurnThisBattle = ToInt(parts[6], 0);
+            loaded.player.firstSummonEnemyHeatAttackBonusPerTurnThisBattle = ToInt(parts[7], 0);
+            loaded.player.enterOverloadEnemyHeatThisBattle = ToInt(parts[8], 0);
+            loaded.player.leaveDefenseEnemyHeatThisBattle = ToInt(parts[9], 0);
+            loaded.player.firstEnterHighHeatTriggeredThisBattle = parts[10] == "1";
+            loaded.player.firstSummonEnemyHeatTriggeredThisTurn = parts[11] == "1";
+        } else if (key == "COND2" && parts.size() >= 19) {
+            loaded.player.heatGainedThisTurn = ToInt(parts[1], 0);
+            loaded.player.heatReducedThisTurn = ToInt(parts[2], 0);
+            loaded.player.enemyHeatRaisedThisTurn = ToInt(parts[3], 0);
+            loaded.player.nextHeatGainReductionThisTurn = ToInt(parts[4], 0);
+            loaded.player.nextAttackEnemyHeatBonusThisTurn = ToInt(parts[5], 0);
+            loaded.player.attackBonusPerHeatThisTurn = ToInt(parts[6], 0);
+            loaded.player.attackBonusPerHeatCapThisTurn = ToInt(parts[7], 0);
+            loaded.player.attackBonusFromHeatGainThisBattle = ToInt(parts[8], 0);
+            loaded.player.attackBonusPerHeatGainPointThisBattle = ToInt(parts[9], 0);
+            loaded.player.killAttackBonusThisBattle = ToInt(parts[10], 0);
+            loaded.player.auxTriggerEnemyHeatBonusThisTurn = ToInt(parts[11], 0);
+            loaded.player.formChangeDrawThisTurn = ToInt(parts[12], 0);
+            loaded.player.overheatSelfDamageBlockThisTurn = ToInt(parts[13], 0);
+            loaded.player.auxOnRemoveDrawThisBattle = ToInt(parts[14], 0);
+            loaded.player.auxOnRemoveEnergyThisBattle = ToInt(parts[15], 0);
+            loaded.player.enteredOverloadThisTurn = parts[16] == "1";
+            loaded.player.exitedDefenseThisTurn = parts[17] == "1";
+            loaded.player.exitedFormThisTurn = parts[18] == "1";
         } else if (key == "CARD" && parts.size() >= 2 && activePile != nullptr) {
             activePile->push_back(parts[1]);
         } else if (key == "ENEMY" && parts.size() >= 12) {
@@ -383,6 +476,35 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.shield = std::max(0, loaded.player.shield);
     loaded.player.nextAttackMultiplier = std::max(1, loaded.player.nextAttackMultiplier);
     loaded.player.overheatRounds = std::max(0, std::min(loaded.player.overheatRounds, 3));
+    loaded.player.form = std::max(0, std::min(2, loaded.player.form));
+    loaded.player.blackboxCopyCount = std::max(0, loaded.player.blackboxCopyCount);
+    loaded.player.pendingBlackboxCopyCount = std::max(0, loaded.player.pendingBlackboxCopyCount);
+    loaded.player.summonCardPlayedDrawThisTurnBuff = std::max(0, loaded.player.summonCardPlayedDrawThisTurnBuff);
+    loaded.player.formChangesThisTurn = std::max(0, loaded.player.formChangesThisTurn);
+    loaded.player.firstEnterHighHeatEnergyThisBattle = std::max(0, loaded.player.firstEnterHighHeatEnergyThisBattle);
+    loaded.player.firstEnterHighHeatDrawThisBattle = std::max(0, loaded.player.firstEnterHighHeatDrawThisBattle);
+    loaded.player.eachEnterHighHeatDrawThisBattle = std::max(0, loaded.player.eachEnterHighHeatDrawThisBattle);
+    loaded.player.firstSummonEnemyHeatPerTurnThisBattle = std::max(0, loaded.player.firstSummonEnemyHeatPerTurnThisBattle);
+    loaded.player.firstSummonEnemyHeatAttackBonusPerTurnThisBattle =
+        std::max(0, loaded.player.firstSummonEnemyHeatAttackBonusPerTurnThisBattle);
+    loaded.player.enterOverloadEnemyHeatThisBattle = std::max(0, loaded.player.enterOverloadEnemyHeatThisBattle);
+    loaded.player.leaveDefenseEnemyHeatThisBattle = std::max(0, loaded.player.leaveDefenseEnemyHeatThisBattle);
+    loaded.player.heatGainedThisTurn = std::max(0, loaded.player.heatGainedThisTurn);
+    loaded.player.heatReducedThisTurn = std::max(0, loaded.player.heatReducedThisTurn);
+    loaded.player.enemyHeatRaisedThisTurn = std::max(0, loaded.player.enemyHeatRaisedThisTurn);
+    loaded.player.nextHeatGainReductionThisTurn = std::max(0, loaded.player.nextHeatGainReductionThisTurn);
+    loaded.player.nextAttackEnemyHeatBonusThisTurn = std::max(0, loaded.player.nextAttackEnemyHeatBonusThisTurn);
+    loaded.player.attackBonusPerHeatThisTurn = std::max(0, loaded.player.attackBonusPerHeatThisTurn);
+    loaded.player.attackBonusPerHeatCapThisTurn = std::max(0, loaded.player.attackBonusPerHeatCapThisTurn);
+    loaded.player.attackBonusFromHeatGainThisBattle = std::max(0, loaded.player.attackBonusFromHeatGainThisBattle);
+    loaded.player.attackBonusPerHeatGainPointThisBattle =
+        std::max(0, loaded.player.attackBonusPerHeatGainPointThisBattle);
+    loaded.player.killAttackBonusThisBattle = std::max(0, loaded.player.killAttackBonusThisBattle);
+    loaded.player.auxTriggerEnemyHeatBonusThisTurn = std::max(0, loaded.player.auxTriggerEnemyHeatBonusThisTurn);
+    loaded.player.formChangeDrawThisTurn = std::max(0, loaded.player.formChangeDrawThisTurn);
+    loaded.player.overheatSelfDamageBlockThisTurn = std::max(0, loaded.player.overheatSelfDamageBlockThisTurn);
+    loaded.player.auxOnRemoveDrawThisBattle = std::max(0, loaded.player.auxOnRemoveDrawThisBattle);
+    loaded.player.auxOnRemoveEnergyThisBattle = std::max(0, loaded.player.auxOnRemoveEnergyThisBattle);
     if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
         loaded.player.overheatRounds = 0;
     } else if (loaded.player.overheatRounds == 0) {
@@ -401,6 +523,20 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.enemy.coolingCooldownTurns = std::max(0, loaded.enemy.coolingCooldownTurns);
     loaded.enemy.weakenTurns = std::max(0, loaded.enemy.weakenTurns);
     loaded.enemy.shieldLockTurns = std::max(0, loaded.enemy.shieldLockTurns);
+    for (AuxiliaryShipState& aux : loaded.auxiliaryShips) {
+        aux.attack = std::max(0, aux.attack);
+        aux.shield = std::max(0, aux.shield);
+        if (aux.remainingTurns == 0) {
+            aux.remainingTurns = -1;
+        }
+    }
+    loaded.auxiliaryShips.erase(
+        std::remove_if(loaded.auxiliaryShips.begin(),
+                       loaded.auxiliaryShips.end(),
+                       [](const AuxiliaryShipState& aux) {
+                           return aux.unitId.empty() || aux.displayName.empty();
+                       }),
+        loaded.auxiliaryShips.end());
 
     if (shipTemplateById(loaded.player.shipId) == nullptr) {
         if (error != nullptr) {
@@ -425,7 +561,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
         }
     }
     const std::vector<std::vector<std::string>*> piles = {
-        &loaded.player.drawPile, &loaded.player.hand, &loaded.player.discardPile,
+        &loaded.player.drawPile, &loaded.player.hand, &loaded.player.discardPile, &loaded.player.exilePile,
         &loaded.reward.cardIds, &loaded.marketOfferCardIds,
     };
     for (const std::vector<std::string>* pile : piles) {
@@ -437,6 +573,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 return false;
             }
         }
+    }
+    if (!loaded.player.blackboxImprintRef.empty() && cardById(loaded.player.blackboxImprintRef) == nullptr) {
+        if (error != nullptr) {
+            *error = "Save file references an unknown blackbox imprint card.";
+        }
+        return false;
     }
     if (!loaded.enemy.enemyId.empty() && enemyTemplateById(loaded.enemy.enemyId) == nullptr) {
         if (error != nullptr) {

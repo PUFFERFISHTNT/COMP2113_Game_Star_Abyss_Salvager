@@ -66,9 +66,9 @@ void GameEngine::initializeData() {
     };
 
     ships_ = {
-        {"vanguard", "Vanguard", 40, 3, 10, {}, {"reactor_core"}},
-        {"drift_fox", "Drift Fox", 34, 4, 9, {"scan_pulse"}, {}},
-        {"iron_bastion", "Iron Bastion", 46, 3, 11, {"emergency_barrier"}, {"shield_matrix"}},
+        {"vanguard", "Vanguard", 50, 3, 10, {"vg_02", "vg_04"}, {"reactor_core"}},
+        {"drift_fox", "Drift Fox", 47, 3, 10, {"df_01", "df_05"}, {}},
+        {"iron_bastion", "Iron Bastion", 58, 3, 10, {"ib_01", "ib_02"}, {"shield_matrix"}},
     };
 
     relicPool_ = {

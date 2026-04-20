@@ -313,6 +313,11 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Battle Log", "战斗日志"},
         {"Player Flagship", "玩家旗舰"},
         {"Abyss Contact", "深渊接触目标"},
+        {"Interceptor Drone", "拦截机"},
+        {"Guardian Drone", "护卫机"},
+        {"Repair Drone", "维修机"},
+        {"Pulse Drone", "脉冲机"},
+        {"Auxiliary Drone", "附属舰"},
         {"Main Menu", "主菜单"},
         {"Launch Setup", "出航设置"},
         {"Difficulty", "难度"},
@@ -1270,6 +1275,65 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Begin voyage") return "开始航程";
     if (text == "Enter the Star Abyss and start your salvage run.") return "进入星渊，开始你的打捞航程。";
     if (text == "The Abyss awaits. Chart your first jump.") return "星渊在等待。规划你的第一次跃迁。";
+    // Auxiliary and conditional-system logs
+    if (text == "Auxiliary command protocol duplicates this launch.") return "附属舰协议触发，本次召唤获得了额外复制。";
+    if (text == "Auxiliary launch protocol is now enhanced.") return "附属舰发射协议已强化。";
+    if (text == "Auxiliary ships will trigger extra times at end of turn.") return "附属舰将在回合结束时额外触发。";
+    if (text == "Auxiliary effect output is amplified this turn.") return "本回合附属舰效果已放大。";
+    if (text == "Conditional fire-control bonus is active this turn.") return "条件火控加成已在本回合生效。";
+    if (text == "Summon-chain draw protocol is armed for this turn.") return "本回合召唤连锁抽牌协议已启用。";
+    if (text == "First high-heat entry bonus is triggered.") return "首次进入高热量奖励已触发。";
+    if (text == "Recurring high-heat entry bonus draws cards.") return "后续高热量触发了额外抽牌。";
+    if (text == "Defense stance release inflicts enemy heat.") return "离开防御形态时已对敌方施加热量。";
+    if (text == "Overload entry inflicts enemy heat.") return "进入过载形态时已对敌方施加热量。";
+    if (text == "Auxiliary ship formation is recalibrated.") return "附属舰编队参数已重校准。";
+    if (text == "Overload instability is damped for this turn.") return "本回合过载不稳定性已缓和。";
+    if (text == "Battlefield Breakdown grants +1 permanent attack bonus this battle.") return "战场拆解触发：本场战斗永久攻击加成 +1。";
+    if (text == "Overheat feedback is fully blocked this turn.") return "本回合过热反噬已被完全抵消。";
+    if (text == "Temporary copy dissipates after use.") return "临时复制牌在使用后消散。";
+    if (text == "Blackbox Protocol awaits imprint target selection.") return "黑箱协议等待选择刻印目标。";
+    if (text == "Blackbox Protocol cannot imprint a temporary copy.") return "黑箱协议不能刻印临时复制牌。";
+    if (text == "Blackbox Protocol found no valid hand card to imprint.") return "黑箱协议未找到可刻印的有效手牌。";
+    if (text == "Blackbox imprint replicates into hand.") return "黑箱刻印已在手牌中复制生成。";
+    if (StartsWith(text, "Dismantled ") && EndsWith(text, " for immediate reward.")) {
+        const std::string name = text.substr(10, text.size() - 31);
+        return "拆解了 " + TranslateGameText(language, name) + "，并立即结算收益。";
+    }
+    if (EndsWith(text, " deployed.")) {
+        const std::string name = text.substr(0, text.size() - 10);
+        return TranslateGameText(language, name) + " 已部署。";
+    }
+    if (text == "Auxiliary bay is full. Oldest support craft is dismissed.") return "附属舰槽位已满，最旧单位被替换。";
+    if (text == "No auxiliary ship is available to dismantle.") return "当前没有可拆解的附属舰。";
+    if (StartsWith(text, " fires for ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" fires for ");
+        return TranslateGameText(language, text.substr(0, split)) + " 造成 " +
+               text.substr(split + 11, text.size() - split - 12) + " 点伤害。";
+    }
+    if (StartsWith(text, " reinforces shield by ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" reinforces shield by ");
+        return TranslateGameText(language, text.substr(0, split)) + " 提供了 " +
+               text.substr(split + 22, text.size() - split - 23) + " 点护盾。";
+    }
+    if (StartsWith(text, " executes an immediate attack for ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" executes an immediate attack for ");
+        return TranslateGameText(language, text.substr(0, split)) + " 立即攻击造成 " +
+               text.substr(split + 33, text.size() - split - 34) + " 点伤害。";
+    }
+    if (StartsWith(text, " grants immediate shield +") && EndsWith(text, ".")) {
+        const size_t split = text.find(" grants immediate shield +");
+        return TranslateGameText(language, text.substr(0, split)) + " 立即提供 +" +
+               text.substr(split + 25, text.size() - split - 26) + " 点护盾。";
+    }
+    if (StartsWith(text, "Summon-chain protocol draws ") && EndsWith(text, " card(s).")) {
+        return "召唤连锁协议抽取了 " + text.substr(28, text.size() - 37) + " 张牌。";
+    }
+    if (StartsWith(text, "Form resonance draws ") && EndsWith(text, " card(s).")) {
+        return "形态共振触发，抽取了 " + text.substr(20, text.size() - 29) + " 张牌。";
+    }
+    if (StartsWith(text, "First summon this turn adds enemy heat by ") && EndsWith(text, ".")) {
+        return "本回合首次召唤使敌方热量增加 " + text.substr(41, text.size() - 42) + " 点。";
+    }
 
     return text;
 }

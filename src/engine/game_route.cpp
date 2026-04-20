@@ -270,7 +270,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
     // --- Market ---
     if (node.typeId == "market") {
         clearMarketState();
-        state_.marketOfferCardIds = randomCardChoices(3);
+        state_.marketOfferCardIds = randomMarketCardChoices(3);
         openMarketShop();
         return;
     }

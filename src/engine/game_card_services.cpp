@@ -15,6 +15,7 @@ constexpr const char* kPayloadPrevUpgrade = "service_prev_upgrade";
 constexpr const char* kPayloadCycleUpgrade = "service_cycle_upgrade";
 constexpr const char* kPayloadBackMarket = "service_back_market";
 constexpr const char* kPayloadSkipService = "service_skip_service";
+constexpr const char* kTemporaryCopyPrefix = "tmp|";
 
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
@@ -24,24 +25,28 @@ void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
 }  // namespace
 
 std::string GameEngine::baseCardId(const std::string& cardRef) const {
-    const size_t separator = cardRef.rfind('@');
+    const std::string normalized =
+        cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
+    const size_t separator = normalized.rfind('@');
     if (separator == std::string::npos) {
-        return cardRef;
+        return normalized;
     }
-    const std::string suffix = cardRef.substr(separator + 1);
+    const std::string suffix = normalized.substr(separator + 1);
     if (suffix.empty() ||
         !std::all_of(suffix.begin(), suffix.end(), [](unsigned char ch) { return ch >= '0' && ch <= '9'; })) {
-        return cardRef;
+        return normalized;
     }
-    return cardRef.substr(0, separator);
+    return normalized.substr(0, separator);
 }
 
 int GameEngine::cardUpgradeLevel(const std::string& cardRef) const {
-    const size_t separator = cardRef.rfind('@');
+    const std::string normalized =
+        cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
+    const size_t separator = normalized.rfind('@');
     if (separator == std::string::npos) {
         return 0;
     }
-    const std::string suffix = cardRef.substr(separator + 1);
+    const std::string suffix = normalized.substr(separator + 1);
     if (suffix.empty() ||
         !std::all_of(suffix.begin(), suffix.end(), [](unsigned char ch) { return ch >= '0' && ch <= '9'; })) {
         return 0;
@@ -237,7 +242,37 @@ bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
            card->weakenTurns != 0 ||
            (card->removeEnemyShield > 0 && card->removeEnemyShield < 999) ||
            card->shieldLockTurns != 0 ||
-           card->salvageBonus != 0;
+           card->salvageBonus != 0 ||
+           card->summonDroneCount != 0 ||
+           card->summonDroneAttack != 0 ||
+           card->summonDroneShield != 0 ||
+           card->summonDroneDuration != 0 ||
+           card->buffDroneAttack != 0 ||
+           card->buffDroneShield != 0 ||
+           card->formShift != 0 ||
+           card->formToggle ||
+           card->overloadIncomingDamageReducePercent != 0 ||
+           card->leaveDefenseEnergyBonus != 0 ||
+           card->leaveDefenseShieldBonus != 0 ||
+           card->auxImmediateTriggerTimes != 0 ||
+           card->auxEndTurnExtraTriggerTimes != 0 ||
+           card->auxEffectPercentBonus != 0 ||
+           card->auxDestroyCount != 0 ||
+           card->auxDestroyRewardMultiplierPercent != 0 ||
+           card->firstSummonExtraCopies != 0 ||
+           card->firstSummonExtraScope != 0 ||
+           card->summonCardPlayedDrawThisTurn != 0 ||
+           card->formChangesThisTurnThreshold != 0 ||
+           card->formChangesThisTurnBonusDamage != 0 ||
+           card->firstEnterHighHeatEnergyThisBattle != 0 ||
+           card->firstEnterHighHeatDrawThisBattle != 0 ||
+           card->eachEnterHighHeatDrawThisBattle != 0 ||
+           card->firstSummonEnemyHeatPerTurnThisBattle != 0 ||
+           card->firstSummonEnemyHeatAttackBonusPerTurnThisBattle != 0 ||
+           card->enterOverloadEnemyHeatThisBattle != 0 ||
+           card->leaveDefenseEnemyHeatThisBattle != 0 ||
+           card->blackboxCopyCount != 0 ||
+           card->blackboxProtocol;
 }
 
 CardDef GameEngine::applyUpgrade(const CardDef& baseCard, int upgradeLevel) const {
@@ -274,6 +309,34 @@ CardDef GameEngine::applyUpgrade(const CardDef& baseCard, int upgradeLevel) cons
         }
         upgraded.shieldLockTurns = scale_value(upgraded.shieldLockTurns);
         upgraded.salvageBonus = scale_value(upgraded.salvageBonus);
+        upgraded.summonDroneCount = scale_value(upgraded.summonDroneCount);
+        upgraded.summonDroneAttack = scale_value(upgraded.summonDroneAttack);
+        upgraded.summonDroneShield = scale_value(upgraded.summonDroneShield);
+        if (upgraded.summonDroneDuration > 0) {
+            upgraded.summonDroneDuration = scale_value(upgraded.summonDroneDuration);
+        }
+        upgraded.buffDroneAttack = scale_value(upgraded.buffDroneAttack);
+        upgraded.buffDroneShield = scale_value(upgraded.buffDroneShield);
+        upgraded.auxImmediateTriggerTimes = scale_value(upgraded.auxImmediateTriggerTimes);
+        upgraded.auxEndTurnExtraTriggerTimes = scale_value(upgraded.auxEndTurnExtraTriggerTimes);
+        upgraded.auxEffectPercentBonus = scale_value(upgraded.auxEffectPercentBonus);
+        upgraded.auxDestroyCount = scale_value(upgraded.auxDestroyCount);
+        upgraded.auxDestroyRewardMultiplierPercent = scale_value(upgraded.auxDestroyRewardMultiplierPercent);
+        upgraded.firstSummonExtraCopies = scale_value(upgraded.firstSummonExtraCopies);
+        upgraded.summonCardPlayedDrawThisTurn = scale_value(upgraded.summonCardPlayedDrawThisTurn);
+        upgraded.formChangesThisTurnBonusDamage = scale_value(upgraded.formChangesThisTurnBonusDamage);
+        upgraded.firstEnterHighHeatEnergyThisBattle = scale_value(upgraded.firstEnterHighHeatEnergyThisBattle);
+        upgraded.firstEnterHighHeatDrawThisBattle = scale_value(upgraded.firstEnterHighHeatDrawThisBattle);
+        upgraded.eachEnterHighHeatDrawThisBattle = scale_value(upgraded.eachEnterHighHeatDrawThisBattle);
+        upgraded.firstSummonEnemyHeatPerTurnThisBattle = scale_value(upgraded.firstSummonEnemyHeatPerTurnThisBattle);
+        upgraded.firstSummonEnemyHeatAttackBonusPerTurnThisBattle =
+            scale_value(upgraded.firstSummonEnemyHeatAttackBonusPerTurnThisBattle);
+        upgraded.enterOverloadEnemyHeatThisBattle = scale_value(upgraded.enterOverloadEnemyHeatThisBattle);
+        upgraded.leaveDefenseEnemyHeatThisBattle = scale_value(upgraded.leaveDefenseEnemyHeatThisBattle);
+        upgraded.overloadIncomingDamageReducePercent = scale_value(upgraded.overloadIncomingDamageReducePercent);
+        upgraded.blackboxCopyCount = scale_value(upgraded.blackboxCopyCount);
+        upgraded.leaveDefenseEnergyBonus = scale_value(upgraded.leaveDefenseEnergyBonus);
+        upgraded.leaveDefenseShieldBonus = scale_value(upgraded.leaveDefenseShieldBonus);
     }
     return upgraded;
 }
@@ -749,7 +812,7 @@ bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
 
 void GameEngine::openMarketShop() {
     if (state_.marketOfferCardIds.empty()) {
-        state_.marketOfferCardIds = randomCardChoices(3);
+        state_.marketOfferCardIds = randomMarketCardChoices(3);
     }
 
     state_.encounter = {};

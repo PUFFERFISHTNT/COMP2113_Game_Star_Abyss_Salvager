@@ -292,6 +292,117 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
     if (card.clearHeat) clauses.push_back(Tr(language, "Remove all heat", "清空全部热量"));
     if (card.salvageBonus > 0) clauses.push_back(Tr(language, "If you win this battle, gain +", "若本场战斗获胜，额外获得 +") +
                                                  std::to_string(card.salvageBonus) + Tr(language, " credits", " 金币"));
+    if (card.summonDroneCount > 0) {
+        std::string clause = Tr(language, "Deploy ", "部署 ") + std::to_string(card.summonDroneCount) +
+                             Tr(language, " auxiliary drone(s)", " 架附属舰");
+        if (card.summonDroneAttack > 0 || card.summonDroneShield > 0) {
+            clause += Tr(language, " (", "（") +
+                      Tr(language, "ATK ", "攻击 ") + std::to_string(card.summonDroneAttack) + ", " +
+                      Tr(language, "SHD ", "护盾 ") + std::to_string(card.summonDroneShield) +
+                      Tr(language, " each)", "）");
+        }
+        if (card.summonDroneDuration > 0) {
+            clause += Tr(language, ", duration ", "，持续 ") + std::to_string(card.summonDroneDuration) +
+                      Tr(language, " turns", " 回合");
+        }
+        clauses.push_back(clause);
+    }
+    if (card.buffDroneAttack != 0 || card.buffDroneShield != 0) {
+        clauses.push_back(Tr(language, "All active auxiliary ships gain ", "所有在场附属舰获得 ") +
+                          Tr(language, "ATK ", "攻击 ") + std::to_string(card.buffDroneAttack) + " / " +
+                          Tr(language, "SHD ", "护盾 ") + std::to_string(card.buffDroneShield));
+    }
+    if (card.auxImmediateTriggerTimes > 0) {
+        clauses.push_back(Tr(language, "All active auxiliary ships trigger immediately x",
+                             "所有在场附属舰立即触发 x") + std::to_string(card.auxImmediateTriggerTimes));
+    }
+    if (card.auxEndTurnExtraTriggerTimes > 0) {
+        clauses.push_back(Tr(language, "Auxiliary end-turn triggers +",
+                             "附属舰回合结束额外触发 +") + std::to_string(card.auxEndTurnExtraTriggerTimes));
+    }
+    if (card.auxEffectPercentBonus > 0) {
+        clauses.push_back(Tr(language, "Auxiliary effect output +", "附属舰效果提升 +") +
+                          std::to_string(card.auxEffectPercentBonus) + "%");
+    }
+    if (card.auxDestroyCount > 0) {
+        clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
+                          Tr(language, " auxiliary ships for immediate rewards x", " 个附属舰并按即时收益倍率 x") +
+                          std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+    }
+    if (card.firstSummonExtraCopies > 0 && card.firstSummonExtraScope > 0) {
+        const std::string scope = card.firstSummonExtraScope >= 2 ? Tr(language, "each turn", "每回合")
+                                                                   : Tr(language, "once this battle", "本场战斗首次");
+        clauses.push_back(Tr(language, "First summon protocol (", "首次召唤协议（") + scope + Tr(language, "): +", "）：额外 +") +
+                          std::to_string(card.firstSummonExtraCopies) + Tr(language, " same-type copy", " 个同类型复制"));
+    }
+    if (card.summonCardPlayedDrawThisTurn > 0) {
+        clauses.push_back(Tr(language, "This turn, whenever you play a summon card, draw ",
+                             "本回合每打出 1 张召唤附属舰牌，抽 ") +
+                          std::to_string(card.summonCardPlayedDrawThisTurn) + Tr(language, " card(s)", " 张牌"));
+    }
+    if (card.formChangesThisTurnThreshold > 0 && card.formChangesThisTurnBonusDamage > 0) {
+        clauses.push_back(Tr(language, "If you changed form at least ", "若你本回合改变形态至少 ") +
+                          std::to_string(card.formChangesThisTurnThreshold) +
+                          Tr(language, " time(s), gain +", " 次，额外造成 +") +
+                          std::to_string(card.formChangesThisTurnBonusDamage) + Tr(language, " damage", " 点伤害"));
+    }
+    if (card.firstEnterHighHeatEnergyThisBattle > 0 || card.firstEnterHighHeatDrawThisBattle > 0) {
+        clauses.push_back(Tr(language, "First time entering high heat this battle: ", "本场战斗首次进入高热量：") +
+                          Tr(language, "+", "+") + std::to_string(card.firstEnterHighHeatEnergyThisBattle) +
+                          Tr(language, " energy, draw ", " 能量，抽 ") + std::to_string(card.firstEnterHighHeatDrawThisBattle) +
+                          Tr(language, " card(s)", " 张牌"));
+    }
+    if (card.eachEnterHighHeatDrawThisBattle > 0) {
+        clauses.push_back(Tr(language, "Each later high-heat entry this battle draws ",
+                             "本场战斗后续每次进入高热量，抽 ") +
+                          std::to_string(card.eachEnterHighHeatDrawThisBattle) + Tr(language, " card(s)", " 张牌"));
+    }
+    if (card.firstSummonEnemyHeatPerTurnThisBattle > 0) {
+        clauses.push_back(Tr(language, "Each turn, your first summon adds enemy heat ",
+                             "每回合你的首次召唤使敌方获得热量 ") +
+                          std::to_string(card.firstSummonEnemyHeatPerTurnThisBattle) +
+                          Tr(language, " (attack summon bonus +", "（攻击型召唤额外 +") +
+                          std::to_string(card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle) + ")");
+    }
+    if (card.enterOverloadEnemyHeatThisBattle > 0 || card.leaveDefenseEnemyHeatThisBattle > 0) {
+        clauses.push_back(Tr(language, "This battle: entering Overload adds enemy heat ",
+                             "本场战斗：进入过载使敌方热量 +") +
+                          std::to_string(card.enterOverloadEnemyHeatThisBattle) +
+                          Tr(language, ", leaving Defense adds ", "；离开防御使敌方热量 +") +
+                          std::to_string(card.leaveDefenseEnemyHeatThisBattle));
+    }
+    if (card.formShift != 0) {
+        std::string target = card.formShift == 1 ? Tr(language, "Overload", "过载形态")
+                             : card.formShift == 2 ? Tr(language, "Defense", "防御形态")
+                                                   : Tr(language, "Neutral", "中立形态");
+        clauses.push_back(Tr(language, "Shift to ", "切换到 ") + target);
+    }
+    if (card.formExit) {
+        clauses.push_back(Tr(language, "Exit current form", "脱离当前形态"));
+    }
+    if (card.formToggle) {
+        clauses.push_back(Tr(language, "Toggle between Overload and Defense forms",
+                             "在过载形态与防御形态之间切换"));
+    }
+    if (card.overloadIncomingDamageReducePercent > 0) {
+        clauses.push_back(Tr(language, "While in Overload this turn, incoming damage modifier -",
+                             "本回合处于过载时，受伤修正降低 ") +
+                          std::to_string(card.overloadIncomingDamageReducePercent) + "%");
+    }
+    if (card.blackboxProtocol) {
+        clauses.push_back(Tr(language,
+                             "Exile 1 card from hand. At the start of each turn, add temporary copies of that card to hand. Copies vanish when leaving hand",
+                             "放逐手牌中的 1 张牌。每回合开始将其临时复制加入手牌，复制牌离手即消失"));
+    }
+    if (card.blackboxCopyCount > 0) {
+        clauses.push_back(Tr(language, "Temporary copies each turn: ", "每回合临时复制数量：") +
+                          std::to_string(card.blackboxCopyCount));
+    }
+    if (card.leaveDefenseEnergyBonus > 0 || card.leaveDefenseShieldBonus > 0) {
+        clauses.push_back(Tr(language, "When leaving Defense, gain ", "离开防御形态时，获得 ") +
+                          Tr(language, "next-turn energy ", "下回合能量 ") + std::to_string(card.leaveDefenseEnergyBonus) +
+                          Tr(language, " and shield ", " 与护盾 ") + std::to_string(card.leaveDefenseShieldBonus));
+    }
     if (card.randomEffect) clauses.push_back(Tr(language, "Trigger one strong but unpredictable effect", "触发一个强力但不可预测的效果"));
 
     const std::string generated = JoinClauses(language, clauses);
@@ -487,6 +598,85 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.halveHeat) facts.push_back(Tr(language, "Halve heat", "热量减半"));
     if (card.clearHeat) facts.push_back(Tr(language, "Clear heat", "清空热量"));
     if (card.salvageBonus > 0) facts.push_back(Tr(language, "Battle credits +", "战斗金币 +") + std::to_string(card.salvageBonus));
+    if (card.summonDroneCount > 0) facts.push_back(Tr(language, "Summon drones x", "部署附属舰 x") + std::to_string(card.summonDroneCount));
+    if (card.summonDroneAttack != 0 || card.summonDroneShield != 0) {
+        facts.push_back(Tr(language, "Drone stats A/S ", "附属舰攻防 ") + std::to_string(card.summonDroneAttack) +
+                        "/" + std::to_string(card.summonDroneShield));
+    }
+    if (card.summonDroneDuration > 0) facts.push_back(Tr(language, "Drone duration ", "附属舰持续 ") + std::to_string(card.summonDroneDuration));
+    if (card.buffDroneAttack != 0 || card.buffDroneShield != 0) {
+        facts.push_back(Tr(language, "Drone buff A/S ", "附属舰增幅 ") + std::to_string(card.buffDroneAttack) +
+                        "/" + std::to_string(card.buffDroneShield));
+    }
+    if (card.auxImmediateTriggerTimes > 0) {
+        facts.push_back(Tr(language, "Aux immediate x", "附属舰立即触发 x") + std::to_string(card.auxImmediateTriggerTimes));
+    }
+    if (card.auxEndTurnExtraTriggerTimes > 0) {
+        facts.push_back(Tr(language, "Aux end-turn +x", "附属舰回合末 +x") + std::to_string(card.auxEndTurnExtraTriggerTimes));
+    }
+    if (card.auxEffectPercentBonus > 0) {
+        facts.push_back(Tr(language, "Aux effect +", "附属舰效果 +") + std::to_string(card.auxEffectPercentBonus) + "%");
+    }
+    if (card.auxDestroyCount > 0) {
+        facts.push_back(Tr(language, "Dismantle x", "拆解数量 x") + std::to_string(card.auxDestroyCount));
+        facts.push_back(Tr(language, "Destroy reward ", "拆解收益倍率 ") + std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+    }
+    if (card.firstSummonExtraCopies > 0 && card.firstSummonExtraScope > 0) {
+        const std::string scope = card.firstSummonExtraScope >= 2 ? Tr(language, "turn", "回合")
+                                                                   : Tr(language, "battle", "战斗");
+        facts.push_back(Tr(language, "First summon +", "首次召唤 +") + std::to_string(card.firstSummonExtraCopies) +
+                        Tr(language, " (scope ", "（范围 ") + scope + ")");
+    }
+    if (card.summonCardPlayedDrawThisTurn > 0) {
+        facts.push_back(Tr(language, "Summon draw/turn +", "召唤抽牌/回合 +") + std::to_string(card.summonCardPlayedDrawThisTurn));
+    }
+    if (card.formChangesThisTurnThreshold > 0 && card.formChangesThisTurnBonusDamage > 0) {
+        facts.push_back(Tr(language, "Form changes >= ", "形态变化 >= ") + std::to_string(card.formChangesThisTurnThreshold) +
+                        Tr(language, " then DMG +", " 时伤害 +") + std::to_string(card.formChangesThisTurnBonusDamage));
+    }
+    if (card.firstEnterHighHeatEnergyThisBattle > 0 || card.firstEnterHighHeatDrawThisBattle > 0) {
+        facts.push_back(Tr(language, "First high-heat E/D ", "首入高热量 能量/抽牌 ") +
+                        std::to_string(card.firstEnterHighHeatEnergyThisBattle) + "/" +
+                        std::to_string(card.firstEnterHighHeatDrawThisBattle));
+    }
+    if (card.eachEnterHighHeatDrawThisBattle > 0) {
+        facts.push_back(Tr(language, "Each high-heat draw ", "每次高热量抽牌 ") +
+                        std::to_string(card.eachEnterHighHeatDrawThisBattle));
+    }
+    if (card.firstSummonEnemyHeatPerTurnThisBattle > 0) {
+        facts.push_back(Tr(language, "First summon enemy heat ", "首次召唤敌热 ") +
+                        std::to_string(card.firstSummonEnemyHeatPerTurnThisBattle));
+        if (card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle > 0) {
+            facts.push_back(Tr(language, "Atk summon bonus +", "攻击召唤加成 +") +
+                            std::to_string(card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle));
+        }
+    }
+    if (card.enterOverloadEnemyHeatThisBattle > 0 || card.leaveDefenseEnemyHeatThisBattle > 0) {
+        facts.push_back(Tr(language, "Overload/Defense enemy heat ", "过载入场/防御离场敌热 ") +
+                        std::to_string(card.enterOverloadEnemyHeatThisBattle) + "/" +
+                        std::to_string(card.leaveDefenseEnemyHeatThisBattle));
+    }
+    if (card.formShift != 0) {
+        const std::string target = card.formShift == 1 ? Tr(language, "Overload", "过载")
+                                    : card.formShift == 2 ? Tr(language, "Defense", "防御")
+                                                          : Tr(language, "Neutral", "中立");
+        facts.push_back(Tr(language, "Form -> ", "形态 -> ") + target);
+    }
+    if (card.formExit) facts.push_back(Tr(language, "Exit current form", "脱离当前形态"));
+    if (card.formToggle) facts.push_back(Tr(language, "Form toggle", "形态切换"));
+    if (card.overloadIncomingDamageReducePercent > 0) {
+        facts.push_back(Tr(language, "Overload dmg mod -", "过载受伤修正 -") +
+                        std::to_string(card.overloadIncomingDamageReducePercent) + "%");
+    }
+    if (card.blackboxProtocol) facts.push_back(Tr(language, "Blackbox protocol", "黑箱协议"));
+    if (card.blackboxCopyCount > 0) {
+        facts.push_back(Tr(language, "Temp copies/turn ", "每回合临时复制 ") + std::to_string(card.blackboxCopyCount));
+    }
+    if (card.leaveDefenseEnergyBonus > 0 || card.leaveDefenseShieldBonus > 0) {
+        facts.push_back(Tr(language, "Exit Defense E/S ", "离开防御奖励 能量/护盾 ") +
+                        std::to_string(card.leaveDefenseEnergyBonus) + "/" +
+                        std::to_string(card.leaveDefenseShieldBonus));
+    }
     if (card.randomEffect) facts.push_back(Tr(language, "Volatile effect", "不稳定效果"));
     return facts;
 }
@@ -503,6 +693,11 @@ std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& 
     if (state.player.salvageBonus > 0) lines.push_back(Tr(language, "Reward bonus +", "奖励金币加成 +") + std::to_string(state.player.salvageBonus) + Tr(language, " credits.", " 金币。"));
     if (state.player.openingEnergyBonus > 0) lines.push_back(Tr(language, "Next battle +", "下场战斗 +") + std::to_string(state.player.openingEnergyBonus) + Tr(language, " opening energy.", " 初始能量。"));
     if (state.player.openingShieldBonus > 0) lines.push_back(Tr(language, "Next battle +", "下场战斗 +") + std::to_string(state.player.openingShieldBonus) + Tr(language, " opening shield.", " 初始护盾。"));
+    const std::string form_name = state.player.form == 1 ? Tr(language, "Overload", "过载")
+                                  : state.player.form == 2 ? Tr(language, "Defense", "防御")
+                                                           : Tr(language, "Neutral", "中立");
+    lines.push_back(Tr(language, "Combat form: ", "战斗形态：") + form_name);
+    lines.push_back(Tr(language, "Auxiliary ships: ", "附属舰数量：") + std::to_string(state.auxiliaryShips.size()));
     return lines;
 }
 
@@ -538,6 +733,17 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
         lines.push_back(Tr(language, "Reward bonus +", "奖励金币加成 +") + std::to_string(state.player.salvageBonus) +
                         Tr(language, " credits", " 金币"));
     }
+    const std::string form_name = state.player.form == 1 ? Tr(language, "Overload", "过载")
+                                  : state.player.form == 2 ? Tr(language, "Defense", "防御")
+                                                           : Tr(language, "Neutral", "中立");
+    lines.push_back(Tr(language, "Combat form: ", "战斗形态：") + form_name);
+    if (state.player.form == 1) {
+        lines.push_back(Tr(language, "Overload effect: deal and take double damage", "过载效果：造成与受到伤害均翻倍"));
+    } else if (state.player.form == 2) {
+        lines.push_back(Tr(language, "Defense release bonus is defined by cards when exiting the form",
+                           "防御形态离开奖励由具体切换卡决定"));
+    }
+    lines.push_back(Tr(language, "Active auxiliary ships: ", "在场附属舰：") + std::to_string(state.auxiliaryShips.size()));
     return lines;
 }
 

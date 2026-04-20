@@ -58,11 +58,42 @@ struct CardDef {
     int removeEnemyShield = 0;
     int shieldLockTurns = 0;
     int salvageBonus = 0;
+    int summonDroneCount = 0;
+    int summonDroneAttack = 0;
+    int summonDroneShield = 0;
+    int summonDroneDuration = 0;
+    int buffDroneAttack = 0;
+    int buffDroneShield = 0;
+    int auxImmediateTriggerTimes = 0;
+    int auxEndTurnExtraTriggerTimes = 0;
+    int auxEffectPercentBonus = 0;
+    int auxDestroyCount = 0;
+    int auxDestroyRewardMultiplierPercent = 0;
+    int firstSummonExtraCopies = 0;
+    int firstSummonExtraScope = 0;
+    int summonCardPlayedDrawThisTurn = 0;
+    int formChangesThisTurnThreshold = 0;
+    int formChangesThisTurnBonusDamage = 0;
+    int firstEnterHighHeatEnergyThisBattle = 0;
+    int firstEnterHighHeatDrawThisBattle = 0;
+    int eachEnterHighHeatDrawThisBattle = 0;
+    int firstSummonEnemyHeatPerTurnThisBattle = 0;
+    int firstSummonEnemyHeatAttackBonusPerTurnThisBattle = 0;
+    int enterOverloadEnemyHeatThisBattle = 0;
+    int leaveDefenseEnemyHeatThisBattle = 0;
+    int formShift = 0;
+    int overloadIncomingDamageReducePercent = 0;
+    int blackboxCopyCount = 0;
+    int leaveDefenseEnergyBonus = 0;
+    int leaveDefenseShieldBonus = 0;
+    bool formToggle = false;
+    bool formExit = false;
     bool ignoreShield = false;
     bool shieldToDamage = false;
     bool halveHeat = false;
     bool clearHeat = false;
     bool randomEffect = false;
+    bool blackboxProtocol = false;
 };
 
 struct CardView {
@@ -140,11 +171,61 @@ struct PlayerState {
     int nextAttackMultiplier = 1;
     int salvageBonus = 0;
     int attacksPlayedThisTurn = 0;
+    int form = 0;
+    int auxEndTurnExtraTriggersThisTurn = 0;
+    int auxEffectPercentBonusThisTurn = 0;
+    int overloadIncomingDamageReducePercentThisTurn = 0;
+    int firstSummonExtraCopies = 0;
+    int firstSummonExtraScope = 0;
+    int blackboxCopyCount = 0;
+    int summonCardPlayedDrawThisTurnBuff = 0;
+    int formChangesThisTurn = 0;
+    int firstEnterHighHeatEnergyThisBattle = 0;
+    int firstEnterHighHeatDrawThisBattle = 0;
+    int eachEnterHighHeatDrawThisBattle = 0;
+    int firstSummonEnemyHeatPerTurnThisBattle = 0;
+    int firstSummonEnemyHeatAttackBonusPerTurnThisBattle = 0;
+    int enterOverloadEnemyHeatThisBattle = 0;
+    int leaveDefenseEnemyHeatThisBattle = 0;
+    int heatGainedThisTurn = 0;
+    int heatReducedThisTurn = 0;
+    int enemyHeatRaisedThisTurn = 0;
+    int nextHeatGainReductionThisTurn = 0;
+    int nextAttackEnemyHeatBonusThisTurn = 0;
+    int attackBonusPerHeatThisTurn = 0;
+    int attackBonusPerHeatCapThisTurn = 0;
+    int attackBonusFromHeatGainThisBattle = 0;
+    int attackBonusPerHeatGainPointThisBattle = 0;
+    int killAttackBonusThisBattle = 0;
+    int auxTriggerEnemyHeatBonusThisTurn = 0;
+    int formChangeDrawThisTurn = 0;
+    int overheatSelfDamageBlockThisTurn = 0;
+    int auxOnRemoveDrawThisBattle = 0;
+    int auxOnRemoveEnergyThisBattle = 0;
+    bool firstSummonUsedThisBattle = false;
+    bool firstSummonUsedThisTurn = false;
+    bool firstEnterHighHeatTriggeredThisBattle = false;
+    bool firstSummonEnemyHeatTriggeredThisTurn = false;
+    bool enteredOverloadThisTurn = false;
+    bool exitedDefenseThisTurn = false;
+    bool exitedFormThisTurn = false;
+    bool blackboxSelectionPending = false;
+    int pendingBlackboxCopyCount = 0;
+    std::string blackboxImprintRef;
     bool emergencyBatteryUsed = false;
     std::vector<std::string> relics;
     std::vector<std::string> drawPile;
     std::vector<std::string> hand;
     std::vector<std::string> discardPile;
+    std::vector<std::string> exilePile;
+};
+
+struct AuxiliaryShipState {
+    std::string unitId;
+    std::string displayName;
+    int attack = 0;
+    int shield = 0;
+    int remainingTurns = 0;
 };
 
 struct EnemyState {
@@ -192,6 +273,7 @@ struct RunState {
     InfoState info;
     AnimationState animation;
     std::vector<std::string> battleLog;
+    std::vector<AuxiliaryShipState> auxiliaryShips;
 };
 
 class GameEngine {
@@ -306,6 +388,7 @@ private:
     std::string makeDeckInstancePayload(const std::string& pileId, size_t index) const;
     bool parseDeckInstancePayload(const std::string& payload, std::string* pileId, size_t* index) const;
     bool replaceDeckInstanceCardRef(const std::string& payload, const std::string& newCardRef);
+    std::string playerFormLabel() const;
     std::string baseCardId(const std::string& cardRef) const;
     std::string makeCardRef(const std::string& cardId, int upgradeLevel) const;
     CardDef applyUpgrade(const CardDef& baseCard, int upgradeLevel) const;
@@ -330,6 +413,20 @@ private:
     int playerOverheatStage() const;
     void syncPlayerOverheatState();
     void advancePlayerOverheatRound();
+    void summonAuxiliaryShips(const CardDef& card);
+    void resolveAuxiliaryShipsEndTurn();
+    void triggerAuxiliaryShipsNow(int times);
+    void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
+    bool resolveBlackboxProtocol(size_t handIndex);
+    bool isTemporaryCopyRef(const std::string& cardRef) const;
+    std::string makeTemporaryCopyRef(const std::string& cardRef) const;
+    std::string unwrapTemporaryCopyRef(const std::string& cardRef) const;
+    void addBlackboxTurnCopies();
+    void buffAuxiliaryShips(const CardDef& card);
+    void onAuxiliaryShipRemoved(const AuxiliaryShipState& ship, const char* reason);
+    void shiftPlayerForm(const CardDef& card);
+    void togglePlayerForm();
+    void clearDestroyedAuxiliaryShips();
     void changeEnemyHeat(int delta);
     bool enemyIsOverheated() const;
     int enemyOverheatStage() const;
@@ -354,6 +451,7 @@ private:
                         int duration);
 
     std::vector<std::string> randomCardChoices(size_t count);
+    std::vector<std::string> randomMarketCardChoices(size_t count);
     std::string randomRelic();
     const EnemyTemplate& pickEnemy(const std::string& nodeType);
     const EnemyTemplate* enemyTemplateById(const std::string& id) const;
