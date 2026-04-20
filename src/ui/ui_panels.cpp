@@ -379,6 +379,84 @@ Color CardBackground(const CardDef* card, bool playable) {
     return Color::RGB(13, 34, 49);
 }
 
+Element ServiceDeckCardPanel(UiLanguage language,
+                             const CardOwnershipEntry& entry,
+                             bool selectable,
+                             int hotkey,
+                             bool direct_select_mode,
+                             bool focused_target,
+                             bool purge_mode,
+                             int card_width,
+                             const CardDef* upgrade_preview) {
+    // The service grid mirrors the whole deck, but only cards enabled by the
+    // current service context should look actionable.
+    const CardDef& card = entry.card.def;
+    Elements description_lines;
+    for (const std::string& line : CardDescriptionLines(language, card)) {
+        description_lines.push_back(text(line) | color(Color::White));
+    }
+    if (description_lines.empty()) {
+        description_lines.push_back(text(TranslateGameText(language, card.description)) | color(Color::White));
+    }
+
+    std::vector<std::string> facts = CardFacts(language, card);
+    facts.insert(facts.begin(), Tr(language, "Copies x", "持有数量 x") + std::to_string(std::max(1, entry.copies)));
+    const std::string fact_text = CompactFactText(language, facts);
+
+    const Color accent = focused_target ? Color::RGB(255, 245, 160)
+                                        : (selectable ? (purge_mode ? kEnemy : kGold) : CardAccent(&card));
+    const Color frame = focused_target ? Color::RGB(255, 245, 160) : (selectable ? accent : CardFrameColor(&card));
+    const Color background = focused_target ? Color::RGB(62, 48, 18)
+                                            : (selectable ? CardBackground(&card, true) : Color::RGB(10, 17, 31));
+    const Color meta_color = selectable ? kHull : Color::RGB(150, 160, 178);
+    const std::string status = focused_target
+                                   ? (direct_select_mode
+                                          ? (purge_mode ? Tr(language, "Focused target: click or press Enter to purge", "当前选中目标：点击或按回车以移除")
+                                                        : Tr(language, "Focused target: click or press Enter to upgrade", "当前选中目标：点击或按回车以升级"))
+                                          : (Tr(language, "Focused target: press ", "当前选中目标：按 ") + std::to_string(hotkey) +
+                                             (purge_mode ? Tr(language, " to purge", " 以移除") : Tr(language, " to upgrade", " 以升级"))))
+                                   : selectable
+                                         ? (direct_select_mode
+                                                ? (purge_mode ? Tr(language, "Target: hover/click to purge", "目标：悬停/点击以移除")
+                                                              : Tr(language, "Target: hover/click to upgrade", "目标：悬停/点击以升级"))
+                                                : (Tr(language, "Target: press ", "目标：按 ") + std::to_string(hotkey) +
+                                                   (purge_mode ? Tr(language, " to purge", " 以移除") : Tr(language, " to upgrade", " 以升级"))))
+                                   : (purge_mode ? Tr(language, "Status: unavailable", "状态：不可移除")
+                                                 : Tr(language, "Status: unavailable", "状态：不可升级"));
+
+    Elements body = {
+        text(TranslateGameText(language, card.name) + Tr(language, " x", " x") + std::to_string(std::max(1, entry.copies))) |
+            color(accent) | bold,
+        text(status) | color(focused_target ? Color::RGB(255, 245, 160) : (selectable ? kGold : kDim)),
+        separator(),
+        text(Tr(language, "Cost ", "费用 ") + std::to_string(card.cost) + "   " +
+             Tr(language, "Type: ", "类型：") + TranslateGameText(language, card.type)) |
+            color(meta_color),
+        separator(),
+        vbox(std::move(description_lines)),
+        paragraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
+                                    : fact_text) |
+            color(selectable ? kDim : Color::RGB(117, 126, 142)),
+    };
+
+    if (upgrade_preview != nullptr) {
+        body.push_back(separator());
+        body.push_back(text(Tr(language, "Upgrade after:", "升级后效果：")) | color(Color::RGB(255, 210, 120)) | bold);
+        body.push_back(paragraph(CardDescriptionText(language, *upgrade_preview)) | color(Color::White));
+        const std::string current_facts = CompactFactText(language, CardFacts(language, card));
+        const std::string upgraded_facts = CompactFactText(language, CardFacts(language, *upgrade_preview));
+        if (upgraded_facts != current_facts && !upgraded_facts.empty()) {
+            body.push_back(paragraph(upgraded_facts) | color(kGold));
+        }
+    }
+
+    return vbox(std::move(body)) |
+           bgcolor(background) |
+           borderStyled(ROUNDED, frame) |
+           size(WIDTH, EQUAL, card_width) |
+           size(HEIGHT, GREATER_THAN, 10);
+}
+
 std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     std::vector<std::string> facts;
     if (card.damage > 0) {

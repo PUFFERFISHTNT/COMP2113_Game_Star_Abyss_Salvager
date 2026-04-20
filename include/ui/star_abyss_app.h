@@ -96,6 +96,14 @@ private:
     int saveSelected_ = 0;
     std::string saveNameInput_ = "save1";
     mutable ftxui::Box battleLaneRowsBox_;
+    mutable std::vector<ftxui::Box> serviceCardBoxes_;
+    mutable std::vector<size_t> serviceCardChoiceIndices_;
+    mutable ftxui::Box serviceActionBox_;
+    mutable bool serviceActionVisible_ = false;
+    mutable size_t serviceActionChoiceIndex_ = 0;
+    mutable int serviceFocusedCardIndex_ = 0;
+    mutable int serviceHoveredCardIndex_ = -1;
+    mutable int serviceCardsPerRow_ = 1;
     std::vector<std::string> saveEntries_;
     std::vector<std::string> saveSlotNames_;
     std::vector<std::string> savePaths_;

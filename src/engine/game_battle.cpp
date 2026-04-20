@@ -644,7 +644,9 @@ bool GameEngine::enemyShouldUseCooling() const {
 }
 
 int GameEngine::enemyCoolingAmount() const {
-    return 2;
+    // Enemy emergency cooling scales with sector depth:
+    // sector 1 -> 3 heat, sector 2 -> 4 heat, sector 3 -> 5 heat.
+    return std::max(3, std::min(5, state_.sector + 2));
 }
 
 void GameEngine::triggerEnemyCooling() {

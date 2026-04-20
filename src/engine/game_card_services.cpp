@@ -630,45 +630,25 @@ void GameEngine::enterMarketPurge(size_t offset) {
 
 void GameEngine::enterMarketUpgrade(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
-    const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
-    const size_t safeOffset =
-        candidates.empty() ? 0 : std::min(offset, ((candidates.size() - 1) / kCardServicePageSize) * kCardServicePageSize);
-    const size_t currentPage = candidates.empty() ? 1 : (safeOffset / kCardServicePageSize) + 1;
-    const size_t upper = std::min(candidates.size(), safeOffset + kCardServicePageSize);
     const int price = cardUpgradeCost(CardUpgradeSource::Market);
+    (void)offset;
 
     state_.encounter = {};
     state_.encounter.typeId = "market";
     state_.encounter.encounterId = "market_upgrade";
     state_.encounter.title = "Black Market Upgrade";
     state_.encounter.description =
-        "Select one card to upgrade. Current price: " + std::to_string(price) + " credits. Page " +
-        std::to_string(currentPage) + "/" + std::to_string(totalPages) +
-        ". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.";
+        "Select one card to upgrade. Current price: " + std::to_string(price) +
+        " credits. The full deck is shown below; scroll vertically if needed.";
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (size_t i = safeOffset; i < upper; ++i) {
-        state_.encounter.choices.push_back(displayCardName(candidates[i].first));
+    for (const auto& candidate : candidates) {
+        state_.encounter.choices.push_back(displayCardName(candidate.first));
         state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidates[i].second) + ".");
-        state_.encounter.payloadIds.push_back(candidates[i].first);
+                                           std::to_string(candidate.second) + ".");
+        state_.encounter.payloadIds.push_back(candidate.first);
         state_.encounter.payloadValues.push_back(price);
-    }
-    if (safeOffset > 0) {
-        const size_t previousOffset = safeOffset >= kCardServicePageSize ? safeOffset - kCardServicePageSize : 0;
-        state_.encounter.choices.push_back("Previous upgrade targets");
-        state_.encounter.details.push_back("Return to the previous page of cards that can be upgraded. Previous page: " +
-                                           std::to_string(currentPage - 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadPrevUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(previousOffset));
-    }
-    if (upper < candidates.size()) {
-        state_.encounter.choices.push_back("More upgrade targets");
-        state_.encounter.details.push_back("Cycle to the next page of cards that can be upgraded. Next page: " +
-                                           std::to_string(currentPage + 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadCycleUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(upper));
     }
     state_.encounter.choices.push_back("Back to broker");
     state_.encounter.details.push_back("Return to the black market offers.");
@@ -678,44 +658,23 @@ void GameEngine::enterMarketUpgrade(size_t offset) {
 
 void GameEngine::enterRepairUpgrade(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
-    const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
-    const size_t safeOffset =
-        candidates.empty() ? 0 : std::min(offset, ((candidates.size() - 1) / kCardServicePageSize) * kCardServicePageSize);
-    const size_t currentPage = candidates.empty() ? 1 : (safeOffset / kCardServicePageSize) + 1;
-    const size_t upper = std::min(candidates.size(), safeOffset + kCardServicePageSize);
+    (void)offset;
 
     state_.encounter = {};
     state_.encounter.typeId = "repair";
     state_.encounter.encounterId = "repair_upgrade";
     state_.encounter.title = "Repair Station Retrofit";
     state_.encounter.description =
-        "Select one card to upgrade for free at the repair station. Page " +
-        std::to_string(currentPage) + "/" + std::to_string(totalPages) +
-        ". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.";
+        "Select one card to upgrade for free at the repair station. The full deck is shown below; scroll vertically if needed.";
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (size_t i = safeOffset; i < upper; ++i) {
-        state_.encounter.choices.push_back(displayCardName(candidates[i].first));
+    for (const auto& candidate : candidates) {
+        state_.encounter.choices.push_back(displayCardName(candidate.first));
         state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidates[i].second) + ".");
-        state_.encounter.payloadIds.push_back(candidates[i].first);
+                                           std::to_string(candidate.second) + ".");
+        state_.encounter.payloadIds.push_back(candidate.first);
         state_.encounter.payloadValues.push_back(0);
-    }
-    if (safeOffset > 0) {
-        const size_t previousOffset = safeOffset >= kCardServicePageSize ? safeOffset - kCardServicePageSize : 0;
-        state_.encounter.choices.push_back("Previous upgrade targets");
-        state_.encounter.details.push_back("Return to the previous page of cards that can be upgraded. Previous page: " +
-                                           std::to_string(currentPage - 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadPrevUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(previousOffset));
-    }
-    if (upper < candidates.size()) {
-        state_.encounter.choices.push_back("More upgrade targets");
-        state_.encounter.details.push_back("Cycle to the next page of cards that can be upgraded. Next page: " +
-                                           std::to_string(currentPage + 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadCycleUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(upper));
     }
     state_.encounter.choices.push_back("Skip reward");
     state_.encounter.details.push_back("Leave the retrofit console unused and continue.");
@@ -772,44 +731,23 @@ void GameEngine::enterEventPurge(size_t offset) {
 
 void GameEngine::enterEventUpgrade(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
-    const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
-    const size_t safeOffset =
-        candidates.empty() ? 0 : std::min(offset, ((candidates.size() - 1) / kCardServicePageSize) * kCardServicePageSize);
-    const size_t currentPage = candidates.empty() ? 1 : (safeOffset / kCardServicePageSize) + 1;
-    const size_t upper = std::min(candidates.size(), safeOffset + kCardServicePageSize);
+    (void)offset;
 
     state_.encounter = {};
     state_.encounter.typeId = "event";
     state_.encounter.encounterId = "event_upgrade";
     state_.encounter.title = "Signal Calibration";
     state_.encounter.description =
-        "A tuning lattice lets you upgrade one card for free. Page " +
-        std::to_string(currentPage) + "/" + std::to_string(totalPages) +
-        ". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.";
+        "A tuning lattice lets you upgrade one card for free. The full deck is shown below; scroll vertically if needed.";
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (size_t i = safeOffset; i < upper; ++i) {
-        state_.encounter.choices.push_back(displayCardName(candidates[i].first));
+    for (const auto& candidate : candidates) {
+        state_.encounter.choices.push_back(displayCardName(candidate.first));
         state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidates[i].second) + ".");
-        state_.encounter.payloadIds.push_back(candidates[i].first);
+                                           std::to_string(candidate.second) + ".");
+        state_.encounter.payloadIds.push_back(candidate.first);
         state_.encounter.payloadValues.push_back(0);
-    }
-    if (safeOffset > 0) {
-        const size_t previousOffset = safeOffset >= kCardServicePageSize ? safeOffset - kCardServicePageSize : 0;
-        state_.encounter.choices.push_back("Previous upgrade targets");
-        state_.encounter.details.push_back("Return to the previous page of cards that can be upgraded. Previous page: " +
-                                           std::to_string(currentPage - 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadPrevUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(previousOffset));
-    }
-    if (upper < candidates.size()) {
-        state_.encounter.choices.push_back("More upgrade targets");
-        state_.encounter.details.push_back("Cycle to the next page of cards that can be upgraded. Next page: " +
-                                           std::to_string(currentPage + 1) + "/" + std::to_string(totalPages) + ".");
-        state_.encounter.payloadIds.push_back(kPayloadCycleUpgrade);
-        state_.encounter.payloadValues.push_back(static_cast<int>(upper));
     }
     state_.encounter.choices.push_back("Skip reward");
     state_.encounter.details.push_back("Leave the tuning lattice unused and continue.");

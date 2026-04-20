@@ -23,6 +23,15 @@ bool StarAbyssApp::ScrollActiveView(int delta_lines) {
 }
 
 bool StarAbyssApp::HandleEvent(Event event) {
+    const auto contains = [](const Box& box, int x, int y) {
+        return x >= box.x_min && x <= box.x_max && y >= box.y_min && y <= box.y_max;
+    };
+    const auto is_full_upgrade_gallery = [&]() {
+        return engine_.state().page == AppPage::Encounter &&
+               (engine_.state().encounter.encounterId == "market_upgrade" ||
+                engine_.state().encounter.encounterId == "repair_upgrade" ||
+                engine_.state().encounter.encounterId == "event_upgrade");
+    };
     const auto active_scroll_component = [&]() -> Component {
         if (saveDialogVisible_) {
             return saveDialogPage_;
@@ -85,6 +94,86 @@ bool StarAbyssApp::HandleEvent(Event event) {
 
     if (handle_mouse_wheel(event)) {
         return true;
+    }
+
+    if (is_full_upgrade_gallery() && event.is_mouse()) {
+        const int mouse_x = event.mouse().x;
+        const int mouse_y = event.mouse().y;
+        if (event.mouse().motion == Mouse::Moved) {
+            int hovered_index = -1;
+            for (size_t i = 0; i < serviceCardBoxes_.size() && i < serviceCardChoiceIndices_.size(); ++i) {
+                if (contains(serviceCardBoxes_[i], mouse_x, mouse_y)) {
+                    hovered_index = static_cast<int>(i);
+                    break;
+                }
+            }
+            if (hovered_index != serviceHoveredCardIndex_) {
+                serviceHoveredCardIndex_ = hovered_index;
+                if (hovered_index >= 0) {
+                    serviceFocusedCardIndex_ = hovered_index;
+                }
+                SyncUi();
+                return true;
+            }
+        }
+    }
+
+    if (is_full_upgrade_gallery() &&
+        event.is_mouse() &&
+        event.mouse().button == Mouse::Left &&
+        event.mouse().motion == Mouse::Released) {
+        const int mouse_x = event.mouse().x;
+        const int mouse_y = event.mouse().y;
+        for (size_t i = 0; i < serviceCardBoxes_.size() && i < serviceCardChoiceIndices_.size(); ++i) {
+            if (contains(serviceCardBoxes_[i], mouse_x, mouse_y)) {
+                serviceFocusedCardIndex_ = static_cast<int>(i);
+                engine_.resolveEncounter(serviceCardChoiceIndices_[i]);
+                AutoSave();
+                SyncUi();
+                return true;
+            }
+        }
+        if (serviceActionVisible_ && contains(serviceActionBox_, mouse_x, mouse_y)) {
+            return false;
+        }
+    }
+
+    if (is_full_upgrade_gallery()) {
+        const int card_count = static_cast<int>(serviceCardChoiceIndices_.size());
+        if (card_count > 0) {
+            const int columns = std::max(1, serviceCardsPerRow_);
+            if (event == Event::ArrowUp) {
+                serviceHoveredCardIndex_ = -1;
+                serviceFocusedCardIndex_ = std::max(0, serviceFocusedCardIndex_ - columns);
+                SyncUi();
+                return true;
+            }
+            if (event == Event::ArrowDown) {
+                serviceHoveredCardIndex_ = -1;
+                serviceFocusedCardIndex_ = std::min(card_count - 1, serviceFocusedCardIndex_ + columns);
+                SyncUi();
+                return true;
+            }
+            if (event == Event::ArrowLeft) {
+                serviceHoveredCardIndex_ = -1;
+                serviceFocusedCardIndex_ = std::max(0, serviceFocusedCardIndex_ - 1);
+                SyncUi();
+                return true;
+            }
+            if (event == Event::ArrowRight) {
+                serviceHoveredCardIndex_ = -1;
+                serviceFocusedCardIndex_ = std::min(card_count - 1, serviceFocusedCardIndex_ + 1);
+                SyncUi();
+                return true;
+            }
+            if (event == Event::Return || event == Event::Character('\n')) {
+                const size_t choice_index = serviceCardChoiceIndices_[static_cast<size_t>(serviceFocusedCardIndex_)];
+                engine_.resolveEncounter(choice_index);
+                AutoSave();
+                SyncUi();
+                return true;
+            }
+        }
     }
 
     if (event == Event::PageUp || event == Event::PageDown) {

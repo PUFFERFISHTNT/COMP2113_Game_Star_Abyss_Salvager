@@ -37,6 +37,15 @@ std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& 
 std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const RunState& state);
 std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunState& state);
 std::vector<std::string> RelicLines(UiLanguage language, const GameEngine& engine, const RunState& state);
+ftxui::Element ServiceDeckCardPanel(UiLanguage language,
+                                    const CardOwnershipEntry& entry,
+                                    bool selectable,
+                                    int hotkey,
+                                    bool direct_select_mode,
+                                    bool focused_target,
+                                    bool purge_mode,
+                                    int card_width,
+                                    const CardDef* upgrade_preview);
 
 ftxui::Element GaugePanel(const std::string& label,
                           int value,
