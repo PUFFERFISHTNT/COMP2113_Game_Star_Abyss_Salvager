@@ -37,8 +37,10 @@ enum class CardRarity {
 struct CardDef {
     std::string id;
     std::string name;
+    std::string nameEn;
     std::string type;
     std::string description;
+    std::string descriptionEn;
     CardRarity rarity = CardRarity::Common;
     int starterCopies = 0;
     int cost = 0;
@@ -367,6 +369,7 @@ private:
     AppPage resumePage_ = AppPage::Map;
     std::mt19937 rng_;
     std::vector<CardDef> cardPool_;
+    std::vector<CardDef> configuredUpgradePool_;
     std::vector<CardDef> upgradedCardPool_;
     std::vector<std::string> obtainedCardIds_;
     std::vector<EnemyTemplate> enemyPool_;
@@ -379,6 +382,7 @@ private:
     void grantRelic(const std::string& relicId);
     bool hasRelic(const std::string& relicId) const;
     const CardDef* upgradedCardByBaseId(const std::string& cardId) const;
+    const CardDef* configuredUpgradeCardByBaseId(const std::string& cardId) const;
     void storeUpgradedCard(const std::string& cardId);
     void rebuildUpgradedCardPool();
     bool isCardTypeUpgraded(const std::string& cardId) const;

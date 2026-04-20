@@ -74,6 +74,14 @@ const CardDef* GameEngine::upgradedCardByBaseId(const std::string& cardId) const
     return found == upgradedCardPool_.end() ? nullptr : &(*found);
 }
 
+const CardDef* GameEngine::configuredUpgradeCardByBaseId(const std::string& cardId) const {
+    const std::string baseId = baseCardId(cardId);
+    const auto found = std::find_if(
+        configuredUpgradePool_.begin(), configuredUpgradePool_.end(),
+        [&](const CardDef& card) { return card.id == baseId; });
+    return found == configuredUpgradePool_.end() ? nullptr : &(*found);
+}
+
 void GameEngine::storeUpgradedCard(const std::string& cardId) {
     const CardDef* base = cardById(cardId);
     if (base == nullptr) {
@@ -223,6 +231,9 @@ bool GameEngine::replaceDeckInstanceCardRef(const std::string& payload, const st
 }
 
 bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
+    if (configuredUpgradeCardByBaseId(cardId) != nullptr) {
+        return true;
+    }
     const CardDef* card = cardById(cardId);
     if (card == nullptr) {
         return false;
@@ -347,9 +358,18 @@ CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
         return CardDef{};
     }
     const int effectiveUpgradeLevel = cardUpgradeLevel(cardRef);
+    if (effectiveUpgradeLevel > 0) {
+        const CardDef* configured = configuredUpgradeCardByBaseId(base->id);
+        if (configured != nullptr) {
+            return *configured;
+        }
+    }
     CardDef resolved = applyUpgrade(*base, effectiveUpgradeLevel);
     if (effectiveUpgradeLevel > 0) {
         resolved.name += "+++";
+        if (!resolved.nameEn.empty()) {
+            resolved.nameEn += "+++";
+        }
     }
     return resolved;
 }

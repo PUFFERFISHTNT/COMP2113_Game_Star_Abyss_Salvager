@@ -11,6 +11,7 @@
 
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,
+                           std::vector<CardDef>* upgrades,
                            std::string* error);
 bool LoadUpgradedCardsFromJsonFile(const std::string& path,
                                    std::vector<CardDef>* cards,

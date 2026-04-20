@@ -35,9 +35,10 @@ std::string TrimAscii(const std::string& value) {
 
 void GameEngine::initializeData() {
     std::string error;
-    if (!LoadCardsFromJsonFile("data/cards.json", &cardPool_, &error)) {
+    if (!LoadCardsFromJsonFile("data/cards.json", &cardPool_, &configuredUpgradePool_, &error)) {
         std::cerr << "Failed to load card data from data/cards.json: " << error << "\n";
         cardPool_.clear();
+        configuredUpgradePool_.clear();
     } else {
         std::sort(cardPool_.begin(), cardPool_.end(), [](const CardDef& lhs, const CardDef& rhs) {
             return lhs.id < rhs.id;
@@ -48,6 +49,7 @@ void GameEngine::initializeData() {
         if (duplicate != cardPool_.end()) {
             std::cerr << "Duplicate card id in data/cards.json: " << duplicate->id << "\n";
             cardPool_.clear();
+            configuredUpgradePool_.clear();
         }
     }
 

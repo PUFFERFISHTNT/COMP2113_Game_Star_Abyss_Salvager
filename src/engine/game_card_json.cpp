@@ -1,6 +1,7 @@
 #include "engine/game_card_json.h"
 
 #include <cctype>
+#include <functional>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -349,6 +350,15 @@ bool GetBoolField(const std::map<std::string, JsonValue>& object,
     return value->bool_value;
 }
 
+const std::map<std::string, JsonValue>* GetObjectField(
+    const std::map<std::string, JsonValue>& object, const std::string& key) {
+    const JsonValue* value = FindObjectField(object, key);
+    if (value == nullptr || value->type != JsonValue::Type::Object) {
+        return nullptr;
+    }
+    return &value->object_value;
+}
+
 CardRarity ParseRarity(const std::string& rarity) {
     if (rarity == "uncommon" || rarity == "blue") {
         return CardRarity::Uncommon;
@@ -374,6 +384,7 @@ std::string RarityToken(CardRarity rarity) {
 bool ParseCardList(const JsonValue& root,
                    bool upgraded_cards,
                    std::vector<CardDef>* cards,
+                   std::vector<CardDef>* upgrades,
                    std::string* error) {
     if (root.type != JsonValue::Type::Object) {
         if (error != nullptr) {
@@ -390,6 +401,124 @@ bool ParseCardList(const JsonValue& root,
     }
 
     cards->clear();
+    if (upgrades != nullptr) {
+        upgrades->clear();
+    }
+    std::function<bool(const std::map<std::string, JsonValue>&, const CardDef*, bool, CardDef*)> parse_card;
+    parse_card = [&](const std::map<std::string, JsonValue>& object,
+                     const CardDef* fallback,
+                     bool allow_upgrade_block,
+                     CardDef* out_card) -> bool {
+        CardDef card = fallback != nullptr ? *fallback : CardDef{};
+        card.id = upgraded_cards
+                      ? GetStringField(object, "base_id", GetStringField(object, "id", card.id))
+                      : GetStringField(object, "id", card.id);
+        card.name = GetStringField(object, "name", card.name);
+        card.nameEn = GetStringField(object, "name_en", card.nameEn);
+        card.type = GetStringField(object, "type", card.type);
+        card.description = GetStringField(object, "description", card.description);
+        card.descriptionEn = GetStringField(object, "description_en", card.descriptionEn);
+        card.rarity = ParseRarity(GetStringField(object, "rarity", RarityToken(card.rarity)));
+        card.starterCopies = GetIntField(object, "starterCopies", card.starterCopies);
+        card.cost = GetIntField(object, "cost", card.cost);
+        card.damage = GetIntField(object, "damage", card.damage);
+        card.shield = GetIntField(object, "shield", card.shield);
+        card.heal = GetIntField(object, "heal", card.heal);
+        card.draw = GetIntField(object, "draw", card.draw);
+        card.energy = GetIntField(object, "energy", card.energy);
+        card.nextTurnEnergy = GetIntField(object, "nextTurnEnergy", card.nextTurnEnergy);
+        card.heat = GetIntField(object, "heat", card.heat);
+        card.enemyHeat = GetIntField(object, "enemyHeat", card.enemyHeat);
+        card.selfDamage = GetIntField(object, "selfDamage", card.selfDamage);
+        card.multiHit = GetIntField(object, "multiHit", card.multiHit == 0 ? 1 : card.multiHit);
+        card.comboBonus = GetIntField(object, "comboBonus", card.comboBonus);
+        card.attackMultiplier = GetIntField(object, "attackMultiplier", card.attackMultiplier == 0 ? 1 : card.attackMultiplier);
+        card.weakenTurns = GetIntField(object, "weakenTurns", card.weakenTurns);
+        card.removeEnemyShield = GetIntField(object, "removeEnemyShield", card.removeEnemyShield);
+        card.shieldLockTurns = GetIntField(object, "shieldLockTurns", card.shieldLockTurns);
+        card.salvageBonus = GetIntField(object, "salvageBonus", card.salvageBonus);
+        card.summonDroneCount = GetIntField(object, "summonDroneCount", card.summonDroneCount);
+        card.summonDroneAttack = GetIntField(object, "summonDroneAttack", card.summonDroneAttack);
+        card.summonDroneShield = GetIntField(object, "summonDroneShield", card.summonDroneShield);
+        card.summonDroneDuration = GetIntField(object, "summonDroneDuration", card.summonDroneDuration);
+        card.buffDroneAttack = GetIntField(object, "buffDroneAttack", card.buffDroneAttack);
+        card.buffDroneShield = GetIntField(object, "buffDroneShield", card.buffDroneShield);
+        card.auxImmediateTriggerTimes = GetIntField(object, "auxImmediateTriggerTimes", card.auxImmediateTriggerTimes);
+        card.auxEndTurnExtraTriggerTimes = GetIntField(object, "auxEndTurnExtraTriggerTimes", card.auxEndTurnExtraTriggerTimes);
+        card.auxEffectPercentBonus = GetIntField(object, "auxEffectPercentBonus", card.auxEffectPercentBonus);
+        card.auxDestroyCount = GetIntField(object, "auxDestroyCount", card.auxDestroyCount);
+        card.auxDestroyRewardMultiplierPercent =
+            GetIntField(object, "auxDestroyRewardMultiplierPercent", card.auxDestroyRewardMultiplierPercent);
+        card.firstSummonExtraCopies = GetIntField(object, "firstSummonExtraCopies", card.firstSummonExtraCopies);
+        card.firstSummonExtraScope = GetIntField(object, "firstSummonExtraScope", card.firstSummonExtraScope);
+        card.summonCardPlayedDrawThisTurn =
+            GetIntField(object, "summonCardPlayedDrawThisTurn", card.summonCardPlayedDrawThisTurn);
+        card.formChangesThisTurnThreshold = GetIntField(object, "formChangesThisTurnThreshold", card.formChangesThisTurnThreshold);
+        card.formChangesThisTurnBonusDamage =
+            GetIntField(object, "formChangesThisTurnBonusDamage", card.formChangesThisTurnBonusDamage);
+        card.firstEnterHighHeatEnergyThisBattle =
+            GetIntField(object, "firstEnterHighHeatEnergyThisBattle", card.firstEnterHighHeatEnergyThisBattle);
+        card.firstEnterHighHeatDrawThisBattle =
+            GetIntField(object, "firstEnterHighHeatDrawThisBattle", card.firstEnterHighHeatDrawThisBattle);
+        card.eachEnterHighHeatDrawThisBattle =
+            GetIntField(object, "eachEnterHighHeatDrawThisBattle", card.eachEnterHighHeatDrawThisBattle);
+        card.firstSummonEnemyHeatPerTurnThisBattle =
+            GetIntField(object, "firstSummonEnemyHeatPerTurnThisBattle", card.firstSummonEnemyHeatPerTurnThisBattle);
+        card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle = GetIntField(
+            object,
+            "firstSummonEnemyHeatAttackBonusPerTurnThisBattle",
+            card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle);
+        card.enterOverloadEnemyHeatThisBattle =
+            GetIntField(object, "enterOverloadEnemyHeatThisBattle", card.enterOverloadEnemyHeatThisBattle);
+        card.leaveDefenseEnemyHeatThisBattle =
+            GetIntField(object, "leaveDefenseEnemyHeatThisBattle", card.leaveDefenseEnemyHeatThisBattle);
+        card.formShift = GetIntField(object, "formShift", card.formShift);
+        card.overloadIncomingDamageReducePercent =
+            GetIntField(object, "overloadIncomingDamageReducePercent", card.overloadIncomingDamageReducePercent);
+        card.blackboxCopyCount = GetIntField(object, "blackboxCopyCount", card.blackboxCopyCount);
+        card.leaveDefenseEnergyBonus = GetIntField(object, "leaveDefenseEnergyBonus", card.leaveDefenseEnergyBonus);
+        card.leaveDefenseShieldBonus = GetIntField(object, "leaveDefenseShieldBonus", card.leaveDefenseShieldBonus);
+        card.blackboxProtocol = GetBoolField(object, "blackboxProtocol", card.blackboxProtocol);
+        card.formToggle = GetBoolField(object, "formToggle", card.formToggle);
+        card.formExit = GetBoolField(object, "formExit", card.formExit);
+        card.ignoreShield = GetBoolField(object, "ignoreShield", card.ignoreShield);
+        card.shieldToDamage = GetBoolField(object, "shieldToDamage", card.shieldToDamage);
+        card.halveHeat = GetBoolField(object, "halveHeat", card.halveHeat);
+        card.clearHeat = GetBoolField(object, "clearHeat", card.clearHeat);
+        card.randomEffect = GetBoolField(object, "randomEffect", card.randomEffect);
+        if (card.id.empty() || card.name.empty()) {
+            if (error != nullptr) {
+                *error = "Card JSON entry is missing id or name.";
+            }
+            return false;
+        }
+        if (card.nameEn.empty()) {
+            card.nameEn = card.id;
+        }
+        if (card.descriptionEn.empty()) {
+            card.descriptionEn = card.description;
+        }
+        *out_card = card;
+        if (allow_upgrade_block && upgrades != nullptr) {
+            const auto* upgrade_object = GetObjectField(object, "upgrade");
+            if (upgrade_object != nullptr) {
+                CardDef upgraded_card;
+                if (!parse_card(*upgrade_object, &card, false, &upgraded_card)) {
+                    return false;
+                }
+                upgraded_card.id = card.id;
+                if (upgraded_card.name.empty()) {
+                    upgraded_card.name = card.name + "+++";
+                }
+                if (upgraded_card.nameEn.empty()) {
+                    upgraded_card.nameEn = card.nameEn + "+++";
+                }
+                upgrades->push_back(upgraded_card);
+            }
+        }
+        return true;
+    };
+
     for (const JsonValue& entry : cards_value->array_value) {
         if (entry.type != JsonValue::Type::Object) {
             if (error != nullptr) {
@@ -399,74 +528,7 @@ bool ParseCardList(const JsonValue& root,
         }
 
         CardDef card;
-        card.id = upgraded_cards
-                      ? GetStringField(entry.object_value, "base_id", GetStringField(entry.object_value, "id"))
-                      : GetStringField(entry.object_value, "id");
-        card.name = GetStringField(entry.object_value, "name");
-        card.type = GetStringField(entry.object_value, "type");
-        card.description = GetStringField(entry.object_value, "description");
-        card.rarity = ParseRarity(GetStringField(entry.object_value, "rarity", "common"));
-        card.starterCopies = GetIntField(entry.object_value, "starterCopies", 0);
-        card.cost = GetIntField(entry.object_value, "cost", 0);
-        card.damage = GetIntField(entry.object_value, "damage", 0);
-        card.shield = GetIntField(entry.object_value, "shield", 0);
-        card.heal = GetIntField(entry.object_value, "heal", 0);
-        card.draw = GetIntField(entry.object_value, "draw", 0);
-        card.energy = GetIntField(entry.object_value, "energy", 0);
-        card.nextTurnEnergy = GetIntField(entry.object_value, "nextTurnEnergy", 0);
-        card.heat = GetIntField(entry.object_value, "heat", 0);
-        card.enemyHeat = GetIntField(entry.object_value, "enemyHeat", 0);
-        card.selfDamage = GetIntField(entry.object_value, "selfDamage", 0);
-        card.multiHit = GetIntField(entry.object_value, "multiHit", 1);
-        card.comboBonus = GetIntField(entry.object_value, "comboBonus", 0);
-        card.attackMultiplier = GetIntField(entry.object_value, "attackMultiplier", 1);
-        card.weakenTurns = GetIntField(entry.object_value, "weakenTurns", 0);
-        card.removeEnemyShield = GetIntField(entry.object_value, "removeEnemyShield", 0);
-        card.shieldLockTurns = GetIntField(entry.object_value, "shieldLockTurns", 0);
-        card.salvageBonus = GetIntField(entry.object_value, "salvageBonus", 0);
-        card.summonDroneCount = GetIntField(entry.object_value, "summonDroneCount", 0);
-        card.summonDroneAttack = GetIntField(entry.object_value, "summonDroneAttack", 0);
-        card.summonDroneShield = GetIntField(entry.object_value, "summonDroneShield", 0);
-        card.summonDroneDuration = GetIntField(entry.object_value, "summonDroneDuration", 0);
-        card.buffDroneAttack = GetIntField(entry.object_value, "buffDroneAttack", 0);
-        card.buffDroneShield = GetIntField(entry.object_value, "buffDroneShield", 0);
-        card.auxImmediateTriggerTimes = GetIntField(entry.object_value, "auxImmediateTriggerTimes", 0);
-        card.auxEndTurnExtraTriggerTimes = GetIntField(entry.object_value, "auxEndTurnExtraTriggerTimes", 0);
-        card.auxEffectPercentBonus = GetIntField(entry.object_value, "auxEffectPercentBonus", 0);
-        card.auxDestroyCount = GetIntField(entry.object_value, "auxDestroyCount", 0);
-        card.auxDestroyRewardMultiplierPercent = GetIntField(entry.object_value, "auxDestroyRewardMultiplierPercent", 0);
-        card.firstSummonExtraCopies = GetIntField(entry.object_value, "firstSummonExtraCopies", 0);
-        card.firstSummonExtraScope = GetIntField(entry.object_value, "firstSummonExtraScope", 0);
-        card.summonCardPlayedDrawThisTurn = GetIntField(entry.object_value, "summonCardPlayedDrawThisTurn", 0);
-        card.formChangesThisTurnThreshold = GetIntField(entry.object_value, "formChangesThisTurnThreshold", 0);
-        card.formChangesThisTurnBonusDamage = GetIntField(entry.object_value, "formChangesThisTurnBonusDamage", 0);
-        card.firstEnterHighHeatEnergyThisBattle = GetIntField(entry.object_value, "firstEnterHighHeatEnergyThisBattle", 0);
-        card.firstEnterHighHeatDrawThisBattle = GetIntField(entry.object_value, "firstEnterHighHeatDrawThisBattle", 0);
-        card.eachEnterHighHeatDrawThisBattle = GetIntField(entry.object_value, "eachEnterHighHeatDrawThisBattle", 0);
-        card.firstSummonEnemyHeatPerTurnThisBattle = GetIntField(entry.object_value, "firstSummonEnemyHeatPerTurnThisBattle", 0);
-        card.firstSummonEnemyHeatAttackBonusPerTurnThisBattle =
-            GetIntField(entry.object_value, "firstSummonEnemyHeatAttackBonusPerTurnThisBattle", 0);
-        card.enterOverloadEnemyHeatThisBattle = GetIntField(entry.object_value, "enterOverloadEnemyHeatThisBattle", 0);
-        card.leaveDefenseEnemyHeatThisBattle = GetIntField(entry.object_value, "leaveDefenseEnemyHeatThisBattle", 0);
-        card.formShift = GetIntField(entry.object_value, "formShift", 0);
-        card.overloadIncomingDamageReducePercent =
-            GetIntField(entry.object_value, "overloadIncomingDamageReducePercent", 0);
-        card.blackboxCopyCount = GetIntField(entry.object_value, "blackboxCopyCount", 0);
-        card.leaveDefenseEnergyBonus = GetIntField(entry.object_value, "leaveDefenseEnergyBonus", 0);
-        card.leaveDefenseShieldBonus = GetIntField(entry.object_value, "leaveDefenseShieldBonus", 0);
-        card.blackboxProtocol = GetBoolField(entry.object_value, "blackboxProtocol", false);
-        card.formToggle = GetBoolField(entry.object_value, "formToggle", false);
-        card.formExit = GetBoolField(entry.object_value, "formExit", false);
-        card.ignoreShield = GetBoolField(entry.object_value, "ignoreShield", false);
-        card.shieldToDamage = GetBoolField(entry.object_value, "shieldToDamage", false);
-        card.halveHeat = GetBoolField(entry.object_value, "halveHeat", false);
-        card.clearHeat = GetBoolField(entry.object_value, "clearHeat", false);
-        card.randomEffect = GetBoolField(entry.object_value, "randomEffect", false);
-
-        if (card.id.empty() || card.name.empty()) {
-            if (error != nullptr) {
-                *error = "Card JSON entry is missing id or name.";
-            }
+        if (!parse_card(entry.object_value, nullptr, !upgraded_cards, &card)) {
             return false;
         }
         cards->push_back(card);
@@ -518,6 +580,7 @@ void WriteString(std::ostream& out, const char* key, const std::string& value, b
 
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,
+                           std::vector<CardDef>* upgrades,
                            std::string* error) {
     std::string content;
     if (!ReadFile(path, &content, error)) {
@@ -528,7 +591,7 @@ bool LoadCardsFromJsonFile(const std::string& path,
     if (!parser.Parse(&root, error)) {
         return false;
     }
-    return ParseCardList(root, false, cards, error);
+    return ParseCardList(root, false, cards, upgrades, error);
 }
 
 bool LoadUpgradedCardsFromJsonFile(const std::string& path,
@@ -543,7 +606,7 @@ bool LoadUpgradedCardsFromJsonFile(const std::string& path,
     if (!parser.Parse(&root, error)) {
         return false;
     }
-    return ParseCardList(root, true, cards, error);
+    return ParseCardList(root, true, cards, nullptr, error);
 }
 
 bool SaveUpgradedCardsToJsonFile(const std::string& path,
@@ -565,8 +628,10 @@ bool SaveUpgradedCardsToJsonFile(const std::string& path,
         output << "    {\n";
         WriteString(output, "base_id", card.id);
         WriteString(output, "name", card.name);
+        WriteString(output, "name_en", card.nameEn);
         WriteString(output, "type", card.type);
         WriteString(output, "description", card.description);
+        WriteString(output, "description_en", card.descriptionEn);
         WriteString(output, "rarity", RarityToken(card.rarity));
         WriteInt(output, "starterCopies", card.starterCopies);
         WriteInt(output, "cost", card.cost);

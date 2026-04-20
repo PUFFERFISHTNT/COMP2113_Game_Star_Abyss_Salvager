@@ -1,7 +1,11 @@
 #include "ui/ui_localization.h"
 
+#include "engine/game_card_json.h"
+
+#include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 // Centralizes all UI copy translation so page render modules can stay focused on
 // layout and interaction, while gameplay text continues to map 1:1 with the
@@ -21,8 +25,57 @@ bool EndsWith(const std::string& text, const std::string& suffix) {
 }
 
 std::string TranslateGameText(UiLanguage language, const std::string& text) {
+    static std::map<std::string, std::string> zh_to_en;
+    static std::map<std::string, std::string> en_to_zh;
+    static std::vector<std::pair<std::string, std::string>> name_zh_to_en;
+    static bool card_maps_ready = false;
+    if (!card_maps_ready) {
+        card_maps_ready = true;
+        std::vector<CardDef> cards;
+        std::vector<CardDef> upgrades;
+        std::string load_error;
+        if (LoadCardsFromJsonFile("data/cards.json", &cards, &upgrades, &load_error)) {
+            const auto add_pair = [&](const std::string& zh, const std::string& en, bool is_name) {
+                if (zh.empty() || en.empty() || zh == en) {
+                    return;
+                }
+                zh_to_en[zh] = en;
+                en_to_zh[en] = zh;
+                if (is_name) {
+                    name_zh_to_en.push_back({zh, en});
+                }
+            };
+            for (const CardDef& card : cards) {
+                add_pair(card.name, card.nameEn, true);
+                add_pair(card.description, card.descriptionEn, false);
+            }
+            for (const CardDef& card : upgrades) {
+                add_pair(card.name, card.nameEn, true);
+                add_pair(card.description, card.descriptionEn, false);
+            }
+        }
+    }
+
     if (language == UiLanguage::English) {
-        return text;
+        if (!text.empty() && text.back() == '+') {
+            const size_t base_end = text.find_last_not_of('+');
+            if (base_end != std::string::npos) {
+                return TranslateGameText(language, text.substr(0, base_end + 1)) + text.substr(base_end + 1);
+            }
+        }
+        const auto exact = zh_to_en.find(text);
+        if (exact != zh_to_en.end()) {
+            return exact->second;
+        }
+        std::string translated = text;
+        for (const auto& item : name_zh_to_en) {
+            size_t pos = translated.find(item.first);
+            while (pos != std::string::npos) {
+                translated.replace(pos, item.first.size(), item.second);
+                pos = translated.find(item.first, pos + item.second.size());
+            }
+        }
+        return translated;
     }
 
     if (!text.empty() && text.back() == '+') {
@@ -30,6 +83,10 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         if (base_end != std::string::npos) {
             return TranslateGameText(language, text.substr(0, base_end + 1)) + text.substr(base_end + 1);
         }
+    }
+    const auto exact_zh = en_to_zh.find(text);
+    if (exact_zh != en_to_zh.end()) {
+        return exact_zh->second;
     }
 
     static const std::pair<const char*, const char*> kTranslations[] = {
