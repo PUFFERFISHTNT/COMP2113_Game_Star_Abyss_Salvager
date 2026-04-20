@@ -229,6 +229,7 @@ public:
     const CardDef* cardById(const std::string& id) const;
     CardDef resolvedCard(const std::string& cardRef) const;
     std::string displayCardName(const std::string& cardRef) const;
+    std::string canonicalCardRef(const std::string& cardRef) const;
     int cardUpgradeLevel(const std::string& cardRef) const;
     int cardUpgradeCost(CardUpgradeSource source) const;
     std::vector<CardView> rewardCards() const;
@@ -236,6 +237,7 @@ public:
     std::vector<CardView> drawPileCards() const;
     std::vector<CardView> discardPileCards() const;
     std::vector<CardOwnershipEntry> ownedCards() const;
+    std::vector<CardView> ownedCardInstances() const;
     std::vector<CardLibraryEntry> allCardLibraryEntries() const;
     size_t obtainedCardCount() const;
     size_t totalCardCount() const;
@@ -301,6 +303,9 @@ private:
     void markCardTypeUpgraded(const std::string& cardId);
     void normalizeUpgradedCards();
     bool cardTypeSupportsUpgrade(const std::string& cardId) const;
+    std::string makeDeckInstancePayload(const std::string& pileId, size_t index) const;
+    bool parseDeckInstancePayload(const std::string& payload, std::string* pileId, size_t* index) const;
+    bool replaceDeckInstanceCardRef(const std::string& payload, const std::string& newCardRef);
     std::string baseCardId(const std::string& cardRef) const;
     std::string makeCardRef(const std::string& cardId, int upgradeLevel) const;
     CardDef applyUpgrade(const CardDef& baseCard, int upgradeLevel) const;
@@ -366,6 +371,7 @@ private:
     void enterRepairUpgrade(size_t offset);
     void enterEventPurge(size_t offset);
     void enterEventUpgrade(size_t offset);
+    std::vector<std::string> upgradeableCardInstanceRefs() const;
     std::vector<std::pair<std::string, int>> purgeableCards() const;
     std::vector<std::pair<std::string, int>> upgradeableCards() const;
     bool purgeCardFromDeck(const std::string& cardId);

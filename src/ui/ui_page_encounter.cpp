@@ -193,8 +193,19 @@ Element StarAbyssApp::RenderEncounter() const {
                    payload != "service_cycle_upgrade" &&
                    payload != "service_back_market" &&
                    payload != "service_skip_service") {
-            const CardDef* base_card = engine_.cardById(payload);
-            const CardDef card = engine_.resolvedCard(payload);
+            std::string service_card_ref = payload;
+            if (StartsWith(payload, "instance:")) {
+                const std::vector<CardView> owned_instances = engine_.ownedCardInstances();
+                const auto found = std::find_if(owned_instances.begin(), owned_instances.end(), [&](const CardView& view) {
+                    return view.ref == payload;
+                });
+                if (found != owned_instances.end()) {
+                    service_card_ref = found->def.id;
+                    service_card_ref = MakeCardRef(BaseCardRef(service_card_ref), found->upgradeLevel);
+                }
+            }
+            const CardDef* base_card = engine_.cardById(service_card_ref);
+            const CardDef card = engine_.resolvedCard(service_card_ref);
             body.push_back(text(is_upgrade_screen ? Tr(language_, "Upgrade Service", "升级服务")
                                                   : Tr(language_, "Purge Service", "移除服务")) |
                            color(is_upgrade_screen ? kHull : kEnemy));
@@ -210,7 +221,7 @@ Element StarAbyssApp::RenderEncounter() const {
                 body.push_back(text(Tr(language_, "Target card: ", "目标卡牌：") + TranslateGameText(language_, card.name)) | color(kEnemy));
                 body.push_back(paragraph(CardDescriptionText(language_, card)) | color(kDim));
                 if (is_upgrade_screen) {
-                    const std::string preview_ref = MakeCardRef(BaseCardRef(payload), CardRefUpgradeLevel(payload) + 1);
+                    const std::string preview_ref = MakeCardRef(BaseCardRef(service_card_ref), CardRefUpgradeLevel(service_card_ref) + 1);
                     const CardDef preview = engine_.resolvedCard(preview_ref);
                     const std::vector<std::string> deltas = UpgradeDeltaLines(language_, card, preview);
                     if (!deltas.empty()) {
@@ -237,19 +248,19 @@ Element StarAbyssApp::RenderEncounter() const {
 
     Element service_deck_panel = text("");
     if (is_service_card_screen) {
-        std::vector<CardOwnershipEntry> owned_cards = engine_.ownedCards();
-        std::sort(owned_cards.begin(), owned_cards.end(), [&](const CardOwnershipEntry& lhs, const CardOwnershipEntry& rhs) {
-            const std::string left_name = TranslateGameText(language_, lhs.card.def.name);
-            const std::string right_name = TranslateGameText(language_, rhs.card.def.name);
+        std::vector<CardView> owned_cards = engine_.ownedCardInstances();
+        std::sort(owned_cards.begin(), owned_cards.end(), [&](const CardView& lhs, const CardView& rhs) {
+            const std::string left_name = TranslateGameText(language_, lhs.def.name);
+            const std::string right_name = TranslateGameText(language_, rhs.def.name);
             if (left_name != right_name) {
                 return left_name < right_name;
             }
-            return lhs.card.ref < rhs.card.ref;
+            return lhs.ref < rhs.ref;
         });
 
         std::map<std::string, int> selectable_hotkeys;
-        for (size_t i = 0; i < visible_options; ++i) {
-            const std::string payload = i < state.encounter.payloadIds.size() ? state.encounter.payloadIds[i] : "";
+        for (size_t i = 0; i < state.encounter.payloadIds.size(); ++i) {
+            const std::string payload = state.encounter.payloadIds[i];
             if (!payload.empty() && payload != "service_skip_service" && payload != "service_back_market" &&
                 payload != "leave") {
                 selectable_hotkeys[payload] = static_cast<int>(i) + 1;
@@ -264,8 +275,8 @@ Element StarAbyssApp::RenderEncounter() const {
         serviceCardsPerRow_ = std::max(1, cards_per_row);
         const int card_width = ServiceCardWidth(panel_width, cards_per_row);
         size_t selectable_count = 0;
-        for (const CardOwnershipEntry& entry : owned_cards) {
-            if (selectable_hotkeys.find(entry.card.ref) != selectable_hotkeys.end()) {
+        for (const CardView& entry : owned_cards) {
+            if (selectable_hotkeys.find(entry.ref) != selectable_hotkeys.end()) {
                 ++selectable_count;
             }
         }
@@ -279,23 +290,24 @@ Element StarAbyssApp::RenderEncounter() const {
         size_t selectable_index = 0;
         Elements card_rows;
         Elements current_row;
-        for (const CardOwnershipEntry& entry : owned_cards) {
-            const auto found = selectable_hotkeys.find(entry.card.ref);
+        for (const CardView& entry : owned_cards) {
+            const auto found = selectable_hotkeys.find(entry.ref);
             const bool selectable = found != selectable_hotkeys.end();
             const bool focused_target = selectable &&
                                         static_cast<int>(selectable_index) ==
                                             (serviceHoveredCardIndex_ >= 0 ? serviceHoveredCardIndex_ : serviceFocusedCardIndex_);
             const CardDef* preview_ptr = nullptr;
             CardDef preview_card;
-            if (selectable && is_upgrade_screen && entry.card.upgradeLevel < kCardUpgradeMaxLevel) {
+            if (selectable && is_upgrade_screen && entry.upgradeLevel < kCardUpgradeMaxLevel) {
                 // Preview the next upgrade level using a synthetic card ref so
                 // the player can inspect the result before committing.
-                const std::string preview_ref = MakeCardRef(BaseCardRef(entry.card.ref), entry.card.upgradeLevel + 1);
+                const std::string preview_ref = MakeCardRef(entry.def.id, entry.upgradeLevel + 1);
                 preview_card = engine_.resolvedCard(preview_ref);
                 preview_ptr = &preview_card;
             }
+            const CardOwnershipEntry entry_view{{entry.ref, entry.def, entry.upgradeLevel}, 1};
             Element card_panel = ServiceDeckCardPanel(language_,
-                                                     entry,
+                                                     entry_view,
                                                      selectable,
                                                      selectable ? found->second : 0,
                                                      use_full_upgrade_gallery,
@@ -332,9 +344,9 @@ Element StarAbyssApp::RenderEncounter() const {
         const int total_owned_cards = static_cast<int>(state.player.drawPile.size() + state.player.hand.size() + state.player.discardPile.size());
         Elements service_body = {
             text(Tr(language_, "Current deck: ", "当前牌组：") + std::to_string(total_owned_cards) +
-                 Tr(language_, " total cards across ", " 张卡牌，共 ") +
+                 Tr(language_, " total cards, showing ", " 张卡牌，当前展示 ") +
                  std::to_string(owned_cards.size()) +
-                 Tr(language_, " card types.", " 种卡牌。")) |
+                 Tr(language_, " card instances.", " 个卡牌实例。")) |
                 color(Color::White),
         };
         if (use_full_upgrade_gallery) {

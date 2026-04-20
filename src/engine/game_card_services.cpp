@@ -57,6 +57,10 @@ std::string GameEngine::makeCardRef(const std::string& cardId, int upgradeLevel)
     return upgradeLevel <= 0 ? cardId : (cardId + "@" + std::to_string(upgradeLevel));
 }
 
+std::string GameEngine::canonicalCardRef(const std::string& cardRef) const {
+    return makeCardRef(baseCardId(cardRef), cardUpgradeLevel(cardRef));
+}
+
 const CardDef* GameEngine::upgradedCardByBaseId(const std::string& cardId) const {
     const std::string baseId = baseCardId(cardId);
     const auto found = std::find_if(upgradedCardPool_.begin(), upgradedCardPool_.end(), [&](const CardDef& card) {
@@ -112,47 +116,105 @@ void GameEngine::rebuildUpgradedCardPool() {
 }
 
 bool GameEngine::isCardTypeUpgraded(const std::string& cardId) const {
-    return upgradedCardByBaseId(cardId) != nullptr;
+    return cardUpgradeLevel(cardId) >= kCardUpgradeMaxLevel;
 }
 
 void GameEngine::markCardTypeUpgraded(const std::string& cardId) {
-    const std::string baseId = baseCardId(cardId);
-    if (baseId.empty() || isCardTypeUpgraded(baseId)) {
-        return;
-    }
-    state_.upgradedCardTypes.push_back(baseId);
-    std::sort(state_.upgradedCardTypes.begin(), state_.upgradedCardTypes.end());
-    storeUpgradedCard(baseId);
+    (void)cardId;
 }
 
 void GameEngine::normalizeUpgradedCards() {
-    std::vector<std::string> discovered;
-    auto collect = [&](const std::vector<std::string>& pile) {
-        for (const std::string& ref : pile) {
-            if (cardUpgradeLevel(ref) > 0) {
-                discovered.push_back(baseCardId(ref));
-            }
-        }
-    };
-    collect(state_.player.drawPile);
-    collect(state_.player.hand);
-    collect(state_.player.discardPile);
-    collect(state_.reward.cardIds);
-    collect(state_.marketOfferCardIds);
-
-    state_.upgradedCardTypes.insert(state_.upgradedCardTypes.end(), discovered.begin(), discovered.end());
-
-    const auto strip_refs = [&](std::vector<std::string>& pile) {
+    const auto normalize_pile = [&](std::vector<std::string>& pile) {
         for (std::string& ref : pile) {
-            ref = baseCardId(ref);
+            ref = canonicalCardRef(ref);
         }
     };
-    strip_refs(state_.player.drawPile);
-    strip_refs(state_.player.hand);
-    strip_refs(state_.player.discardPile);
-    strip_refs(state_.reward.cardIds);
-    strip_refs(state_.marketOfferCardIds);
-    rebuildUpgradedCardPool();
+    normalize_pile(state_.player.drawPile);
+    normalize_pile(state_.player.hand);
+    normalize_pile(state_.player.discardPile);
+    normalize_pile(state_.reward.cardIds);
+    normalize_pile(state_.marketOfferCardIds);
+
+    // Legacy saves stored upgrades by card type. Convert them into per-instance
+    // upgrades by upgrading every matching copy that still exists in the deck.
+    for (const std::string& legacyType : state_.upgradedCardTypes) {
+        const std::string baseId = baseCardId(legacyType);
+        if (baseId.empty()) {
+            continue;
+        }
+        const auto upgrade_matching_refs = [&](std::vector<std::string>& pile) {
+            for (std::string& ref : pile) {
+                if (baseCardId(ref) == baseId) {
+                    ref = makeCardRef(baseId, std::max(1, cardUpgradeLevel(ref)));
+                }
+            }
+        };
+        upgrade_matching_refs(state_.player.drawPile);
+        upgrade_matching_refs(state_.player.hand);
+        upgrade_matching_refs(state_.player.discardPile);
+        upgrade_matching_refs(state_.reward.cardIds);
+        upgrade_matching_refs(state_.marketOfferCardIds);
+    }
+
+    state_.upgradedCardTypes.clear();
+    upgradedCardPool_.clear();
+}
+
+std::string GameEngine::makeDeckInstancePayload(const std::string& pileId, size_t index) const {
+    return "instance:" + pileId + ":" + std::to_string(index);
+}
+
+bool GameEngine::parseDeckInstancePayload(const std::string& payload, std::string* pileId, size_t* index) const {
+    if (payload.rfind("instance:", 0) != 0) {
+        return false;
+    }
+    const size_t first_separator = payload.find(':', 9);
+    if (first_separator == std::string::npos) {
+        return false;
+    }
+    const std::string parsedPileId = payload.substr(9, first_separator - 9);
+    const std::string parsedIndex = payload.substr(first_separator + 1);
+    if (parsedPileId.empty() || parsedIndex.empty() ||
+        !std::all_of(parsedIndex.begin(), parsedIndex.end(), [](unsigned char ch) { return ch >= '0' && ch <= '9'; })) {
+        return false;
+    }
+    try {
+        if (pileId != nullptr) {
+            *pileId = parsedPileId;
+        }
+        if (index != nullptr) {
+            *index = static_cast<size_t>(std::stoul(parsedIndex));
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool GameEngine::replaceDeckInstanceCardRef(const std::string& payload, const std::string& newCardRef) {
+    std::string pileId;
+    size_t index = 0;
+    if (!parseDeckInstancePayload(payload, &pileId, &index)) {
+        return false;
+    }
+
+    std::vector<std::string>* targetPile = nullptr;
+    if (pileId == "hand") {
+        targetPile = &state_.player.hand;
+    } else if (pileId == "draw") {
+        targetPile = &state_.player.drawPile;
+    } else if (pileId == "discard") {
+        targetPile = &state_.player.discardPile;
+    } else {
+        return false;
+    }
+
+    if (targetPile == nullptr || index >= targetPile->size()) {
+        return false;
+    }
+
+    (*targetPile)[index] = canonicalCardRef(newCardRef);
+    return true;
 }
 
 bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
@@ -217,10 +279,6 @@ CardDef GameEngine::applyUpgrade(const CardDef& baseCard, int upgradeLevel) cons
 }
 
 CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
-    const CardDef* upgraded = upgradedCardByBaseId(cardRef);
-    if (upgraded != nullptr) {
-        return *upgraded;
-    }
     const CardDef* base = cardById(cardRef);
     if (base == nullptr) {
         return CardDef{};
@@ -257,7 +315,7 @@ std::vector<CardView> GameEngine::rewardCards() const {
     std::vector<CardView> result;
     for (const std::string& ref : state_.reward.cardIds) {
         if (cardById(ref) != nullptr) {
-            result.push_back({ref, resolvedCard(ref), isCardTypeUpgraded(ref) ? 1 : cardUpgradeLevel(ref)});
+            result.push_back({canonicalCardRef(ref), resolvedCard(ref), cardUpgradeLevel(ref)});
         }
     }
     return result;
@@ -267,7 +325,7 @@ std::vector<CardView> GameEngine::handCards() const {
     std::vector<CardView> result;
     for (const std::string& ref : state_.player.hand) {
         if (cardById(ref) != nullptr) {
-            result.push_back({ref, resolvedCard(ref), isCardTypeUpgraded(ref) ? 1 : cardUpgradeLevel(ref)});
+            result.push_back({canonicalCardRef(ref), resolvedCard(ref), cardUpgradeLevel(ref)});
         }
     }
     return result;
@@ -278,7 +336,7 @@ std::vector<CardView> GameEngine::drawPileCards() const {
     result.reserve(state_.player.drawPile.size());
     for (auto it = state_.player.drawPile.rbegin(); it != state_.player.drawPile.rend(); ++it) {
         if (cardById(*it) != nullptr) {
-            result.push_back({*it, resolvedCard(*it), isCardTypeUpgraded(*it) ? 1 : cardUpgradeLevel(*it)});
+            result.push_back({canonicalCardRef(*it), resolvedCard(*it), cardUpgradeLevel(*it)});
         }
     }
     return result;
@@ -289,7 +347,7 @@ std::vector<CardView> GameEngine::discardPileCards() const {
     result.reserve(state_.player.discardPile.size());
     for (auto it = state_.player.discardPile.rbegin(); it != state_.player.discardPile.rend(); ++it) {
         if (cardById(*it) != nullptr) {
-            result.push_back({*it, resolvedCard(*it), isCardTypeUpgraded(*it) ? 1 : cardUpgradeLevel(*it)});
+            result.push_back({canonicalCardRef(*it), resolvedCard(*it), cardUpgradeLevel(*it)});
         }
     }
     return result;
@@ -302,7 +360,7 @@ std::vector<CardOwnershipEntry> GameEngine::ownedCards() const {
     owned_refs.insert(owned_refs.end(), state_.player.discardPile.begin(), state_.player.discardPile.end());
 
     for (std::string& ref : owned_refs) {
-        ref = baseCardId(ref);
+        ref = canonicalCardRef(ref);
     }
 
     std::sort(owned_refs.begin(), owned_refs.end(), [&](const std::string& lhs, const std::string& rhs) {
@@ -319,11 +377,55 @@ std::vector<CardOwnershipEntry> GameEngine::ownedCards() const {
         if (cardById(ref) == nullptr) {
             continue;
         }
-        if (!result.empty() && baseCardId(result.back().card.ref) == ref) {
+        if (!result.empty() && result.back().card.ref == ref) {
             ++result.back().copies;
             continue;
         }
-        result.push_back({{ref, resolvedCard(ref), isCardTypeUpgraded(ref) ? 1 : cardUpgradeLevel(ref)}, 1});
+        result.push_back({{ref, resolvedCard(ref), cardUpgradeLevel(ref)}, 1});
+    }
+    return result;
+}
+
+std::vector<CardView> GameEngine::ownedCardInstances() const {
+    struct CardInstance {
+        std::string pileId;
+        size_t index = 0;
+        std::string ref;
+    };
+
+    std::vector<CardInstance> instances;
+    const auto collect = [&](const std::vector<std::string>& pile, const std::string& pileId) {
+        for (size_t i = 0; i < pile.size(); ++i) {
+            if (cardById(pile[i]) != nullptr) {
+                instances.push_back({pileId, i, canonicalCardRef(pile[i])});
+            }
+        }
+    };
+    collect(state_.player.drawPile, "draw");
+    collect(state_.player.hand, "hand");
+    collect(state_.player.discardPile, "discard");
+
+    std::sort(instances.begin(), instances.end(), [&](const CardInstance& lhs, const CardInstance& rhs) {
+        const std::string left_name = displayCardName(lhs.ref);
+        const std::string right_name = displayCardName(rhs.ref);
+        if (left_name != right_name) {
+            return left_name < right_name;
+        }
+        if (lhs.ref != rhs.ref) {
+            return lhs.ref < rhs.ref;
+        }
+        if (lhs.pileId != rhs.pileId) {
+            return lhs.pileId < rhs.pileId;
+        }
+        return lhs.index < rhs.index;
+    });
+
+    std::vector<CardView> result;
+    result.reserve(instances.size());
+    for (const CardInstance& instance : instances) {
+        result.push_back({makeDeckInstancePayload(instance.pileId, instance.index),
+                          resolvedCard(instance.ref),
+                          cardUpgradeLevel(instance.ref)});
     }
     return result;
 }
@@ -367,20 +469,32 @@ bool GameEngine::upgradeCard(const std::string& cardRef,
         return false;
     }
 
-    const std::string baseId = baseCardId(cardRef);
-    std::vector<std::vector<std::string>*> piles = {
-        &state_.player.hand,
-        &state_.player.drawPile,
-        &state_.player.discardPile,
-    };
+    std::string targetRef;
+    std::string pileId;
+    size_t pileIndex = 0;
+    const bool payloadTargetsInstance = parseDeckInstancePayload(cardRef, &pileId, &pileIndex);
+    if (payloadTargetsInstance) {
+        const std::vector<std::string>* targetPile = nullptr;
+        if (pileId == "hand") {
+            targetPile = &state_.player.hand;
+        } else if (pileId == "draw") {
+            targetPile = &state_.player.drawPile;
+        } else if (pileId == "discard") {
+            targetPile = &state_.player.discardPile;
+        }
+        if (targetPile == nullptr || pileIndex >= targetPile->size()) {
+            if (error != nullptr) {
+                *error = "That card is not in the current deck.";
+            }
+            return false;
+        }
+        targetRef = canonicalCardRef((*targetPile)[pileIndex]);
+    } else {
+        targetRef = canonicalCardRef(cardRef);
+    }
 
-    const bool ownsCardType = std::any_of(piles.begin(), piles.end(), [&](const std::vector<std::string>* pile) {
-        return std::any_of(pile->begin(), pile->end(), [&](const std::string& ownedRef) {
-            return baseCardId(ownedRef) == baseId;
-        });
-    });
-
-    if (!ownsCardType) {
+    const std::string baseId = baseCardId(targetRef);
+    if (targetRef.empty() || baseId.empty() || cardById(baseId) == nullptr) {
         if (error != nullptr) {
             *error = "That card is not in the current deck.";
         }
@@ -393,7 +507,8 @@ bool GameEngine::upgradeCard(const std::string& cardRef,
         return false;
     }
 
-    if (isCardTypeUpgraded(baseId)) {
+    const int currentUpgradeLevel = cardUpgradeLevel(targetRef);
+    if (currentUpgradeLevel >= kCardUpgradeMaxLevel) {
         if (error != nullptr) {
             *error = "That card is already fully upgraded.";
         }
@@ -411,14 +526,55 @@ bool GameEngine::upgradeCard(const std::string& cardRef,
     if (price > 0) {
         state_.player.scrap -= price;
     }
-    markCardTypeUpgraded(baseId);
+
+    const std::string upgradedRef = makeCardRef(baseId, currentUpgradeLevel + 1);
+    if (payloadTargetsInstance) {
+        if (!replaceDeckInstanceCardRef(cardRef, upgradedRef)) {
+            if (price > 0) {
+                state_.player.scrap += price;
+            }
+            if (error != nullptr) {
+                *error = "That card is not in the current deck.";
+            }
+            return false;
+        }
+    } else {
+        bool replaced = false;
+        std::vector<std::vector<std::string>*> piles = {
+            &state_.player.hand,
+            &state_.player.drawPile,
+            &state_.player.discardPile,
+        };
+        for (std::vector<std::string>* pile : piles) {
+            for (std::string& ownedRef : *pile) {
+                if (canonicalCardRef(ownedRef) == targetRef) {
+                    ownedRef = upgradedRef;
+                    replaced = true;
+                    break;
+                }
+            }
+            if (replaced) {
+                break;
+            }
+        }
+        if (!replaced) {
+            if (price > 0) {
+                state_.player.scrap += price;
+            }
+            if (error != nullptr) {
+                *error = "That card is not in the current deck.";
+            }
+            return false;
+        }
+    }
+
     if (source == CardUpgradeSource::Market) {
         ++state_.marketUpgradeCount;
-        state_.statusLine = displayCardName(baseId) + " upgraded for " + std::to_string(price) + " credits.";
+        state_.statusLine = displayCardName(upgradedRef) + " upgraded for " + std::to_string(price) + " credits.";
     } else if (source == CardUpgradeSource::RepairStation) {
-        state_.statusLine = displayCardName(baseId) + " upgraded for free at the repair station.";
+        state_.statusLine = displayCardName(upgradedRef) + " upgraded for free at the repair station.";
     } else {
-        state_.statusLine = displayCardName(baseId) + " upgraded for free.";
+        state_.statusLine = displayCardName(upgradedRef) + " upgraded for free.";
     }
     if (error != nullptr) {
         *error = "";
@@ -460,9 +616,10 @@ std::vector<std::pair<std::string, int>> GameEngine::upgradeableCards() const {
     std::vector<std::string> allCards;
     const auto collect = [&](const std::vector<std::string>& pile) {
         for (const std::string& cardRef : pile) {
-            const std::string baseId = baseCardId(cardRef);
-            if (!isCardTypeUpgraded(baseId) && cardTypeSupportsUpgrade(baseId)) {
-                allCards.push_back(baseId);
+            const std::string canonical = canonicalCardRef(cardRef);
+            const std::string baseId = baseCardId(canonical);
+            if (cardUpgradeLevel(canonical) < kCardUpgradeMaxLevel && cardTypeSupportsUpgrade(baseId)) {
+                allCards.push_back(canonical);
             }
         }
     };
@@ -490,6 +647,56 @@ std::vector<std::pair<std::string, int>> GameEngine::upgradeableCards() const {
     return result;
 }
 
+std::vector<std::string> GameEngine::upgradeableCardInstanceRefs() const {
+    std::vector<std::string> result;
+    const auto collect = [&](const std::vector<std::string>& pile, const std::string& pileId) {
+        for (size_t i = 0; i < pile.size(); ++i) {
+            const std::string canonical = canonicalCardRef(pile[i]);
+            const std::string baseId = baseCardId(canonical);
+            if (cardById(baseId) == nullptr || !cardTypeSupportsUpgrade(baseId)) {
+                continue;
+            }
+            if (cardUpgradeLevel(canonical) >= kCardUpgradeMaxLevel) {
+                continue;
+            }
+            result.push_back(makeDeckInstancePayload(pileId, i));
+        }
+    };
+    collect(state_.player.drawPile, "draw");
+    collect(state_.player.hand, "hand");
+    collect(state_.player.discardPile, "discard");
+
+    std::sort(result.begin(), result.end(), [&](const std::string& lhs, const std::string& rhs) {
+        std::string leftPile;
+        std::string rightPile;
+        size_t leftIndex = 0;
+        size_t rightIndex = 0;
+        parseDeckInstancePayload(lhs, &leftPile, &leftIndex);
+        parseDeckInstancePayload(rhs, &rightPile, &rightIndex);
+        const std::vector<std::string>* leftVector = leftPile == "draw"   ? &state_.player.drawPile
+                                              : leftPile == "hand"   ? &state_.player.hand
+                                                                     : &state_.player.discardPile;
+        const std::vector<std::string>* rightVector = rightPile == "draw"   ? &state_.player.drawPile
+                                               : rightPile == "hand"   ? &state_.player.hand
+                                                                       : &state_.player.discardPile;
+        const std::string leftRef = canonicalCardRef((*leftVector)[leftIndex]);
+        const std::string rightRef = canonicalCardRef((*rightVector)[rightIndex]);
+        const std::string leftName = displayCardName(leftRef);
+        const std::string rightName = displayCardName(rightRef);
+        if (leftName != rightName) {
+            return leftName < rightName;
+        }
+        if (leftRef != rightRef) {
+            return leftRef < rightRef;
+        }
+        if (leftPile != rightPile) {
+            return leftPile < rightPile;
+        }
+        return leftIndex < rightIndex;
+    });
+    return result;
+}
+
 bool GameEngine::purgeCardFromDeck(const std::string& cardId) {
     const std::string baseId = baseCardId(cardId);
     std::vector<std::vector<std::string>*> piles = {
@@ -512,7 +719,7 @@ bool GameEngine::purgeCardFromDeck(const std::string& cardId) {
 bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
                                    std::string* upgradedCardName,
                                    std::string* error) {
-    const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
+    const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     if (candidates.empty()) {
         if (error != nullptr) {
             *error = "No cards can be upgraded right now.";
@@ -520,12 +727,17 @@ bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
         return false;
     }
 
-    std::vector<std::string> candidateIds;
-    for (const auto& entry : candidates) {
-        candidateIds.push_back(entry.first);
-    }
+    std::vector<std::string> candidateIds = candidates;
     ShuffleVector(candidateIds, rng_);
-    const std::string upgradedName = displayCardName(candidateIds.front());
+
+    std::string pileId;
+    size_t pileIndex = 0;
+    parseDeckInstancePayload(candidateIds.front(), &pileId, &pileIndex);
+    const std::vector<std::string>* pile = pileId == "draw"   ? &state_.player.drawPile
+                                           : pileId == "hand" ? &state_.player.hand
+                                                              : &state_.player.discardPile;
+    const std::string upgradedName =
+        (pile != nullptr && pileIndex < pile->size()) ? displayCardName((*pile)[pileIndex]) : "Card";
     if (!upgradeCard(candidateIds.front(), source, error)) {
         return false;
     }
@@ -629,7 +841,7 @@ void GameEngine::enterMarketPurge(size_t offset) {
 }
 
 void GameEngine::enterMarketUpgrade(size_t offset) {
-    const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
+    const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     const int price = cardUpgradeCost(CardUpgradeSource::Market);
     (void)offset;
 
@@ -643,11 +855,17 @@ void GameEngine::enterMarketUpgrade(size_t offset) {
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (const auto& candidate : candidates) {
-        state_.encounter.choices.push_back(displayCardName(candidate.first));
-        state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidate.second) + ".");
-        state_.encounter.payloadIds.push_back(candidate.first);
+    for (const std::string& candidate : candidates) {
+        std::string pileId;
+        size_t pileIndex = 0;
+        parseDeckInstancePayload(candidate, &pileId, &pileIndex);
+        const std::vector<std::string>* pile = pileId == "draw"   ? &state_.player.drawPile
+                                               : pileId == "hand" ? &state_.player.hand
+                                                                  : &state_.player.discardPile;
+        const std::string cardRef = (pile != nullptr && pileIndex < pile->size()) ? canonicalCardRef((*pile)[pileIndex]) : "";
+        state_.encounter.choices.push_back(displayCardName(cardRef));
+        state_.encounter.details.push_back("Upgrade exactly 1 copy in the deck.");
+        state_.encounter.payloadIds.push_back(candidate);
         state_.encounter.payloadValues.push_back(price);
     }
     state_.encounter.choices.push_back("Back to broker");
@@ -657,7 +875,7 @@ void GameEngine::enterMarketUpgrade(size_t offset) {
 }
 
 void GameEngine::enterRepairUpgrade(size_t offset) {
-    const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
+    const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     (void)offset;
 
     state_.encounter = {};
@@ -669,11 +887,17 @@ void GameEngine::enterRepairUpgrade(size_t offset) {
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (const auto& candidate : candidates) {
-        state_.encounter.choices.push_back(displayCardName(candidate.first));
-        state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidate.second) + ".");
-        state_.encounter.payloadIds.push_back(candidate.first);
+    for (const std::string& candidate : candidates) {
+        std::string pileId;
+        size_t pileIndex = 0;
+        parseDeckInstancePayload(candidate, &pileId, &pileIndex);
+        const std::vector<std::string>* pile = pileId == "draw"   ? &state_.player.drawPile
+                                               : pileId == "hand" ? &state_.player.hand
+                                                                  : &state_.player.discardPile;
+        const std::string cardRef = (pile != nullptr && pileIndex < pile->size()) ? canonicalCardRef((*pile)[pileIndex]) : "";
+        state_.encounter.choices.push_back(displayCardName(cardRef));
+        state_.encounter.details.push_back("Upgrade exactly 1 copy in the deck.");
+        state_.encounter.payloadIds.push_back(candidate);
         state_.encounter.payloadValues.push_back(0);
     }
     state_.encounter.choices.push_back("Skip reward");
@@ -730,7 +954,7 @@ void GameEngine::enterEventPurge(size_t offset) {
 }
 
 void GameEngine::enterEventUpgrade(size_t offset) {
-    const std::vector<std::pair<std::string, int>> candidates = upgradeableCards();
+    const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     (void)offset;
 
     state_.encounter = {};
@@ -742,11 +966,17 @@ void GameEngine::enterEventUpgrade(size_t offset) {
     state_.page = AppPage::Encounter;
     resumePage_ = AppPage::Encounter;
 
-    for (const auto& candidate : candidates) {
-        state_.encounter.choices.push_back(displayCardName(candidate.first));
-        state_.encounter.details.push_back("Upgrade 1 card type in the deck. Copies owned: " +
-                                           std::to_string(candidate.second) + ".");
-        state_.encounter.payloadIds.push_back(candidate.first);
+    for (const std::string& candidate : candidates) {
+        std::string pileId;
+        size_t pileIndex = 0;
+        parseDeckInstancePayload(candidate, &pileId, &pileIndex);
+        const std::vector<std::string>* pile = pileId == "draw"   ? &state_.player.drawPile
+                                               : pileId == "hand" ? &state_.player.hand
+                                                                  : &state_.player.discardPile;
+        const std::string cardRef = (pile != nullptr && pileIndex < pile->size()) ? canonicalCardRef((*pile)[pileIndex]) : "";
+        state_.encounter.choices.push_back(displayCardName(cardRef));
+        state_.encounter.details.push_back("Upgrade exactly 1 copy in the deck.");
+        state_.encounter.payloadIds.push_back(candidate);
         state_.encounter.payloadValues.push_back(0);
     }
     state_.encounter.choices.push_back("Skip reward");
