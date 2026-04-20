@@ -55,9 +55,20 @@ const CardDef* GameEngine::cardById(const std::string& id) const {
     return found == cardPool_.end() ? nullptr : &(*found);
 }
 
-const GameEngine::EnemyTemplate& GameEngine::pickEnemy(const std::string& nodeType) {
+const GameEngine::EnemyTemplate& GameEngine::pickEnemy(const std::string& nodeType,
+                                                       const std::string& forcedEnemyId) {
+    if (!forcedEnemyId.empty()) {
+        const EnemyTemplate* forced = enemyTemplateById(forcedEnemyId);
+        if (forced != nullptr) {
+            return *forced;
+        }
+    }
+
     std::vector<const EnemyTemplate*> candidates;
     for (const EnemyTemplate& enemy : enemyPool_) {
+        if (state_.sector < enemy.minSector || state_.sector > enemy.maxSector) {
+            continue;
+        }
         if (nodeType == "boss" && enemy.boss) {
             if ((state_.sector == 1 && enemy.id == "dread_frigate_omega") ||
                 (state_.sector == 2 && enemy.id == "furnace_carrier") ||
@@ -73,7 +84,10 @@ const GameEngine::EnemyTemplate& GameEngine::pickEnemy(const std::string& nodeTy
     }
 
     ShuffleVector(candidates, rng_);
-    return *(candidates.empty() ? &enemyPool_.front() : candidates.front());
+    if (!candidates.empty()) {
+        return *candidates.front();
+    }
+    return enemyPool_.front();
 }
 
 const GameEngine::EnemyTemplate* GameEngine::enemyTemplateById(const std::string& id) const {

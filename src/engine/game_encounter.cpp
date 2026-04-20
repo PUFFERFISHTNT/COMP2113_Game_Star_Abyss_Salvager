@@ -282,6 +282,21 @@ void GameEngine::resolveEncounter(size_t index) {
             return;
         }
 
+        if (eid == "event_story_boss") {
+            if (index == 0) {
+                const std::string payload = index < state_.encounter.payloadIds.size()
+                                                ? state_.encounter.payloadIds[index]
+                                                : "";
+                state_.activeNodeType = "boss";
+                startBattle("boss", payload);
+                state_.statusLine = "Signal lock confirmed. Story boss battle engaged.";
+            } else {
+                state_.statusLine = "You break lock and leave the anomalous signature behind.";
+                finishCurrentNode();
+            }
+            return;
+        }
+
         // ====== Category C: Ship Malfunctions ======
 
         if (eid == "event_c1") {  // Reactor Leak

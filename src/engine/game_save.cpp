@@ -101,7 +101,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|16\n";
+    output << "VERSION|17\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -197,7 +197,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
         output << "NODE|" << option.typeId << "|" << option.name << "|" << option.detail
-               << "|" << option.danger << "\n";
+               << "|" << option.danger << "|" << option.enemyId << "\n";
     }
 
     output << "MARKETOFFERS|" << state_.marketOfferCardIds.size() << "\n";
@@ -422,7 +422,15 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 loaded.enemy.coolingCooldownTurns = ToInt(parts[16], 0);
             }
         } else if (key == "NODE" && parts.size() >= 5) {
-            loaded.routeOptions.push_back({parts[1], parts[2], parts[3], ToInt(parts[4], 1)});
+            NodeOption option;
+            option.typeId = parts[1];
+            option.name = parts[2];
+            option.detail = parts[3];
+            option.danger = ToInt(parts[4], 1);
+            if (parts.size() >= 6) {
+                option.enemyId = parts[5];
+            }
+            loaded.routeOptions.push_back(option);
         } else if (key == "MARKETOFFER" && parts.size() >= 2) {
             loaded.marketOfferCardIds.push_back(parts[1]);
         } else if (key == "ENCOUNTER" && parts.size() >= 5) {

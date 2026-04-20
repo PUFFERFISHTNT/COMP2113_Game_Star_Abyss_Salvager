@@ -657,12 +657,18 @@ void GameEngine::endTurn() {
     state_.statusLine = "Enemy cycle resolved. Your turn begins.";
 }
 
-void GameEngine::startBattle(const std::string& nodeType) {
-    const EnemyTemplate& enemy = pickEnemy(nodeType);
+void GameEngine::startBattle(const std::string& nodeType, const std::string& forcedEnemyId) {
+    const EnemyTemplate& enemy = pickEnemy(nodeType, forcedEnemyId);
     state_.enemy.enemyId = enemy.id;
     state_.enemy.name = enemy.name;
     state_.enemy.behavior = enemy.behavior;
-    state_.enemy.maxHp = enemy.baseHp + (state_.sector - 1) * (enemy.boss ? 8 : (enemy.elite ? 5 : 3));
+    int enemyHp = enemy.baseHp + (state_.sector - 1) * (enemy.boss ? 8 : (enemy.elite ? 5 : 3));
+    if (state_.difficulty <= 0) {
+        enemyHp = std::max(1, (enemyHp * 90 + 99) / 100);
+    } else if (state_.difficulty >= 2) {
+        enemyHp = std::max(1, (enemyHp * 115 + 99) / 100);
+    }
+    state_.enemy.maxHp = enemyHp;
     state_.enemy.hp = state_.enemy.maxHp;
     state_.enemy.shield = 0;
     state_.enemy.heat = 0;
@@ -1604,8 +1610,14 @@ bool GameEngine::enemyShouldUseCooling() const {
 
 int GameEngine::enemyCoolingAmount() const {
     // Enemy emergency cooling scales with sector depth:
-    // sector 1 -> 3 heat, sector 2 -> 4 heat, sector 3 -> 5 heat.
-    return std::max(3, std::min(5, state_.sector + 2));
+    // sector 1 -> 3 heat, sector 2 -> 5 heat, sector 3+ -> 7 heat.
+    if (state_.sector <= 1) {
+        return 3;
+    }
+    if (state_.sector == 2) {
+        return 5;
+    }
+    return 7;
 }
 
 void GameEngine::triggerEnemyCooling() {

@@ -108,7 +108,7 @@ void GameEngine::chooseNode(size_t index) {
     state_.statusLine = "Jump vector locked for " + node.name + ".";
 
     if (node.typeId == "battle" || node.typeId == "elite" || node.typeId == "boss") {
-        startBattle(node.typeId);
+        startBattle(node.typeId, node.enemyId);
     } else {
         startEncounterForNode(node);
     }
@@ -128,27 +128,27 @@ void GameEngine::generateRouteOptions() {
     // --- Escape route ---
     if (g_sa_escape_stage >= 1 && g_sa_escape_stage <= 8) {
         if (g_sa_escape_intro_pending) {
-            state_.routeOptions.push_back({"event", "Escape Decision", "The Ark's beacon falls silent. A new heading crystallizes on the nav console.", 1});
+            state_.routeOptions.push_back({"event", "Escape Decision", "The Ark's beacon falls silent. A new heading crystallizes on the nav console.", 1, ""});
             return;
         }
         if (g_sa_escape_battle_pending) {
             std::uniform_int_distribution<int> typeRoll(1, 100);
             if (typeRoll(rng_) <= 35) {
-                state_.routeOptions.push_back({"elite", "Escape Blockade", "A heavily armed ship blocks your escape route.", 3});
+                state_.routeOptions.push_back({"elite", "Escape Blockade", "A heavily armed ship blocks your escape route.", 3, ""});
             } else {
-                state_.routeOptions.push_back({"battle", "Escape Skirmish", "Hostile contacts on the escape vector. No way around them.", 2});
+                state_.routeOptions.push_back({"battle", "Escape Skirmish", "Hostile contacts on the escape vector. No way around them.", 2, ""});
             }
             return;
         }
         switch (g_sa_escape_stage) {
-            case 1: state_.routeOptions.push_back({"event", "Federal Patrol Outpost", "A federation checkpoint blocks the route. Patrol drones sweep the area.", 3}); break;
-            case 2: state_.routeOptions.push_back({"event", "Abandoned Smuggling Port", "A deserted port with some supplies left behind.", 1}); break;
-            case 3: state_.routeOptions.push_back({"event", "Deep Space Radiation Belt", "A deadly band of cosmic radiation stretches across the path ahead.", 3}); break;
-            case 4: state_.routeOptions.push_back({"event", "Pirate Pursuit Ship", "A pirate craft locks onto your trail and closes in fast.", 4}); break;
-            case 5: state_.routeOptions.push_back({"event", "Drifting Escape Pod", "A damaged escape pod tumbles through the void with intact supplies.", 1}); break;
-            case 6: state_.routeOptions.push_back({"event", "Unstable Jump Point", "An unstable warp corridor shimmers ahead, offering a risky shortcut.", 3}); break;
-            case 7: state_.routeOptions.push_back({"event", "Star Abyss Edge Barrier", "An energy barrier marks the edge of the Star Abyss.", 4}); break;
-            case 8: state_.routeOptions.push_back({"event", "Temporary Safe Station", "A small outpost at the edge of the abyss offers one last chance to prepare.", 2}); break;
+            case 1: state_.routeOptions.push_back({"event", "Federal Patrol Outpost", "A federation checkpoint blocks the route. Patrol drones sweep the area.", 3, ""}); break;
+            case 2: state_.routeOptions.push_back({"event", "Abandoned Smuggling Port", "A deserted port with some supplies left behind.", 1, ""}); break;
+            case 3: state_.routeOptions.push_back({"event", "Deep Space Radiation Belt", "A deadly band of cosmic radiation stretches across the path ahead.", 3, ""}); break;
+            case 4: state_.routeOptions.push_back({"event", "Pirate Pursuit Ship", "A pirate craft locks onto your trail and closes in fast.", 4, ""}); break;
+            case 5: state_.routeOptions.push_back({"event", "Drifting Escape Pod", "A damaged escape pod tumbles through the void with intact supplies.", 1, ""}); break;
+            case 6: state_.routeOptions.push_back({"event", "Unstable Jump Point", "An unstable warp corridor shimmers ahead, offering a risky shortcut.", 3, ""}); break;
+            case 7: state_.routeOptions.push_back({"event", "Star Abyss Edge Barrier", "An energy barrier marks the edge of the Star Abyss.", 4, ""}); break;
+            case 8: state_.routeOptions.push_back({"event", "Temporary Safe Station", "A small outpost at the edge of the abyss offers one last chance to prepare.", 2, ""}); break;
         }
         return;
     }
@@ -157,20 +157,20 @@ void GameEngine::generateRouteOptions() {
     if (g_sa_truth_stage >= 1 && g_sa_truth_stage <= 6) {
         if (!g_sa_truth_post_battle) {
             switch (g_sa_truth_stage) {
-                case 1: state_.routeOptions.push_back({"elite", "Memory Remnant", "A twisted echo of forgotten memories blocks the corridor ahead.", 4}); break;
-                case 2: state_.routeOptions.push_back({"elite", "Rogue Maintenance AI", "A malfunctioning AI system guards the old bridge with lethal force.", 4}); break;
-                case 3: state_.routeOptions.push_back({"elite", "Phantom Guardian", "An illusory sentinel materializes, defending the captain's sanctum.", 5}); break;
-                case 4: state_.routeOptions.push_back({"elite", "Space Ripper", "A spatial anomaly tears through reality, attacking anything in its path.", 5}); break;
-                case 5: state_.routeOptions.push_back({"elite", "Pseudo-God Apostle", "A being of immense power emerges from the origin horizon.", 5}); break;
-                case 6: state_.routeOptions.push_back({"boss", "Creation Core Guardian", "The ultimate guardian of the Ark's creation core unfolds in the void.", 6}); break;
+                case 1: state_.routeOptions.push_back({"elite", "Memory Remnant", "A twisted echo of forgotten memories blocks the corridor ahead.", 4, ""}); break;
+                case 2: state_.routeOptions.push_back({"elite", "Rogue Maintenance AI", "A malfunctioning AI system guards the old bridge with lethal force.", 4, ""}); break;
+                case 3: state_.routeOptions.push_back({"elite", "Phantom Guardian", "An illusory sentinel materializes, defending the captain's sanctum.", 5, ""}); break;
+                case 4: state_.routeOptions.push_back({"elite", "Space Ripper", "A spatial anomaly tears through reality, attacking anything in its path.", 5, ""}); break;
+                case 5: state_.routeOptions.push_back({"elite", "Pseudo-God Apostle", "A being of immense power emerges from the origin horizon.", 5, ""}); break;
+                case 6: state_.routeOptions.push_back({"boss", "Creation Core Guardian", "The ultimate guardian of the Ark's creation core unfolds in the void.", 6, ""}); break;
             }
         } else {
             switch (g_sa_truth_stage) {
-                case 1: state_.routeOptions.push_back({"event", "Creation Memory Fragment", "The corridor pulses with ancient data streams from a lost civilization.", 2}); break;
-                case 2: state_.routeOptions.push_back({"event", "Rogue Guardian AI", "The bridge's AI system lies defeated, its data banks exposed.", 2}); break;
-                case 3: state_.routeOptions.push_back({"event", "First Captain's Consciousness", "An echo of the original captain lingers in the ship's neural network.", 2}); break;
-                case 4: state_.routeOptions.push_back({"event", "Spatial Collapse Point", "Reality bends and tears around you. The fabric of space is failing.", 3}); break;
-                case 5: state_.routeOptions.push_back({"event", "Star Abyss Birth Truth", "You have reached the origin horizon. The truth of creation lies before you.", 3}); break;
+                case 1: state_.routeOptions.push_back({"event", "Creation Memory Fragment", "The corridor pulses with ancient data streams from a lost civilization.", 2, ""}); break;
+                case 2: state_.routeOptions.push_back({"event", "Rogue Guardian AI", "The bridge's AI system lies defeated, its data banks exposed.", 2, ""}); break;
+                case 3: state_.routeOptions.push_back({"event", "First Captain's Consciousness", "An echo of the original captain lingers in the ship's neural network.", 2, ""}); break;
+                case 4: state_.routeOptions.push_back({"event", "Spatial Collapse Point", "Reality bends and tears around you. The fabric of space is failing.", 3, ""}); break;
+                case 5: state_.routeOptions.push_back({"event", "Star Abyss Birth Truth", "You have reached the origin horizon. The truth of creation lies before you.", 3, ""}); break;
             }
         }
         return;
@@ -179,23 +179,22 @@ void GameEngine::generateRouteOptions() {
     // --- Normal route: boss ---
     if (state_.depth >= state_.nodesPerSector) {
         if (g_sa_no_boss) {
-            state_.routeOptions.push_back({"event", "Strange Signal", "Anomalous data bleeds across the sensor grid.", 2});
+            state_.routeOptions.push_back({"event", "Strange Signal", "Anomalous data bleeds across the sensor grid.", 2, ""});
             return;
         }
         if (state_.sector == 1) {
-            state_.routeOptions.push_back({"boss", "Dread Frigate Omega", "A warship blocks the sector jump.", 4});
+            state_.routeOptions.push_back({"boss", "Dread Frigate Omega", "A warship blocks the sector jump.", 4, "dread_frigate_omega"});
         } else if (state_.sector == 2) {
-            state_.routeOptions.push_back({"boss", "The Furnace Carrier", "Heat wakes ripple through a carrier hull.", 5});
+            state_.routeOptions.push_back({"boss", "The Furnace Carrier", "Heat wakes ripple through a carrier hull.", 5, "furnace_carrier"});
         } else {
-            state_.routeOptions.push_back({"boss", "Abyss Core Sentinel", "The final guardian unfolds in the void.", 6});
+            state_.routeOptions.push_back({"boss", "Abyss Core Sentinel", "The final guardian unfolds in the void.", 6, "abyss_core_sentinel"});
         }
         return;
     }
 
     // --- Normal route options ---
-    std::vector<std::string> types = {"battle", "salvage", "repair", "event"};
+    std::vector<std::string> types = {"battle", "salvage", "repair", "event", "elite"};
     if (state_.sector >= 2) {
-        types.push_back("elite");
         types.push_back("market");
     }
     if (g_sa_next_elite) {
@@ -207,17 +206,72 @@ void GameEngine::generateRouteOptions() {
 
     for (const std::string& type : types) {
         if (type == "battle") {
-            state_.routeOptions.push_back({"battle", "Pirate Ambush", "Fast raiders are sweeping the lane ahead.", 2});
+            std::vector<std::string> battle_ids;
+            if (state_.sector == 1) {
+                battle_ids = {"pirate_needle", "scrapbreaker_tug", "signal_leech_mk2"};
+            } else if (state_.sector == 2) {
+                battle_ids = {"cinder_hauler", "furnace_tender", "ember_rack_skiff"};
+            } else {
+                battle_ids = {"phase_skewer", "null_choir", "core_warder"};
+            }
+            std::uniform_int_distribution<size_t> pick(0, battle_ids.size() - 1);
+            const std::string enemy_id = battle_ids[pick(rng_)];
+            const EnemyTemplate* enemy = enemyTemplateById(enemy_id);
+            const std::string enemy_name = enemy != nullptr ? enemy->name : "Hostile Contact";
+            state_.routeOptions.push_back({"battle",
+                                           enemy_name,
+                                           "Hostile signatures spike ahead.",
+                                           2,
+                                           enemy_id});
         } else if (type == "elite") {
-            state_.routeOptions.push_back({"elite", "Elite Intercept", "A heavier hostile signature holds position.", 3});
+            std::string enemy_id = "rogue_miner_colossus";
+            if (state_.sector == 2) {
+                enemy_id = "slag_tribunal";
+            } else if (state_.sector >= 3) {
+                enemy_id = "reality_harrower";
+            }
+            const EnemyTemplate* enemy = enemyTemplateById(enemy_id);
+            const std::string enemy_name = enemy != nullptr ? enemy->name : "Elite Intercept";
+            state_.routeOptions.push_back({"elite",
+                                           enemy_name,
+                                           "A heavy hostile vessel blocks the lane.",
+                                           3,
+                                           enemy_id});
         } else if (type == "salvage") {
-            state_.routeOptions.push_back({"salvage", "Derelict Wreck", "Broken hulls drift in a silent salvage field.", 1});
+            state_.routeOptions.push_back({"salvage", "Derelict Wreck", "Broken hulls drift in a silent salvage field.", 1, ""});
         } else if (type == "repair") {
-            state_.routeOptions.push_back({"repair", "Repair Station", "A maintenance dock answers your ping.", 1});
+            state_.routeOptions.push_back({"repair", "Repair Station", "A maintenance dock answers your ping.", 1, ""});
         } else if (type == "market") {
-            state_.routeOptions.push_back({"market", "Black Market", "Encrypted trade beacons flare nearby.", 2});
+            state_.routeOptions.push_back({"market", "Black Market", "Encrypted trade beacons flare nearby.", 2, ""});
         } else {
-            state_.routeOptions.push_back({"event", "Strange Signal", "Anomalous data bleeds across the sensor grid.", 2});
+            std::uniform_int_distribution<int> storyBossRoll(1, 100);
+            if (storyBossRoll(rng_) <= 18) {
+                std::string storyBossId;
+                std::string storyBossName;
+                if (state_.sector == 1) {
+                    storyBossId = "the_pale_broker";
+                    storyBossName = "Broker Echo";
+                } else if (state_.sector == 2) {
+                    storyBossId = "saint_of_cinders";
+                    storyBossName = "Cinder Shrine Signal";
+                } else {
+                    std::uniform_int_distribution<int> deepRoll(0, 1);
+                    if (deepRoll(rng_) == 0) {
+                        storyBossId = "the_choir_beneath";
+                        storyBossName = "Beneath Choir Resonance";
+                    } else {
+                        storyBossId = "salvager_zero";
+                        storyBossName = "Prototype Zero Trace";
+                    }
+                }
+                state_.routeOptions.push_back({"event",
+                                               storyBossName,
+                                               "A high-priority anomalous war signature requests immediate attention.",
+                                               4,
+                                               storyBossId});
+            } else {
+                state_.routeOptions.push_back({"event", "Strange Signal", "Anomalous data bleeds across the sensor grid.", 2, ""});
+            }
         }
     }
 
@@ -226,12 +280,16 @@ void GameEngine::generateRouteOptions() {
             return option.typeId == "repair";
         });
         if (!hasRepair && !state_.routeOptions.empty()) {
-            state_.routeOptions.back() = {"repair", "Emergency Drydock", "A lightly armed station can patch your hull.", 1};
+            state_.routeOptions.back() = {"repair", "Emergency Drydock", "A lightly armed station can patch your hull.", 1, ""};
         }
     }
 }
 
 void GameEngine::startEncounterForNode(const NodeOption& node) {
+    if (node.typeId == "battle" || node.typeId == "elite" || node.typeId == "boss") {
+        startBattle(node.typeId, node.enemyId);
+        return;
+    }
     state_.encounter = {};
     state_.encounter.typeId = node.typeId;
     state_.encounter.title = node.name;
@@ -273,6 +331,25 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.marketOfferCardIds = randomMarketCardChoices(3);
         openMarketShop();
         return;
+    }
+
+    if (node.typeId == "event" && !node.enemyId.empty()) {
+        const EnemyTemplate* forcedEnemy = enemyTemplateById(node.enemyId);
+        if (forcedEnemy != nullptr) {
+            state_.encounter.encounterId = "event_story_boss";
+            state_.encounter.title = node.name.empty() ? "Anomalous War Signature" : node.name;
+            state_.encounter.description =
+                "The signal condenses into a hostile flagship profile. "
+                "Engaging now could uncover hidden truths, but retreat is still possible.";
+            state_.encounter.choices = {"Engage", "Withdraw"};
+            state_.encounter.details = {
+                "Force a boss battle against " + forcedEnemy->name + ".",
+                "Abort contact and continue your route.",
+            };
+            state_.encounter.payloadIds = {node.enemyId, ""};
+            state_.encounter.payloadValues = {0, 0};
+            return;
+        }
     }
 
     // --- Escape Route Prologue ---

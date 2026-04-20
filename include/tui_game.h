@@ -119,6 +119,7 @@ struct NodeOption {
     std::string name;
     std::string detail;
     int danger = 1;
+    std::string enemyId;
 };
 
 struct EncounterState {
@@ -347,6 +348,8 @@ private:
         bool boss = false;
         std::vector<IntentDef> pattern;
         int maxHeat = 10;
+        int minSector = 1;
+        int maxSector = 3;
     };
 
     struct ShipTemplate {
@@ -399,7 +402,7 @@ private:
 
     void generateRouteOptions();
     void startEncounterForNode(const NodeOption& node);
-    void startBattle(const std::string& nodeType);
+    void startBattle(const std::string& nodeType, const std::string& forcedEnemyId = "");
     void resetBattleDeck();
     void startPlayerTurn();
     void chooseEnemyIntent();
@@ -457,7 +460,7 @@ private:
     std::vector<std::string> randomCardChoices(size_t count);
     std::vector<std::string> randomMarketCardChoices(size_t count);
     std::string randomRelic();
-    const EnemyTemplate& pickEnemy(const std::string& nodeType);
+    const EnemyTemplate& pickEnemy(const std::string& nodeType, const std::string& forcedEnemyId = "");
     const EnemyTemplate* enemyTemplateById(const std::string& id) const;
     const ShipTemplate* shipTemplateById(const std::string& id) const;
     const RelicDef* relicById(const std::string& id) const;
