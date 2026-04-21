@@ -25,7 +25,6 @@ const RunState& GameEngine::state() const {
 
 void GameEngine::resetRunState() {
     state_ = RunState{};
-    upgradedCardPool_.clear();
     state_.difficulty = 1;
     state_.page = AppPage::MainMenu;
     state_.statusLine = "Abyss link stable. Choose a route.";
