@@ -1,5 +1,4 @@
 #include "engine/game_save.h"
-#include "engine/game_card_json.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -238,13 +237,11 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << state_.animation.tick << "|" << state_.animation.duration << "|"
            << BoolToken(state_.animation.active) << "\n";
 
-    std::string upgraded_error;
-    if (!SaveUpgradedCardsToJsonFile(UpgradedCardsJsonPath(path), upgradedCardPool_, &upgraded_error)) {
-        if (error != nullptr) {
-            *error = upgraded_error;
-        }
-        return false;
-    }
+    // Upgraded card definitions now come only from data/cards.json. If an
+    // older sidecar still exists beside the save, remove it so the save folder
+    // reflects the new single-source-of-truth model.
+    std::error_code remove_error;
+    std::filesystem::remove(UpgradedCardsJsonPath(path), remove_error);
 
     if (error != nullptr) {
         *error = "";
@@ -603,26 +600,6 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     }
 
     state_ = loaded;
-    upgradedCardPool_.clear();
-
-    std::string upgraded_error;
-    const std::string upgraded_json_path = UpgradedCardsJsonPath(path);
-    if (std::filesystem::exists(upgraded_json_path)) {
-        if (!LoadUpgradedCardsFromJsonFile(upgraded_json_path, &upgradedCardPool_, &upgraded_error)) {
-            if (error != nullptr) {
-                *error = upgraded_error;
-            }
-            return false;
-        }
-        for (const CardDef& card : upgradedCardPool_) {
-            if (cardById(card.id) == nullptr) {
-                if (error != nullptr) {
-                    *error = "Upgraded card JSON references an unknown base card.";
-                }
-                return false;
-            }
-        }
-    }
     normalizeUpgradedCards();
     recordCurrentOwnedCards();
     resumePage_ = (state_.page == AppPage::MainMenu) ? AppPage::Map : state_.page;

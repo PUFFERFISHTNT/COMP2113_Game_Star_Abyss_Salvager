@@ -66,74 +66,12 @@ std::string GameEngine::canonicalCardRef(const std::string& cardRef) const {
     return makeCardRef(baseCardId(cardRef), cardUpgradeLevel(cardRef));
 }
 
-const CardDef* GameEngine::upgradedCardByBaseId(const std::string& cardId) const {
-    const std::string baseId = baseCardId(cardId);
-    const auto found = std::find_if(upgradedCardPool_.begin(), upgradedCardPool_.end(), [&](const CardDef& card) {
-        return card.id == baseId;
-    });
-    return found == upgradedCardPool_.end() ? nullptr : &(*found);
-}
-
 const CardDef* GameEngine::configuredUpgradeCardByBaseId(const std::string& cardId) const {
     const std::string baseId = baseCardId(cardId);
     const auto found = std::find_if(
         configuredUpgradePool_.begin(), configuredUpgradePool_.end(),
         [&](const CardDef& card) { return card.id == baseId; });
     return found == configuredUpgradePool_.end() ? nullptr : &(*found);
-}
-
-void GameEngine::storeUpgradedCard(const std::string& cardId) {
-    const CardDef* base = cardById(cardId);
-    if (base == nullptr) {
-        return;
-    }
-
-    CardDef upgraded = applyUpgrade(*base, 1);
-    upgraded.id = base->id;
-    upgraded.name = base->name + "+++";
-
-    auto found = std::find_if(upgradedCardPool_.begin(), upgradedCardPool_.end(), [&](const CardDef& card) {
-        return card.id == upgraded.id;
-    });
-    if (found == upgradedCardPool_.end()) {
-        upgradedCardPool_.push_back(upgraded);
-    } else {
-        *found = upgraded;
-    }
-}
-
-void GameEngine::rebuildUpgradedCardPool() {
-    std::sort(state_.upgradedCardTypes.begin(), state_.upgradedCardTypes.end());
-    state_.upgradedCardTypes.erase(std::unique(state_.upgradedCardTypes.begin(),
-                                               state_.upgradedCardTypes.end()),
-                                   state_.upgradedCardTypes.end());
-
-    if (!upgradedCardPool_.empty()) {
-        std::vector<std::string> upgraded_ids;
-        upgraded_ids.reserve(upgradedCardPool_.size());
-        for (const CardDef& card : upgradedCardPool_) {
-            upgraded_ids.push_back(card.id);
-        }
-        state_.upgradedCardTypes.insert(state_.upgradedCardTypes.end(), upgraded_ids.begin(), upgraded_ids.end());
-        std::sort(state_.upgradedCardTypes.begin(), state_.upgradedCardTypes.end());
-        state_.upgradedCardTypes.erase(std::unique(state_.upgradedCardTypes.begin(),
-                                                   state_.upgradedCardTypes.end()),
-                                       state_.upgradedCardTypes.end());
-    }
-
-    if (upgradedCardPool_.empty()) {
-        for (const std::string& cardId : state_.upgradedCardTypes) {
-            storeUpgradedCard(cardId);
-        }
-    }
-}
-
-bool GameEngine::isCardTypeUpgraded(const std::string& cardId) const {
-    return cardUpgradeLevel(cardId) >= kCardUpgradeMaxLevel;
-}
-
-void GameEngine::markCardTypeUpgraded(const std::string& cardId) {
-    (void)cardId;
 }
 
 void GameEngine::normalizeUpgradedCards() {
@@ -170,7 +108,6 @@ void GameEngine::normalizeUpgradedCards() {
     }
 
     state_.upgradedCardTypes.clear();
-    upgradedCardPool_.clear();
 }
 
 std::string GameEngine::makeDeckInstancePayload(const std::string& pileId, size_t index) const {
@@ -231,125 +168,7 @@ bool GameEngine::replaceDeckInstanceCardRef(const std::string& payload, const st
 }
 
 bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
-    if (configuredUpgradeCardByBaseId(cardId) != nullptr) {
-        return true;
-    }
-    const CardDef* card = cardById(cardId);
-    if (card == nullptr) {
-        return false;
-    }
-    return card->damage != 0 ||
-           card->shield != 0 ||
-           card->heal != 0 ||
-           card->draw != 0 ||
-           card->energy != 0 ||
-           card->nextTurnEnergy != 0 ||
-           card->heat != 0 ||
-           card->enemyHeat != 0 ||
-           card->selfDamage != 0 ||
-           card->multiHit > 1 ||
-           card->comboBonus != 0 ||
-           card->attackMultiplier > 1 ||
-           card->weakenTurns != 0 ||
-           (card->removeEnemyShield > 0 && card->removeEnemyShield < 999) ||
-           card->shieldLockTurns != 0 ||
-           card->salvageBonus != 0 ||
-           card->summonDroneCount != 0 ||
-           card->summonDroneAttack != 0 ||
-           card->summonDroneShield != 0 ||
-           card->summonDroneDuration != 0 ||
-           card->buffDroneAttack != 0 ||
-           card->buffDroneShield != 0 ||
-           card->formShift != 0 ||
-           card->formToggle ||
-           card->overloadIncomingDamageReducePercent != 0 ||
-           card->leaveDefenseEnergyBonus != 0 ||
-           card->leaveDefenseShieldBonus != 0 ||
-           card->auxImmediateTriggerTimes != 0 ||
-           card->auxEndTurnExtraTriggerTimes != 0 ||
-           card->auxEffectPercentBonus != 0 ||
-           card->auxDestroyCount != 0 ||
-           card->auxDestroyRewardMultiplierPercent != 0 ||
-           card->firstSummonExtraCopies != 0 ||
-           card->firstSummonExtraScope != 0 ||
-           card->summonCardPlayedDrawThisTurn != 0 ||
-           card->formChangesThisTurnThreshold != 0 ||
-           card->formChangesThisTurnBonusDamage != 0 ||
-           card->firstEnterHighHeatEnergyThisBattle != 0 ||
-           card->firstEnterHighHeatDrawThisBattle != 0 ||
-           card->eachEnterHighHeatDrawThisBattle != 0 ||
-           card->firstSummonEnemyHeatPerTurnThisBattle != 0 ||
-           card->firstSummonEnemyHeatAttackBonusPerTurnThisBattle != 0 ||
-           card->enterOverloadEnemyHeatThisBattle != 0 ||
-           card->leaveDefenseEnemyHeatThisBattle != 0 ||
-           card->blackboxCopyCount != 0 ||
-           card->blackboxProtocol;
-}
-
-CardDef GameEngine::applyUpgrade(const CardDef& baseCard, int upgradeLevel) const {
-    CardDef upgraded = baseCard;
-    for (int level = 0; level < upgradeLevel; ++level) {
-        const auto scale_value = [](int value) {
-            if (value == 0) {
-                return 0;
-            }
-            const int magnitude = std::abs(value);
-            const int scaled = (magnitude * 3 + 1) / 2;
-            return value > 0 ? scaled : -scaled;
-        };
-
-        upgraded.damage = scale_value(upgraded.damage);
-        upgraded.shield = scale_value(upgraded.shield);
-        upgraded.heal = scale_value(upgraded.heal);
-        upgraded.draw = scale_value(upgraded.draw);
-        upgraded.energy = scale_value(upgraded.energy);
-        upgraded.nextTurnEnergy = scale_value(upgraded.nextTurnEnergy);
-        upgraded.heat = scale_value(upgraded.heat);
-        upgraded.enemyHeat = scale_value(upgraded.enemyHeat);
-        upgraded.selfDamage = scale_value(upgraded.selfDamage);
-        if (upgraded.multiHit > 1) {
-            upgraded.multiHit = scale_value(upgraded.multiHit);
-        }
-        upgraded.comboBonus = scale_value(upgraded.comboBonus);
-        if (upgraded.attackMultiplier > 1) {
-            upgraded.attackMultiplier = scale_value(upgraded.attackMultiplier);
-        }
-        upgraded.weakenTurns = scale_value(upgraded.weakenTurns);
-        if (upgraded.removeEnemyShield > 0 && upgraded.removeEnemyShield < 999) {
-            upgraded.removeEnemyShield = scale_value(upgraded.removeEnemyShield);
-        }
-        upgraded.shieldLockTurns = scale_value(upgraded.shieldLockTurns);
-        upgraded.salvageBonus = scale_value(upgraded.salvageBonus);
-        upgraded.summonDroneCount = scale_value(upgraded.summonDroneCount);
-        upgraded.summonDroneAttack = scale_value(upgraded.summonDroneAttack);
-        upgraded.summonDroneShield = scale_value(upgraded.summonDroneShield);
-        if (upgraded.summonDroneDuration > 0) {
-            upgraded.summonDroneDuration = scale_value(upgraded.summonDroneDuration);
-        }
-        upgraded.buffDroneAttack = scale_value(upgraded.buffDroneAttack);
-        upgraded.buffDroneShield = scale_value(upgraded.buffDroneShield);
-        upgraded.auxImmediateTriggerTimes = scale_value(upgraded.auxImmediateTriggerTimes);
-        upgraded.auxEndTurnExtraTriggerTimes = scale_value(upgraded.auxEndTurnExtraTriggerTimes);
-        upgraded.auxEffectPercentBonus = scale_value(upgraded.auxEffectPercentBonus);
-        upgraded.auxDestroyCount = scale_value(upgraded.auxDestroyCount);
-        upgraded.auxDestroyRewardMultiplierPercent = scale_value(upgraded.auxDestroyRewardMultiplierPercent);
-        upgraded.firstSummonExtraCopies = scale_value(upgraded.firstSummonExtraCopies);
-        upgraded.summonCardPlayedDrawThisTurn = scale_value(upgraded.summonCardPlayedDrawThisTurn);
-        upgraded.formChangesThisTurnBonusDamage = scale_value(upgraded.formChangesThisTurnBonusDamage);
-        upgraded.firstEnterHighHeatEnergyThisBattle = scale_value(upgraded.firstEnterHighHeatEnergyThisBattle);
-        upgraded.firstEnterHighHeatDrawThisBattle = scale_value(upgraded.firstEnterHighHeatDrawThisBattle);
-        upgraded.eachEnterHighHeatDrawThisBattle = scale_value(upgraded.eachEnterHighHeatDrawThisBattle);
-        upgraded.firstSummonEnemyHeatPerTurnThisBattle = scale_value(upgraded.firstSummonEnemyHeatPerTurnThisBattle);
-        upgraded.firstSummonEnemyHeatAttackBonusPerTurnThisBattle =
-            scale_value(upgraded.firstSummonEnemyHeatAttackBonusPerTurnThisBattle);
-        upgraded.enterOverloadEnemyHeatThisBattle = scale_value(upgraded.enterOverloadEnemyHeatThisBattle);
-        upgraded.leaveDefenseEnemyHeatThisBattle = scale_value(upgraded.leaveDefenseEnemyHeatThisBattle);
-        upgraded.overloadIncomingDamageReducePercent = scale_value(upgraded.overloadIncomingDamageReducePercent);
-        upgraded.blackboxCopyCount = scale_value(upgraded.blackboxCopyCount);
-        upgraded.leaveDefenseEnergyBonus = scale_value(upgraded.leaveDefenseEnergyBonus);
-        upgraded.leaveDefenseShieldBonus = scale_value(upgraded.leaveDefenseShieldBonus);
-    }
-    return upgraded;
+    return configuredUpgradeCardByBaseId(cardId) != nullptr;
 }
 
 CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
@@ -358,20 +177,21 @@ CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
         return CardDef{};
     }
     const int effectiveUpgradeLevel = cardUpgradeLevel(cardRef);
-    if (effectiveUpgradeLevel > 0) {
-        const CardDef* configured = configuredUpgradeCardByBaseId(base->id);
-        if (configured != nullptr) {
-            return *configured;
-        }
+    if (effectiveUpgradeLevel <= 0) {
+        return *base;
     }
-    CardDef resolved = applyUpgrade(*base, effectiveUpgradeLevel);
-    if (effectiveUpgradeLevel > 0) {
-        resolved.name += "+++";
-        if (!resolved.nameEn.empty()) {
-            resolved.nameEn += "+++";
-        }
+
+    const CardDef* configured = configuredUpgradeCardByBaseId(base->id);
+    if (configured != nullptr) {
+        return *configured;
     }
-    return resolved;
+
+    CardDef fallback = *base;
+    fallback.name += "+++";
+    if (!fallback.nameEn.empty()) {
+        fallback.nameEn += "+++";
+    }
+    return fallback;
 }
 
 std::string GameEngine::displayCardName(const std::string& cardRef) const {

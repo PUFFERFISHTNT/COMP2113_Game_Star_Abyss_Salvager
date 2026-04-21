@@ -6,18 +6,12 @@
 
 #include "tui_game.h"
 
-// This module owns JSON loading for original card definitions and JSON
-// persistence for upgraded card definitions stored alongside save files.
+// This module owns JSON loading for the base card list plus the upgrade
+// definitions authored alongside each card in data/cards.json.
 
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,
                            std::vector<CardDef>* upgrades,
                            std::string* error);
-bool LoadUpgradedCardsFromJsonFile(const std::string& path,
-                                   std::vector<CardDef>* cards,
-                                   std::string* error);
-bool SaveUpgradedCardsToJsonFile(const std::string& path,
-                                 const std::vector<CardDef>& cards,
-                                 std::string* error);
 
 #endif

@@ -101,6 +101,7 @@ This release already supports:
 ## Important Runtime Notes
 
 - Saves are written into `save/` and use a text-based `.sav` format.
+- Card upgrades are now resolved only from the `upgrade` definitions inside `data/cards.json`; older `save/*.cards.json` sidecars are ignored and cleaned up on the next save.
 - The game currently stores the player currency internally in a field still named `scrap`, but all player-facing UI presents it as **credits**.
 - Gameplay data and rules are still compiled into the program for portability, but the implementation is now split across `src/engine/` and `src/ui/` rather than kept in two oversized source files.
 - The purge screen now shows page progress and warns that starter cards may appear on later pages.

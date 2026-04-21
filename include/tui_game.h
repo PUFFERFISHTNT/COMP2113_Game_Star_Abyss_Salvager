@@ -268,6 +268,8 @@ struct RunState {
     std::string statusLine;
     PlayerState player;
     EnemyState enemy;
+    // Legacy saves may still carry type-level upgrade markers. They are
+    // normalized into per-instance refs during load and are not written again.
     std::vector<std::string> upgradedCardTypes;
     std::vector<std::string> marketOfferCardIds;
     std::vector<NodeOption> routeOptions;
@@ -373,7 +375,6 @@ private:
     std::mt19937 rng_;
     std::vector<CardDef> cardPool_;
     std::vector<CardDef> configuredUpgradePool_;
-    std::vector<CardDef> upgradedCardPool_;
     std::vector<std::string> obtainedCardIds_;
     std::vector<EnemyTemplate> enemyPool_;
     std::vector<ShipTemplate> ships_;
@@ -384,12 +385,7 @@ private:
     void setupPlayerForShip(const ShipTemplate& ship, int difficulty);
     void grantRelic(const std::string& relicId);
     bool hasRelic(const std::string& relicId) const;
-    const CardDef* upgradedCardByBaseId(const std::string& cardId) const;
     const CardDef* configuredUpgradeCardByBaseId(const std::string& cardId) const;
-    void storeUpgradedCard(const std::string& cardId);
-    void rebuildUpgradedCardPool();
-    bool isCardTypeUpgraded(const std::string& cardId) const;
-    void markCardTypeUpgraded(const std::string& cardId);
     void normalizeUpgradedCards();
     bool cardTypeSupportsUpgrade(const std::string& cardId) const;
     std::string makeDeckInstancePayload(const std::string& pileId, size_t index) const;
@@ -398,7 +394,6 @@ private:
     std::string playerFormLabel() const;
     std::string baseCardId(const std::string& cardRef) const;
     std::string makeCardRef(const std::string& cardId, int upgradeLevel) const;
-    CardDef applyUpgrade(const CardDef& baseCard, int upgradeLevel) const;
 
     void generateRouteOptions();
     void startEncounterForNode(const NodeOption& node);
