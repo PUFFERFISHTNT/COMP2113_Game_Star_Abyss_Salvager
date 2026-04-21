@@ -309,6 +309,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
                     engine_.showHelp();
                 } else if (index == 5) {
                     language_ = language_ == UiLanguage::English ? UiLanguage::Chinese : UiLanguage::English;
+                    SaveLanguagePreference();
                 } else if (index == 6) screen_.ExitLoopClosure()();
                 break;
             case AppPage::Map:

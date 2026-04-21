@@ -2,6 +2,9 @@
 
 #include <array>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -14,7 +17,15 @@
 
 using namespace ftxui;
 
+namespace {
+
+constexpr const char* kLanguagePreferencePath = "save/ui_language.txt";
+
+}  // namespace
+
 StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
+    LoadLanguagePreference();
+
     menuButtons_[0] = Button(&menuLabels_[0], [&] { engine_.resumeRun(); SyncUi(); }, AccentButton(kHull));
     menuButtons_[1] = Button(&menuLabels_[1], [&] { engine_.startAnotherRun(); SyncUi(); }, AccentButton(kGold));
     menuButtons_[2] = Button(&menuLabels_[2], [&] { OpenSaveDialog(SaveDialogMode::Load); SyncUi(); }, AccentButton(kGold));
@@ -30,6 +41,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     }, AccentButton(kHull));
     menuButtons_[5] = Button(&menuLabels_[5], [&] {
         language_ = language_ == UiLanguage::English ? UiLanguage::Chinese : UiLanguage::English;
+        SaveLanguagePreference();
         SyncUi();
     }, AccentButton(kGold));
     menuButtons_[6] = Button(&menuLabels_[6], [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
@@ -131,6 +143,37 @@ StarAbyssApp::~StarAbyssApp() {
     if (ticker_.joinable()) {
         ticker_.join();
     }
+}
+
+void StarAbyssApp::LoadLanguagePreference() {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::create_directories("save", ec);
+
+    std::ifstream input(kLanguagePreferencePath);
+    if (!input) {
+        return;
+    }
+
+    std::string token;
+    input >> token;
+    if (token == "zh" || token == "ZH" || token == "chinese" || token == "Chinese") {
+        language_ = UiLanguage::Chinese;
+    } else if (token == "en" || token == "EN" || token == "english" || token == "English") {
+        language_ = UiLanguage::English;
+    }
+}
+
+void StarAbyssApp::SaveLanguagePreference() const {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::create_directories("save", ec);
+
+    std::ofstream output(kLanguagePreferencePath, std::ios::trunc);
+    if (!output) {
+        return;
+    }
+    output << (language_ == UiLanguage::Chinese ? "zh\n" : "en\n");
 }
 
 ftxui::Component CreateApp(ftxui::ScreenInteractive& screen) {

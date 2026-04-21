@@ -2,6 +2,7 @@ obj/
 *.exe
 save/*.sav
 save/*.cards.json
+save/ui_language.txt
 data/leaderboard.txt
 star_abyss_salvager
 battle_smoke_check
