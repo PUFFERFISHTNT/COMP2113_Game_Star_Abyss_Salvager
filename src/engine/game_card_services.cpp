@@ -27,14 +27,29 @@ void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
 std::string GameEngine::baseCardId(const std::string& cardRef) const {
     const std::string normalized =
         cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
+    const auto resolve_alias = [&](const std::string& token) -> std::string {
+        const auto by_base_name = std::find_if(cardPool_.begin(), cardPool_.end(), [&](const CardDef& card) {
+            return card.id == token || card.name == token || card.nameEn == token;
+        });
+        if (by_base_name != cardPool_.end()) {
+            return by_base_name->id;
+        }
+        const auto by_upgrade_name = std::find_if(configuredUpgradePool_.begin(), configuredUpgradePool_.end(), [&](const CardDef& card) {
+            return card.name == token || card.nameEn == token;
+        });
+        if (by_upgrade_name != configuredUpgradePool_.end()) {
+            return by_upgrade_name->id;
+        }
+        return token;
+    };
     const size_t separator = normalized.rfind('@');
     if (separator == std::string::npos) {
-        return normalized;
+        return resolve_alias(normalized);
     }
     const std::string suffix = normalized.substr(separator + 1);
     if (suffix.empty() ||
         !std::all_of(suffix.begin(), suffix.end(), [](unsigned char ch) { return ch >= '0' && ch <= '9'; })) {
-        return normalized;
+        return resolve_alias(normalized);
     }
     return normalized.substr(0, separator);
 }
@@ -42,14 +57,20 @@ std::string GameEngine::baseCardId(const std::string& cardRef) const {
 int GameEngine::cardUpgradeLevel(const std::string& cardRef) const {
     const std::string normalized =
         cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
+    const auto alias_level = [&](const std::string& token) -> int {
+        const auto found = std::find_if(configuredUpgradePool_.begin(), configuredUpgradePool_.end(), [&](const CardDef& card) {
+            return card.name == token || card.nameEn == token;
+        });
+        return found == configuredUpgradePool_.end() ? 0 : 1;
+    };
     const size_t separator = normalized.rfind('@');
     if (separator == std::string::npos) {
-        return 0;
+        return alias_level(normalized);
     }
     const std::string suffix = normalized.substr(separator + 1);
     if (suffix.empty() ||
         !std::all_of(suffix.begin(), suffix.end(), [](unsigned char ch) { return ch >= '0' && ch <= '9'; })) {
-        return 0;
+        return alias_level(normalized);
     }
     try {
         return std::max(0, std::stoi(suffix));

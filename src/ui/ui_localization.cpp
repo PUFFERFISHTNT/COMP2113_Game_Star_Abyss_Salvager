@@ -34,7 +34,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         std::vector<CardDef> cards;
         std::vector<CardDef> upgrades;
         std::string load_error;
-        if (LoadCardsFromJsonFile("data/cards.json", &cards, &upgrades, &load_error)) {
+        if (LoadCardsFromJsonFile(ResolveCardsJsonPath(), &cards, &upgrades, &load_error)) {
             const auto add_pair = [&](const std::string& zh, const std::string& en, bool is_name) {
                 if (zh.empty() || en.empty() || zh == en) {
                     return;
@@ -101,9 +101,27 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"War Corvette", "战争轻巡"},
         {"Black Market Hunter", "黑市猎手"},
         {"Corrupted AI Ship", "失控 AI 战舰"},
+        {"Pirate Needle", "海盗尖针舰"},
+        {"Scrapbreaker Tug", "碎铁拖船"},
+        {"Signal Leech Mk-II", "信号水蛭 Mk-II"},
+        {"Rogue Miner Colossus", "失控矿业巨像"},
         {"Dread Frigate Omega", "欧米伽无畏护卫舰"},
+        {"Cinder Hauler", "炽烬运载舰"},
+        {"Furnace Tender", "熔炉补给舰"},
+        {"Ember Rack Skiff", "余烬挂架艇"},
+        {"Slag Tribunal", "熔渣裁决者"},
         {"The Furnace Carrier", "熔炉航母"},
+        {"Phase Skewer", "相位穿刺者"},
+        {"Null Choir", "虚无合唱团"},
+        {"Core Warder", "核心守望者"},
+        {"Reality Harrower", "现实劫掠者"},
         {"Abyss Core Sentinel", "深渊核心哨兵"},
+        {"The Pale Broker", "苍白掮客"},
+        {"Saint of Cinders", "灰烬圣者"},
+        {"The Choir Beneath", "深处合唱"},
+        {"Salvager Zero", "零号打捞者"},
+        {"Hostile Contact", "敌方接触目标"},
+        {"Anomalous War Signature", "异常战争信号"},
         {"Laser Burst", "激光爆裂"},
         {"Raise Shield", "升起护盾"},
         {"Coolant Flush", "冷却液冲洗"},
@@ -188,6 +206,70 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Jam Pulse", "干扰脉冲"},
         {"Hunter Volley", "猎手齐射"},
         {"Tracer Burn", "曳光灼烧"},
+        {"Needle Burst", "尖针齐射"},
+        {"Afterburn Dash", "加力突袭"},
+        {"Scrap Bulkhead", "碎铁隔板"},
+        {"Tow Ram", "拖拽冲角"},
+        {"Brace Thrusters", "稳推姿态"},
+        {"Pulse Jam", "脉冲干扰"},
+        {"Seismic Beam", "震裂光束"},
+        {"Shrapnel Wash", "破片洪流"},
+        {"Ore Plating", "矿层装甲"},
+        {"Slag Exhaust", "熔渣排气"},
+        {"Cargo Swing", "货舱横扫"},
+        {"Insulated Plating", "隔热装甲"},
+        {"Thermal Screen", "热幕护屏"},
+        {"Boiler Surge", "锅炉激涌"},
+        {"Coolant Wall", "冷却壁"},
+        {"Pipe Lash", "管线鞭击"},
+        {"Incendiary Burst", "燃烧爆裂"},
+        {"Rack Detonation", "挂架殉爆"},
+        {"Verdict Barrier", "裁决壁障"},
+        {"Molten Sentence", "熔刑宣告"},
+        {"Execution Lance", "处决长枪"},
+        {"Suppression Pulse", "压制脉冲"},
+        {"Phase Jab", "相位突刺"},
+        {"Warp Friction", "曲跃摩擦"},
+        {"Skewer Drive", "穿刺推进"},
+        {"Silence Vector", "寂静向量"},
+        {"Null Resonance", "虚无共振"},
+        {"Echo Collapse", "回响坍缩"},
+        {"Static Break", "静电断裂"},
+        {"Core Guard", "核心护卫"},
+        {"Core Drill Spin-Up", "核心钻机蓄压"},
+        {"Beam Sweep", "光束横扫"},
+        {"Anchor Field", "锚定力场"},
+        {"Containment Leak", "约束泄漏"},
+        {"Rift Slash", "裂隙斩击"},
+        {"Entropy Bloom", "熵增绽放"},
+        {"Fracture Veil", "裂界帷幕"},
+        {"Static Snare", "静滞陷网"},
+        {"Contract Lock", "契约封锁"},
+        {"Broker Screen", "掮客屏障"},
+        {"Asset Seizure", "资产扣押"},
+        {"Salvage Burn", "打捞灼烧"},
+        {"Liquidation Shot", "清算射击"},
+        {"Kiln Mantle", "窑炉圣袍"},
+        {"Censer Exhaust", "香炉排烟"},
+        {"Sanctified Pressure", "圣化蓄压"},
+        {"Foundry Verdict", "铸炉裁决"},
+        {"Ash Injection", "灰烬注入"},
+        {"Ashen Choir", "灰烬圣咏"},
+        {"Mute Pulse", "静默脉冲"},
+        {"Resonance Fever", "共振热病"},
+        {"Echo Veil", "回声帷幕"},
+        {"Hymn of Collapse", "坍缩圣歌"},
+        {"Silence Cascade", "静默级联"},
+        {"Prototype Shell", "原型机壳"},
+        {"Smelter Shell", "熔炼外壳"},
+        {"Reactor Flare", "反应堆闪焰"},
+        {"Reactor Overwrite", "反应堆覆写"},
+        {"Salvage Breaker", "打捞破碎锤"},
+        {"System Refit Pulse", "系统重构脉冲"},
+        {"Zero-State Windup", "零态蓄能"},
+        {"Collapse Verdict", "坍缩裁决"},
+        {"Origin Collapse", "原初坍缩"},
+        {"Abyss Pressure", "深渊压强"},
         {"Glitch Strike", "故障打击"},
         {"Phase Barrier", "相位屏障"},
         {"Entropy Pulse", "熵脉冲"},
@@ -207,6 +289,13 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Black Market", "黑市"},
         {"Black Market Purge", "黑市移除终端"},
         {"Strange Signal", "诡异信号"},
+        {"Hostile signatures spike ahead.", "前方敌对信号陡增。"},
+        {"A heavy hostile vessel blocks the lane.", "一艘重型敌舰挡住了航道。"},
+        {"A high-priority anomalous war signature requests immediate attention.", "一道高优先级异常战舰信号请求立即处理。"},
+        {"Broker Echo", "掮客残响"},
+        {"Cinder Shrine Signal", "灰烬圣坛信号"},
+        {"Beneath Choir Resonance", "深处合唱共振"},
+        {"Prototype Zero Trace", "零号原型踪迹"},
         {"Fast raiders are sweeping the lane ahead.", "前方航道有高速掠袭舰巡弋。"},
         {"A heavier hostile signature holds position.", "更重型的敌舰信号正在前方驻守。"},
         {"Broken hulls drift in a silent salvage field.", "破碎船壳漂浮在寂静的打捞场中。"},
@@ -293,6 +382,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Leave the purge rig untouched and continue.", "不使用删牌终端，直接继续前进。"},
         {"Leave the tuning lattice unused and continue.", "不使用调谐阵列，直接继续前进。"},
         {"Leave the retrofit console unused and continue.", "不使用改装终端，直接继续前进。"},
+        {"Upgrade exactly 1 copy in the deck.", "精确升级牌组中的 1 个卡牌实例。"},
         {"Upgrade Service", "升级服务"},
         {"Price Free", "价格：免费"},
         {"Purge service already used on this visit.", "本次进店的删牌服务已使用。"},
@@ -523,8 +613,11 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Emergency dodge", "紧急闪避"},
         {"Accept the truth", "接受真相"},
         {"Extract the origin", "提取起源"},
+        {"Withdraw", "撤离"},
 
         // ---- New event system: details ----
+        {"The signal condenses into a hostile flagship profile. Engaging now could uncover hidden truths, but retreat is still possible.",
+         "那道信号凝聚成一艘敌对旗舰的轮廓。现在交战也许能揭开隐藏的真相，但你仍然可以选择撤退。"},
         {"Gain 10 HP and 12 credits.", "获得 10 生命和 12 金币。"},
         {"Reduce 3 heat and gain 1 random card.", "减少 3 热量并获得 1 张随机卡牌。"},
         {"Continue without delay.", "继续前进，不耽搁。"},
@@ -918,6 +1011,13 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
                " 金币。第 " + text.substr(page_start, page_end - page_start) +
                " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
     }
+    if (StartsWith(text, "Select one card to upgrade. Current price: ") &&
+        text.find(" credits. The full deck is shown below; scroll vertically if needed.") != std::string::npos) {
+        const size_t price_start = std::string("Select one card to upgrade. Current price: ").size();
+        const size_t price_end = text.find(" credits. The full deck is shown below; scroll vertically if needed.");
+        return "选择 1 张卡牌升级。当前价格：" + text.substr(price_start, price_end - price_start) +
+               " 金币。下方会显示整个牌组，需要时可纵向滚动浏览。";
+    }
     if (StartsWith(text, "A hidden rig can erase one card from your deck for free. Page ") &&
         text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
         const size_t page_start = std::string("A hidden rig can erase one card from your deck for free. Page ").size();
@@ -934,6 +1034,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
                text.substr(page_start, page_end - page_start) +
                " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
     }
+    if (text == "A tuning lattice lets you upgrade one card for free. The full deck is shown below; scroll vertically if needed.") {
+        return "一组调谐阵列可以免费升级你卡组中的 1 张牌。下方会显示整个牌组，需要时可纵向滚动浏览。";
+    }
     if (StartsWith(text, "Select one card to upgrade for free at the repair station. Page ") &&
         text.find(". Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
         const size_t page_start = std::string("Select one card to upgrade for free at the repair station. Page ").size();
@@ -941,6 +1044,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         return "选择 1 种卡牌在维修站免费升级。第 " +
                text.substr(page_start, page_end - page_start) +
                " 页。需要时可用鼠标滚轮、[ ] 或 PgUp/PgDn 滚动。";
+    }
+    if (text == "Select one card to upgrade for free at the repair station. The full deck is shown below; scroll vertically if needed.") {
+        return "选择 1 张卡牌在维修站免费升级。下方会显示整个牌组，需要时可纵向滚动浏览。";
     }
     if (StartsWith(text, "Select one card to erase from your deck. Price: 20 credits. Each market visit allows only one purge. Page ") &&
         text.find(". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.") != std::string::npos) {
@@ -1155,6 +1261,14 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "The Ark's beacon activates. Gained a legendary card. +8 heat. Something awakens.") return "方舟信标激活。获得 1 张传说卡牌。+8 热量。有什么苏醒了。";
     if (text == "Dismantled the beacon. +25 credits, gained a relic, -6 HP.") return "拆解了信标。+25 金币，获得遗物，-6 生命。";
     if (text == "Blocked the beacon. Escape route initiated. No more boss encounters.") return "封锁了信标。逃离路线已启动。不再有 Boss 战。";
+    if (text == "Signal lock confirmed. Story boss battle engaged.") return "信号锁定完成。剧情 Boss 战已开始。";
+    if (text == "You break lock and leave the anomalous signature behind.") return "你解除锁定，把那道异常信号抛在身后。";
+    if (StartsWith(text, "Force a boss battle against ") && EndsWith(text, ".")) {
+        const std::string prefix = "Force a boss battle against ";
+        const std::string name = text.substr(prefix.size(), text.size() - prefix.size() - 1);
+        return "强制与 " + TranslateGameText(language, name) + " 进行一场 Boss 战。";
+    }
+    if (text == "Abort contact and continue your route.") return "中止接触，继续你的航线。";
     // Event C1 – Reactor Leak
     if (text == "Manual stabilization. -3 HP, -4 heat.") return "手动稳定。-3 生命，-4 热量。";
     if (text == "Emergency cooling activated. -8 credits.") return "紧急冷却已启动。-8 金币。";

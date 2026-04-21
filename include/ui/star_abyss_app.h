@@ -61,6 +61,8 @@ private:
     void CloseCardViewer();
     void ToggleBattlePileInspector(BattlePileInspector target);
     void CloseBattlePileInspector();
+    void LoadLanguagePreference();
+    void SaveLanguagePreference() const;
     ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
     static constexpr size_t PageIndex(AppPage page) { return static_cast<size_t>(page); }
 

@@ -1,6 +1,7 @@
 #include "engine/game_card_json.h"
 
 #include <cctype>
+#include <filesystem>
 #include <functional>
 #include <fstream>
 #include <map>
@@ -8,7 +9,41 @@
 #include <string>
 #include <vector>
 
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#endif
+
 namespace {
+
+std::filesystem::path ExecutablePath() {
+#if defined(__APPLE__)
+    uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    std::vector<char> buffer(size + 1, '\0');
+    if (_NSGetExecutablePath(buffer.data(), &size) == 0) {
+        return std::filesystem::weakly_canonical(std::filesystem::path(buffer.data()));
+    }
+#elif defined(__linux__)
+    std::vector<char> buffer(4096, '\0');
+    const ssize_t size = ::readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+    if (size > 0) {
+        buffer[static_cast<size_t>(size)] = '\0';
+        return std::filesystem::weakly_canonical(std::filesystem::path(buffer.data()));
+    }
+#elif defined(_WIN32)
+    std::vector<char> buffer(MAX_PATH, '\0');
+    const DWORD size = GetModuleFileNameA(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    if (size > 0 && size < buffer.size()) {
+        buffer[static_cast<size_t>(size)] = '\0';
+        return std::filesystem::weakly_canonical(std::filesystem::path(buffer.data()));
+    }
+#endif
+    return {};
+}
 
 struct JsonValue {
     enum class Type {
@@ -537,6 +572,24 @@ bool ParseCardList(const JsonValue& root,
 }
 
 }  // namespace
+
+std::string ResolveCardsJsonPath() {
+    namespace fs = std::filesystem;
+
+    const std::vector<fs::path> candidates = {
+        fs::path("data") / "cards.json",
+        ExecutablePath().empty() ? fs::path() : (ExecutablePath().parent_path() / "data" / "cards.json"),
+        ExecutablePath().empty() ? fs::path() : (ExecutablePath().parent_path().parent_path() / "data" / "cards.json"),
+    };
+
+    for (const fs::path& candidate : candidates) {
+        if (!candidate.empty() && fs::exists(candidate)) {
+            return candidate.string();
+        }
+    }
+
+    return (fs::path("data") / "cards.json").string();
+}
 
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,

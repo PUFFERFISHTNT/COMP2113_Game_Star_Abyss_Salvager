@@ -9,6 +9,8 @@
 // This module owns JSON loading for the base card list plus the upgrade
 // definitions authored alongside each card in data/cards.json.
 
+std::string ResolveCardsJsonPath();
+
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,
                            std::vector<CardDef>* upgrades,
