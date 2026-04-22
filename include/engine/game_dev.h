@@ -61,7 +61,7 @@ public:
     void exitDeveloperMode();
     bool handleOverlayEvent(ftxui::Event event);
     bool unlocked() const { return unlocked_; }
-    bool debugPanelVisible() const { return debug_panel_visible_; }
+    bool debugPanelVisible() const { return debug_panel_visible_ || event_panel_visible_; }
 
 private:
     enum DevPage : int {
@@ -74,10 +74,13 @@ private:
     ftxui::Element renderMain() const;
     ftxui::Element renderOverlay() const;
     ftxui::Element renderDebugPanel() const;
+    ftxui::Element renderEventPanel() const;
     void resetUiState();
     void rebuildDestinationOptions();
     void openDebugPanel();
     void closeDebugPanel();
+    void openEventPanel();
+    void closeEventPanel();
 
     GameEngine& engine_;
     UiLanguage& language_;
@@ -89,6 +92,7 @@ private:
     std::string status_line_;
     bool unlocked_ = false;
     bool debug_panel_visible_ = false;
+    bool event_panel_visible_ = false;
 
     int difficulty_index_ = 1;
     int ship_index_ = 0;
@@ -164,6 +168,9 @@ private:
     std::string label_debug_add_to_hand_;
     std::string label_debug_skip_battle_;
     std::string label_debug_return_map_;
+    std::string label_event_panel_title_;
+    std::string label_event_panel_confirm_;
+    std::string label_event_panel_close_;
     std::string label_inc_;
     std::string label_dec_;
     std::string label_inc5_;
@@ -224,6 +231,8 @@ private:
     ftxui::Component dbg_close_button_;
     ftxui::Component dbg_exit_dev_button_;
     ftxui::Component debug_panel_container_;
+    ftxui::Component event_panel_close_button_;
+    ftxui::Component event_panel_container_;
     ftxui::Component floating_bar_;
     ftxui::Component overlay_interactive_;
     ftxui::Component overlay_root_;

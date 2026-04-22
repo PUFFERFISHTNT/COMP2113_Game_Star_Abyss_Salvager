@@ -392,6 +392,21 @@ struct SceneEntry {
     const char* payload;
 };
 
+bool IsSelectableMapScene(const SceneEntry& entry) {
+    if (entry.sceneKey == nullptr) {
+        return false;
+    }
+    const std::string sceneKey = entry.sceneKey;
+    const std::string payload = entry.payload == nullptr ? "" : entry.payload;
+    if (sceneKey == "service") {
+        return false;
+    }
+    if (sceneKey == "route" && payload == "game_intro") {
+        return false;
+    }
+    return true;
+}
+
 std::vector<std::string> CopyEncounterText(const std::array<const char*, 4>& values) {
     std::vector<std::string> out;
     for (const char* value : values) {
@@ -765,6 +780,9 @@ DevModeUi::DevModeUi(GameEngine& engine,
         enemy_labels_.push_back(name);
     }
     for (const auto& entry : SceneCatalogue()) {
+        if (!IsSelectableMapScene(entry)) {
+            continue;
+        }
         encounter_labels_.emplace_back();
         encounter_ids_.push_back(entry.sceneKey == nullptr ? "" : entry.sceneKey);
         encounter_payloads_.push_back(entry.payload == nullptr ? "" : entry.payload);
@@ -840,8 +858,10 @@ DevModeUi::DevModeUi(GameEngine& engine,
         if (encounter_index_ < 0 || encounter_index_ >= static_cast<int>(encounter_ids_.size())) {
             return;
         }
-        engine_.dev_openDebugScene(encounter_ids_[encounter_index_], encounter_payloads_[encounter_index_]);
-        dismissModal();
+        const std::string sceneKey = encounter_ids_[encounter_index_];
+        const std::string payload = encounter_payloads_[encounter_index_];
+        closeEventPanel();
+        engine_.dev_openDebugScene(sceneKey, payload);
     }, AccentButton(kHull));
 
     battle_node_toggle_ = Toggle(&battle_node_labels_, &battle_node_index_);
@@ -962,12 +982,17 @@ DevModeUi::DevModeUi(GameEngine& engine,
         engine_.dev_skipCurrentBattleAsVictory();
     }, AccentButton(kEnemy));
     dbg_return_map_button_ = Button(&label_debug_return_map_, [&] {
+        closeDebugPanel();
         engine_.dev_returnToMap();
+        openEventPanel();
     }, AccentButton(kHull));
     dbg_close_button_ = Button(&label_debug_close_, [&] { closeDebugPanel(); },
                                AccentButton(kEnemy));
     dbg_exit_dev_button_ = Button(&label_debug_exit_dev_, [&] { exitDeveloperMode(); },
                                   AccentButton(kEnemy));
+    event_panel_close_button_ = Button(&label_event_panel_close_, [&] {
+        closeEventPanel();
+    }, AccentButton(kEnemy));
 
     debug_panel_container_ = Container::Vertical({
         dbg_hp_dec5_, dbg_hp_dec_, dbg_hp_inc_, dbg_hp_inc5_,
@@ -981,8 +1006,14 @@ DevModeUi::DevModeUi(GameEngine& engine,
         dbg_close_button_, dbg_exit_dev_button_,
     });
 
+    event_panel_container_ = Container::Vertical({
+        encounter_menu_,
+        trigger_encounter_button_,
+        event_panel_close_button_,
+    });
+
     floating_bar_ = Container::Horizontal({floating_button_, exit_dev_button_});
-    overlay_interactive_ = Container::Tab({floating_bar_, debug_panel_container_}, &overlay_page_);
+    overlay_interactive_ = Container::Tab({floating_bar_, debug_panel_container_, event_panel_container_}, &overlay_page_);
     overlay_root_ = Renderer(overlay_interactive_, [this] {
         rebuildLabels();
         return renderOverlay();
@@ -1011,11 +1042,15 @@ void DevModeUi::exitDeveloperMode() {
 }
 
 bool DevModeUi::handleOverlayEvent(Event event) {
-    if (!debug_panel_visible_) {
+    if (!debug_panel_visible_ && !event_panel_visible_) {
         return false;
     }
     if (event == Event::Escape) {
-        closeDebugPanel();
+        if (event_panel_visible_) {
+            closeEventPanel();
+        } else {
+            closeDebugPanel();
+        }
         return true;
     }
     if (overlay_interactive_ && overlay_interactive_->OnEvent(event)) {
@@ -1030,6 +1065,7 @@ void DevModeUi::resetUiState() {
     status_line_.clear();
     unlocked_ = false;
     debug_panel_visible_ = false;
+    event_panel_visible_ = false;
     overlay_page_ = 0;
     setup_destination_index_ = 0;
     destination_index_ = 0;
@@ -1045,12 +1081,27 @@ void DevModeUi::openDebugPanel() {
     if (!unlocked_) {
         return;
     }
+    event_panel_visible_ = false;
     debug_panel_visible_ = true;
     overlay_page_ = 1;
 }
 
 void DevModeUi::closeDebugPanel() {
     debug_panel_visible_ = false;
+    overlay_page_ = 0;
+}
+
+void DevModeUi::openEventPanel() {
+    if (!unlocked_) {
+        return;
+    }
+    debug_panel_visible_ = false;
+    event_panel_visible_ = true;
+    overlay_page_ = 2;
+}
+
+void DevModeUi::closeEventPanel() {
+    event_panel_visible_ = false;
     overlay_page_ = 0;
 }
 
@@ -1130,6 +1181,9 @@ void DevModeUi::rebuildLabels() {
     label_debug_add_to_hand_ = Tr(language_, "Add Selected To Hand", "加入手牌");
     label_debug_skip_battle_ = Tr(language_, "Skip Battle", "跳过战斗");
     label_debug_return_map_ = Tr(language_, "Return To Map", "返回地图");
+    label_event_panel_title_ = Tr(language_, "Event Selection", "事件选择");
+    label_event_panel_confirm_ = Tr(language_, "Trigger Selected Event", "触发选中事件");
+    label_event_panel_close_ = Tr(language_, "Close Panel", "关闭面板");
 
     label_inc_ = Tr(language_, " +1 ", " +1 ");
     label_dec_ = Tr(language_, " -1 ", " -1 ");
@@ -1160,10 +1214,21 @@ void DevModeUi::rebuildLabels() {
         enemy_labels_[i] = TranslateGameText(language_, enemies[i].second);
     }
 
-    const auto& scenes = SceneCatalogue();
-    for (size_t i = 0; i < scenes.size() && i < encounter_labels_.size(); ++i) {
-        encounter_labels_[i] = zh ? scenes[i].labelZh : scenes[i].labelEn;
+    for (size_t i = 0; i < encounter_labels_.size(); ++i) {
+        encounter_labels_[i].clear();
+        const std::string sceneKey = i < encounter_ids_.size() ? encounter_ids_[i] : "";
+        const std::string payload = i < encounter_payloads_.size() ? encounter_payloads_[i] : "";
+        for (const auto& scene : SceneCatalogue()) {
+            const std::string sceneId = scene.sceneKey == nullptr ? "" : scene.sceneKey;
+            const std::string scenePayload = scene.payload == nullptr ? "" : scene.payload;
+            if (sceneId == sceneKey && scenePayload == payload) {
+                encounter_labels_[i] = zh ? scene.labelZh : scene.labelEn;
+                break;
+            }
+        }
     }
+
+    label_trigger_encounter_ = label_event_panel_confirm_;
 
     battle_node_labels_[0] = Tr(language_, "Normal", "普通");
     battle_node_labels_[1] = Tr(language_, "Elite", "精英");
@@ -1250,6 +1315,14 @@ Element DevModeUi::renderMain() const {
 Element DevModeUi::renderOverlay() const {
     if (!unlocked_ || visible_) {
         return text("");
+    }
+
+    if (event_panel_visible_) {
+        Element panel = renderEventPanel();
+        return dbox({
+            filler() | bgcolor(kAbyss),
+            vbox({filler(), hbox({filler(), panel | flex_grow, filler()}), filler()}) | bgcolor(kAbyss),
+        }) | clear_under;
     }
 
     if (debug_panel_visible_) {
@@ -1345,6 +1418,29 @@ Element DevModeUi::renderDebugPanel() const {
         return (vbox(std::move(rows)) | vscroll_indicator | yframe |
            size(HEIGHT, LESS_THAN, 36) | size(WIDTH, GREATER_THAN, 60) |
             borderDouble | bgcolor(kAbyss)) | clear_under;
+}
+
+Element DevModeUi::renderEventPanel() const {
+    Elements rows;
+    rows.push_back(text(label_event_panel_title_) | bold | color(kGold) | center);
+    rows.push_back(separatorDouble());
+    rows.push_back(text(Tr(language_,
+                           "Choose any map-side event or location. Selecting one will trigger it immediately. Closing this panel keeps the map on its normal three random options.",
+                           "选择任意地图侧边会出现的事件或地点。选中后会立即触发；关闭此面板则保留地图原本的三个随机选项。")) |
+                   color(kHull));
+    rows.push_back(separator());
+    rows.push_back(encounter_menu_->Render() | vscroll_indicator | frame |
+                   size(HEIGHT, LESS_THAN, 18));
+    rows.push_back(separator());
+    rows.push_back(trigger_encounter_button_->Render());
+    rows.push_back(separator());
+    rows.push_back(event_panel_close_button_->Render());
+
+    Element panel = vbox(std::move(rows)) | vscroll_indicator | yframe |
+                    size(HEIGHT, LESS_THAN, 34) |
+                    size(WIDTH, GREATER_THAN, 70) |
+                    borderDouble | bgcolor(kAbyss);
+    return panel | clear_under;
 }
 
 }  // namespace dev_mode
