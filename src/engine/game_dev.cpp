@@ -54,13 +54,17 @@ extern std::string g_sa_event_epilogue;
 // =============================================================================
 
 void GameEngine::dev_initRunIfNeeded(int difficulty, const std::string& shipId) {
+    if (!dev_session_active_) {
+        dev_obtained_snapshot_ = obtainedCardIds_;
+        dev_obtained_snapshot_valid_ = true;
+        dev_session_active_ = true;
+    }
     if (!state_.hasRun) {
         startNewRun(difficulty, shipId);
         g_sa_game_intro_pending = false;
         state_.encounter = {};
         state_.page = AppPage::Map;
         resumePage_ = AppPage::Map;
-        state_.player.scrap = 500;
     }
 }
 
@@ -74,7 +78,6 @@ void GameEngine::dev_setShip(const std::string& shipId) {
         return;
     }
     setupPlayerForShip(*ship, state_.difficulty);
-    state_.player.scrap = 500;
 }
 
 void GameEngine::dev_setHp(int hp) {
@@ -133,6 +136,14 @@ void GameEngine::dev_addShield(int delta) {
 }
 
 void GameEngine::dev_shutdownSession() {
+    if (dev_obtained_snapshot_valid_) {
+        obtainedCardIds_ = dev_obtained_snapshot_;
+        saveObtainedCardRegistry(nullptr);
+    }
+    dev_obtained_snapshot_.clear();
+    dev_obtained_snapshot_valid_ = false;
+    dev_session_active_ = false;
+
     resetRunState();
     clearMarketState();
 
@@ -768,11 +779,8 @@ DevModeUi::DevModeUi(GameEngine& engine,
         if (password_input_ == kPassword) {
             password_input_.clear();
             status_line_.clear();
-            page_ = Main;
             unlocked_ = true;
-            engine_.dev_initRunIfNeeded(difficulty_index_,
-                                        ship_ids_.empty() ? "vanguard" : ship_ids_[ship_index_]);
-            engine_.dev_setDifficulty(difficulty_index_);
+            page_ = Main;
         } else {
             status_line_ = password_error_label_;
             password_input_.clear();
@@ -785,14 +793,29 @@ DevModeUi::DevModeUi(GameEngine& engine,
     // -------- Options modal components --------
     difficulty_toggle_ = Toggle(&difficulty_entries_, &difficulty_index_);
     ship_toggle_ = Toggle(&ship_entries_, &ship_index_);
+    setup_destination_menu_ = Menu(&destination_labels_, &setup_destination_index_);
 
     init_run_button_ = Button(&label_init_run_, [&] {
-        if (!ship_ids_.empty()) {
-            engine_.dev_initRunIfNeeded(difficulty_index_, ship_ids_[ship_index_]);
-            engine_.dev_setDifficulty(difficulty_index_);
-            engine_.dev_setShip(ship_ids_[ship_index_]);
-            status_line_ = "OK";
+        if (ship_ids_.empty() || ship_index_ < 0 || ship_index_ >= static_cast<int>(ship_ids_.size())) {
+            return;
         }
+        if (setup_destination_index_ < 0 ||
+            setup_destination_index_ >= static_cast<int>(destination_targets_.size())) {
+            return;
+        }
+
+        engine_.dev_initRunIfNeeded(difficulty_index_, ship_ids_[ship_index_]);
+
+        const auto [sec, dep] = destination_targets_[setup_destination_index_];
+        if (sec == -1) {
+            engine_.dev_setEscapeStage(dep);
+        } else if (sec == -2) {
+            engine_.dev_setTruthStage(dep, /*postBattle=*/true);
+        } else {
+            engine_.dev_jumpToSector(sec, dep);
+        }
+
+        dismissModal();
     }, AccentButton(kGold));
 
     destination_menu_ = Menu(&destination_labels_, &destination_index_);
@@ -809,7 +832,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
         } else {
             engine_.dev_jumpToSector(sec, dep);
         }
-        dismissModal();
+        closeDebugPanel();
     }, AccentButton(kHull));
 
     encounter_menu_ = Menu(&encounter_labels_, &encounter_index_);
@@ -875,14 +898,12 @@ DevModeUi::DevModeUi(GameEngine& engine,
     });
 
     main_page_ = Container::Vertical({
+        difficulty_toggle_,
+        ship_toggle_,
+        setup_destination_menu_,
+        init_run_button_,
         close_button_,
-        difficulty_toggle_, ship_toggle_, init_run_button_,
-        destination_menu_, jump_button_,
-        encounter_menu_, trigger_encounter_button_,
-        battle_node_toggle_, enemy_menu_, start_battle_button_, skip_battle_button_,
-        card_menu_, add_to_hand_button_, add_to_draw_button_, play_top_button_,
-        ending_menu_, show_ending_button_,
-        return_map_button_, modal_exit_dev_button_,
+        modal_exit_dev_button_,
     });
 
     pages_ = Container::Tab({password_page_, main_page_}, &page_);
@@ -955,7 +976,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
         dbg_heat_dec5_, dbg_heat_dec_, dbg_heat_inc_, dbg_heat_inc5_,
         dbg_scrap_dec50_, dbg_scrap_dec_, dbg_scrap_inc_, dbg_scrap_inc50_,
         dbg_card_menu_, dbg_add_to_hand_button_,
-        dbg_reload_event_button_,
+        destination_menu_, jump_button_,
         dbg_skip_battle_button_, dbg_return_map_button_,
         dbg_close_button_, dbg_exit_dev_button_,
     });
@@ -969,6 +990,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
 }
 
 void DevModeUi::open() {
+    visible_ = true;
     page_ = unlocked_ ? Main : Password;
     password_input_.clear();
     status_line_.clear();
@@ -1009,6 +1031,7 @@ void DevModeUi::resetUiState() {
     unlocked_ = false;
     debug_panel_visible_ = false;
     overlay_page_ = 0;
+    setup_destination_index_ = 0;
     destination_index_ = 0;
     encounter_index_ = 0;
     enemy_index_ = 0;
@@ -1098,7 +1121,7 @@ void DevModeUi::rebuildLabels() {
     label_debug_reload_event_ = Tr(language_, "Reload Current Event", "重新加载当前事件");
     label_debug_section_stats_ = Tr(language_, "Live Stats", "实时数值");
     label_debug_section_cards_ = Tr(language_, "Card Library", "卡牌库");
-    label_debug_section_misc_ = Tr(language_, "Quick Actions", "快捷操作");
+    label_debug_section_misc_ = Tr(language_, "Map Jump", "地图跳转");
     label_debug_hp_ = Tr(language_, "HP", "生命");
     label_debug_shield_ = Tr(language_, "Shield", "护盾");
     label_debug_energy_ = Tr(language_, "Energy", "能量");
@@ -1173,7 +1196,7 @@ Element DevModeUi::renderPassword() const {
     return dbox({
         filler() | bgcolor(kAbyss),
         vbox({filler(), hbox({filler(), panel, filler()}), filler()}),
-    });
+    }) | clear_under;
 }
 
 Element DevModeUi::renderMain() const {
@@ -1189,69 +1212,39 @@ Element DevModeUi::renderMain() const {
     sections.push_back(section(section_run_, {
         hbox({text(label_difficulty_ + ": ") | color(kHull), difficulty_toggle_->Render()}),
         hbox({text(label_character_ + ": ") | color(kHull), ship_toggle_->Render()}),
-        init_run_button_->Render(),
     }));
     sections.push_back(section(section_destination_, {
-        destination_menu_->Render() | vscroll_indicator | frame |
+        setup_destination_menu_->Render() | vscroll_indicator | frame |
             size(HEIGHT, LESS_THAN, 12),
-        jump_button_->Render(),
-    }));
-    sections.push_back(section(section_encounter_, {
-        encounter_menu_->Render() | vscroll_indicator | frame |
-            size(HEIGHT, LESS_THAN, 10),
-        trigger_encounter_button_->Render(),
-    }));
-    sections.push_back(section(section_battle_, {
-        hbox({text(Tr(language_, "Type", "类型") + ": ") | color(kHull), battle_node_toggle_->Render()}),
-        enemy_menu_->Render() | vscroll_indicator | frame |
-            size(HEIGHT, LESS_THAN, 10),
-        hbox({start_battle_button_->Render() | flex, text(" "), skip_battle_button_->Render() | flex}),
-    }));
-    sections.push_back(section(section_cards_, {
-        card_menu_->Render() | vscroll_indicator | frame |
-            size(HEIGHT, LESS_THAN, 10),
-        hbox({add_to_hand_button_->Render() | flex, text(" "), add_to_draw_button_->Render() | flex}),
-        play_top_button_->Render(),
-    }));
-    sections.push_back(section(section_ending_, {
-        ending_menu_->Render(),
-        show_ending_button_->Render(),
+        init_run_button_->Render(),
     }));
 
     Elements rows;
     rows.push_back(hbox({
-        text(title_label_) | bold | color(kGold) | flex,
+        text(Tr(language_, "Developer Initialization", "开发者初始化")) | bold | color(kGold) | flex,
         close_button_->Render(),
     }));
     rows.push_back(separatorDouble());
-    const RunState& s = engine_.state();
-    const std::string status =
-        Tr(language_, "Sector ", "星区 ") + std::to_string(s.sector) +
-        Tr(language_, " · Depth ", " · 深度 ") + std::to_string(s.depth) +
-        "  HP " + std::to_string(s.player.hp) + "/" + std::to_string(s.player.maxHp) +
-        Tr(language_, "  Energy ", "  能量 ") + std::to_string(s.player.energy) +
-        Tr(language_, "  Credits ", "  金币 ") + std::to_string(s.player.scrap) +
-        Tr(language_, "  Heat ", "  热量 ") + std::to_string(s.player.heat);
-    rows.push_back(text(status) | color(kHull) | center);
+    rows.push_back(text(Tr(language_,
+                           "Choose difficulty, ship, and starting location. Initialization uses the normal game's starting values, then closes automatically.",
+                           "选择难度、飞船与初始地点。初始化会沿用正常游戏的起始数值，随后自动关闭面板。")) |
+                   color(kHull));
     if (!status_line_.empty()) {
         rows.push_back(text(label_status_ + ": " + status_line_) | color(kGold) | center);
     }
     rows.push_back(separator());
     for (auto& sec : sections) rows.push_back(std::move(sec));
     rows.push_back(separator());
-    rows.push_back(hbox({
-        return_map_button_->Render() | flex,
-        text(" "),
-        modal_exit_dev_button_->Render() | flex,
-    }));
+    rows.push_back(modal_exit_dev_button_->Render());
 
     Element panel = vbox(std::move(rows)) | vscroll_indicator | yframe |
-                    size(HEIGHT, LESS_THAN, 50) |
+                    size(HEIGHT, LESS_THAN, 36) |
+                    size(WIDTH, GREATER_THAN, 68) |
                     borderDouble | bgcolor(kAbyss);
     return dbox({
         filler() | bgcolor(kAbyss),
         vbox({filler(), hbox({filler(), panel, filler()}), filler()}),
-    });
+    }) | clear_under;
 }
 
 Element DevModeUi::renderOverlay() const {
@@ -1264,7 +1257,11 @@ Element DevModeUi::renderOverlay() const {
         return dbox({
             filler() | bgcolor(kAbyss),
             vbox({filler(), hbox({filler(), panel | flex_grow, filler()}), filler()}) | bgcolor(kAbyss),
-        });
+        }) | clear_under;
+    }
+
+    if (engine_.state().page == AppPage::MainMenu) {
+        return text("");
     }
 
     return vbox({
@@ -1315,11 +1312,6 @@ Element DevModeUi::renderDebugPanel() const {
         return window(text(title) | color(kGold), vbox(std::move(rows))) | bgcolor(kPanel);
     };
 
-    const std::string current_event_label =
-        s.encounter.encounterId.empty()
-            ? Tr(language_, "(no active encounter)", "（当前无事件）")
-            : s.encounter.encounterId;
-
     Element stats_section = window_section(label_debug_section_stats_, std::move(stat_rows));
     Element cards_section = window_section(label_debug_section_cards_, {
         dbg_card_menu_->Render() | vscroll_indicator | frame |
@@ -1327,9 +1319,9 @@ Element DevModeUi::renderDebugPanel() const {
         dbg_add_to_hand_button_->Render(),
     });
     Element misc_section = window_section(label_debug_section_misc_, {
-        text(Tr(language_, "Active event: ", "当前事件：") + current_event_label) |
-            color(kHull),
-        dbg_reload_event_button_->Render(),
+        destination_menu_->Render() | vscroll_indicator | frame |
+            size(HEIGHT, LESS_THAN, 12),
+        jump_button_->Render(),
         hbox({
             dbg_skip_battle_button_->Render() | flex,
             text(" "),
@@ -1350,9 +1342,9 @@ Element DevModeUi::renderDebugPanel() const {
         dbg_exit_dev_button_->Render() | flex,
     }));
 
-    return vbox(std::move(rows)) | vscroll_indicator | yframe |
+        return (vbox(std::move(rows)) | vscroll_indicator | yframe |
            size(HEIGHT, LESS_THAN, 36) | size(WIDTH, GREATER_THAN, 60) |
-           borderDouble | bgcolor(kAbyss);
+            borderDouble | bgcolor(kAbyss)) | clear_under;
 }
 
 }  // namespace dev_mode

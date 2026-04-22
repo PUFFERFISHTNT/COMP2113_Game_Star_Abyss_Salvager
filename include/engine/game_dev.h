@@ -93,6 +93,7 @@ private:
     int difficulty_index_ = 1;
     int ship_index_ = 0;
 
+    int setup_destination_index_ = 0;
     int destination_index_ = 0;
     std::vector<std::string> destination_labels_;
     std::vector<std::pair<int, int>> destination_targets_;
@@ -181,6 +182,7 @@ private:
 
     ftxui::Component difficulty_toggle_;
     ftxui::Component ship_toggle_;
+    ftxui::Component setup_destination_menu_;
     ftxui::Component init_run_button_;
     ftxui::Component destination_menu_;
     ftxui::Component jump_button_;

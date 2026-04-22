@@ -47,8 +47,11 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     }, AccentButton(kGold));
     menuButtons_[6] = Button(&menuLabels_[6], [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
     menuDevButton_ = Button(&menuDevLabel_, [&] {
-        if (devModeUi_) devModeUi_->open();
-        devModeVisible_ = true;
+        if (!devModeUi_) {
+            SyncUi();
+            return;
+        }
+        devModeUi_->open();
         SyncUi();
     }, AccentButton(kEnemy));
 

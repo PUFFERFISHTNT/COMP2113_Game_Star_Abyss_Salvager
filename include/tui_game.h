@@ -422,6 +422,9 @@ private:
     std::vector<CardDef> cardPool_;
     std::vector<CardDef> configuredUpgradePool_;
     std::vector<std::string> obtainedCardIds_;
+    bool dev_session_active_ = false;
+    bool dev_obtained_snapshot_valid_ = false;
+    std::vector<std::string> dev_obtained_snapshot_;
     std::vector<EnemyTemplate> enemyPool_;
     std::vector<ShipTemplate> ships_;
     std::vector<RelicDef> relicPool_;

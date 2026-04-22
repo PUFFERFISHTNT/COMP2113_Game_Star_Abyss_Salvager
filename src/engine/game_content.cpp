@@ -120,6 +120,9 @@ bool GameEngine::hasObtainedCard(const std::string& cardId) const {
 }
 
 void GameEngine::recordObtainedCard(const std::string& cardRef) {
+    if (dev_session_active_) {
+        return;
+    }
     const std::string baseId = baseCardId(cardRef);
     if (baseId.empty() || cardById(baseId) == nullptr || hasObtainedCard(baseId)) {
         return;
@@ -132,6 +135,9 @@ void GameEngine::recordObtainedCard(const std::string& cardRef) {
 }
 
 void GameEngine::recordCurrentOwnedCards() {
+    if (dev_session_active_) {
+        return;
+    }
     bool changed = false;
     const auto collect = [&](const std::vector<std::string>& pile) {
         for (const std::string& ref : pile) {
