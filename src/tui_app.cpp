@@ -14,6 +14,7 @@
 
 #include "ui/star_abyss_app.h"
 #include "ui/ui_panels.h"
+#include "engine/game_dev.h"
 
 using namespace ftxui;
 
@@ -45,6 +46,14 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
         SyncUi();
     }, AccentButton(kGold));
     menuButtons_[6] = Button(&menuLabels_[6], [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
+    menuDevButton_ = Button(&menuDevLabel_, [&] {
+        if (!devModeUi_) {
+            SyncUi();
+            return;
+        }
+        devModeUi_->open();
+        SyncUi();
+    }, AccentButton(kEnemy));
 
     for (size_t i = 0; i < mapButtons_.size(); ++i) {
         mapButtons_[i] = Button(&mapLabels_[i], [&, i] { engine_.chooseNode(i); AutoSave(); SyncUi(); }, AccentButton(kHull));
@@ -97,7 +106,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     closeDialogButton_ = Button(&closeDialogLabel_, [&] { CloseSaveDialog(); SyncUi(); }, AccentButton(kEnemy));
     cardViewerCloseButton_ = Button(&cardViewerCloseLabel_, [&] { CloseCardViewer(); SyncUi(); }, AccentButton(kEnemy));
 
-    mainMenuPage_ = Renderer(Container::Vertical({menuButtons_[0], menuButtons_[1], menuButtons_[2], menuButtons_[3], menuButtons_[4], menuLibraryButton_, menuButtons_[5], menuButtons_[6]}),
+    mainMenuPage_ = Renderer(Container::Vertical({menuButtons_[0], menuButtons_[1], menuButtons_[2], menuButtons_[3], menuButtons_[4], menuLibraryButton_, menuButtons_[5], menuDevButton_, menuButtons_[6]}),
                              [&] { return RenderMainMenu(); });
     setupPage_ = Renderer(Container::Vertical({difficultyToggle_, shipToggle_, startRunButton_, setupBackButton_}), [&] { return RenderSetup(); });
     mapPage_ = Renderer(Container::Vertical({mapButtons_[0], mapButtons_[1], mapButtons_[2], mapOwnedCardsButton_, mapSaveButton_, mapMenuButton_}), [&] { return RenderMap(); });
@@ -125,8 +134,28 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
         mainMenuPage_, setupPage_, mapPage_, encounterPage_, battlePage_, rewardPage_, summaryPage_, infoPage_,
     };
     pages_ = Container::Tab(std::move(page_list), &activePage_);
-    root_ = CatchEvent(Modal(Modal(pages_, cardViewerPage_, &cardViewerVisible_), saveDialogPage_, &saveDialogVisible_),
-                       [&](Event event) { return HandleEvent(event); });
+    devModeUi_ = std::make_shared<dev_mode::DevModeUi>(
+        engine_, screen_, language_, devModeVisible_, [this] {
+            devModeVisible_ = false;
+            cardViewerVisible_ = false;
+            cardViewerMode_ = CardViewerMode::None;
+            saveDialogVisible_ = false;
+            saveDialogMode_ = SaveDialogMode::None;
+            battlePileInspector_ = BattlePileInspector::None;
+            SyncUi();
+        });
+    devModePage_ = devModeUi_->component();
+    auto modalStack = Modal(
+        Modal(Modal(pages_, cardViewerPage_, &cardViewerVisible_), saveDialogPage_, &saveDialogVisible_),
+        devModePage_, &devModeVisible_);
+    auto devOverlay = devModeUi_->overlay();
+    auto withOverlay = Container::Stacked({devOverlay, modalStack});
+    root_ = CatchEvent(
+        Renderer(withOverlay,
+                 [modalStack, devOverlay] {
+                     return dbox({modalStack->Render(), devOverlay->Render()});
+                 }),
+        [&](Event event) { return HandleEvent(event); });
 
     RefreshSaveEntries();
     SyncUi();

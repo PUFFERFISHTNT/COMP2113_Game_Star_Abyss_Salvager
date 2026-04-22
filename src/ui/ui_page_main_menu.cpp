@@ -50,6 +50,7 @@ Element StarAbyssApp::RenderMainMenu() const {
                    menuButtons_[4]->Render(),
                    menuLibraryButton_->Render(),
                    menuButtons_[5]->Render(),
+                   menuDevButton_->Render(),
                    menuButtons_[6]->Render(),
                })) |
             bgcolor(kPanel),

@@ -1,8 +1,16 @@
 #include "ui/star_abyss_app.h"
 
+#include "engine/game_dev.h"
 #include "ui/ui_localization.h"
 
 void StarAbyssApp::SyncUi() {
+    if (engine_.state().page == AppPage::MainMenu &&
+        activePage_ != static_cast<int>(AppPage::MainMenu) &&
+        devModeUi_ != nullptr && devModeUi_->unlocked()) {
+        devModeUi_->exitDeveloperMode();
+        return;
+    }
+
     const RunState& state = engine_.state();
     const int previous_page = activePage_;
     activePage_ = static_cast<int>(state.page);
@@ -51,6 +59,7 @@ void StarAbyssApp::SyncUi() {
     menuLabels_[4] = Tr(language_, "Help", "帮助");
     menuLabels_[5] = Tr(language_, "Language: English", "语言：中文");
     menuLabels_[6] = Tr(language_, "Exit", "退出");
+    menuDevLabel_ = Tr(language_, "Developer Mode", "开发者选项");
 
     for (std::string& label : mapLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : encounterLabels_) label = TranslateGameText(language_, "Unavailable");

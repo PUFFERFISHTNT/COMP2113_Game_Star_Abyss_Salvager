@@ -3,6 +3,7 @@
 
 #include <array>
 #include <atomic>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -14,6 +15,8 @@
 #include "tui_game.h"
 #include "ui/ui_localization.h"
 #include "ui/ui_save_dialog.h"
+
+namespace dev_mode { class DevModeUi; }
 
 class StarAbyssApp {
 public:
@@ -114,6 +117,7 @@ private:
     std::vector<std::string> shipEntries_ = {"Vanguard", "Drift Fox", "Iron Bastion"};
 
     std::array<std::string, 7> menuLabels_{};
+    std::string menuDevLabel_ = "Developer Mode";
     std::array<std::string, kMapSlots> mapLabels_{};
     std::array<std::string, kEncounterSlots> encounterLabels_{};
     std::array<std::string, kBattleSlots> battleCardLabels_{};
@@ -147,6 +151,7 @@ private:
     std::string cardViewerCloseLabel_ = "Close";
 
     std::array<ftxui::Component, 7> menuButtons_{};
+    ftxui::Component menuDevButton_;
     std::array<ftxui::Component, kMapSlots> mapButtons_{};
     std::array<ftxui::Component, kEncounterSlots> encounterButtons_{};
     std::array<ftxui::Component, kBattleSlots> battleCardButtons_{};
@@ -195,6 +200,9 @@ private:
     ftxui::Component cardViewerPage_;
     ftxui::Component saveDialogPage_;
     ftxui::Component pages_;
+    ftxui::Component devModePage_;
+    bool devModeVisible_ = false;
+    std::shared_ptr<dev_mode::DevModeUi> devModeUi_;
     ftxui::Component root_;
 };
 
