@@ -1,4 +1,5 @@
 #include "ui/star_abyss_app.h"
+#include "engine/game_dev.h"
 
 #include <algorithm>
 
@@ -89,6 +90,25 @@ bool StarAbyssApp::HandleEvent(Event event) {
         ++ambientTick_;
         engine_.tickAnimation();
         SyncUi();
+        return false;
+    }
+
+    // When the developer overlay is open it must take exclusive priority over
+    // every global shortcut (digits for menu items, language toggle, scroll
+    // hotkeys, etc.). Forward all events directly to the dev modal so its
+    // Input components and Buttons receive raw key strokes (including digits
+    // for the password). Only Escape is intercepted here as a safety exit.
+    if (devModeVisible_) {
+        if (event == Event::Escape) {
+            devModeVisible_ = false;
+            SyncUi();
+            return true;
+        }
+        return false;
+    }
+
+    // Same exclusive-priority rule for the persistent debug panel.
+    if (devModeUi_ && devModeUi_->debugPanelVisible()) {
         return false;
     }
 

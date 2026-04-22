@@ -334,6 +334,48 @@ public:
     std::string relicNameForId(const std::string& relicId) const;
     std::string relicDescriptionForId(const std::string& relicId) const;
 
+    // ---------------------------------------------------------------
+    // Developer mode hooks (additive only). These functions are used
+    // exclusively by the optional developer overlay declared in
+    // include/engine/game_dev.h. They MUST NOT be called from the
+    // normal gameplay flow. Implementations live in
+    // src/engine/game_dev.cpp so no other engine file is touched.
+    // ---------------------------------------------------------------
+    void dev_initRunIfNeeded(int difficulty, const std::string& shipId);
+    void dev_setDifficulty(int difficulty);
+    void dev_setShip(const std::string& shipId);
+    void dev_setHp(int hp);
+    void dev_setMaxHp(int maxHp);
+    void dev_setEnergy(int energy);
+    void dev_setScrap(int scrap);
+    void dev_setHeat(int heat);
+    void dev_setShield(int shield);
+    void dev_addHp(int delta);
+    void dev_addEnergy(int delta);
+    void dev_addScrap(int delta);
+    void dev_addHeat(int delta);
+    void dev_addShield(int delta);
+    void dev_jumpToSector(int sector, int depth);
+    void dev_addCardToDrawPile(const std::string& cardId);
+    void dev_addCardToHand(const std::string& cardId);
+    bool dev_playTopOfHand();
+    void dev_startBattleWith(const std::string& nodeType, const std::string& enemyId);
+    void dev_skipCurrentBattleAsVictory();
+    void dev_forceEncounter(const std::string& typeId,
+                            const std::string& encounterId,
+                            const std::string& title,
+                            const std::string& description,
+                            const std::vector<std::string>& choices,
+                            const std::vector<std::string>& details);
+    void dev_setEscapeStage(int stage);
+    void dev_setTruthStage(int stage, bool postBattle);
+    void dev_showEnding(int kind);  // 0 normal, 1 escape, 2 truth
+    void dev_returnToMap();
+    std::vector<std::string> dev_listCardIds() const;
+    std::vector<std::pair<std::string, std::string>> dev_listCardsWithNames() const;
+    std::vector<std::pair<std::string, std::string>> dev_listEnemiesWithNames() const;
+    std::vector<std::pair<std::string, std::string>> dev_listShipsWithNames() const;
+
 private:
     struct IntentDef {
         std::string kind;

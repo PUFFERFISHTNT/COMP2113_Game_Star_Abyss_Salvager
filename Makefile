@@ -37,6 +37,7 @@ APP_SOURCES := \
 	src/engine/game_reward.cpp \
 	src/engine/game_route.cpp \
 	src/engine/game_save.cpp \
+	src/engine/game_dev.cpp \
 	src/ui/ui_art.cpp \
 	src/ui/ui_card_viewer.cpp \
 	src/ui/ui_input.cpp \

@@ -51,6 +51,7 @@ void StarAbyssApp::SyncUi() {
     menuLabels_[4] = Tr(language_, "Help", "帮助");
     menuLabels_[5] = Tr(language_, "Language: English", "语言：中文");
     menuLabels_[6] = Tr(language_, "Exit", "退出");
+    menuDevLabel_ = Tr(language_, "Developer Mode", "开发者选项");
 
     for (std::string& label : mapLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : encounterLabels_) label = TranslateGameText(language_, "Unavailable");
