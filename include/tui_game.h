@@ -355,6 +355,10 @@ public:
     void dev_addScrap(int delta);
     void dev_addHeat(int delta);
     void dev_addShield(int delta);
+    void dev_reloadCurrentEncounter();
+    void dev_openDebugScene(const std::string& sceneKey,
+                            const std::string& payload = "");
+    void dev_shutdownSession();
     void dev_jumpToSector(int sector, int depth);
     void dev_addCardToDrawPile(const std::string& cardId);
     void dev_addCardToHand(const std::string& cardId);

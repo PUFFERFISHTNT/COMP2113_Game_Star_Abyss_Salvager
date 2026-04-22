@@ -39,8 +39,15 @@ extern int g_sa_beacon_activated;
 extern int g_sa_escape_stage;
 extern int g_sa_truth_stage;
 extern bool g_sa_truth_post_battle;
+extern int g_sa_skip_segments;
+extern bool g_sa_next_elite;
+extern bool g_sa_heat_accel;
+extern bool g_sa_no_boss;
+extern int g_sa_permanent_shield;
+extern bool g_sa_escape_battle_pending;
 extern bool g_sa_escape_intro_pending;
 extern bool g_sa_game_intro_pending;
+extern std::string g_sa_event_epilogue;
 
 // =============================================================================
 // Engine-side ``dev_*`` hook implementations.
@@ -123,6 +130,25 @@ void GameEngine::dev_addHeat(int delta) {
 
 void GameEngine::dev_addShield(int delta) {
     dev_setShield(state_.player.shield + delta);
+}
+
+void GameEngine::dev_shutdownSession() {
+    resetRunState();
+    clearMarketState();
+
+    g_sa_beacon_activated = 0;
+    g_sa_escape_stage = 0;
+    g_sa_truth_stage = 0;
+    g_sa_truth_post_battle = false;
+    g_sa_skip_segments = 0;
+    g_sa_next_elite = false;
+    g_sa_heat_accel = false;
+    g_sa_no_boss = false;
+    g_sa_permanent_shield = 0;
+    g_sa_escape_battle_pending = false;
+    g_sa_escape_intro_pending = true;
+    g_sa_game_intro_pending = true;
+    g_sa_event_epilogue.clear();
 }
 
 void GameEngine::dev_jumpToSector(int sector, int depth) {
@@ -348,6 +374,33 @@ struct EncounterEntry {
     std::array<const char*, 4> detailsZh;
 };
 
+struct SceneEntry {
+    const char* labelEn;
+    const char* labelZh;
+    const char* sceneKey;
+    const char* payload;
+};
+
+std::vector<std::string> CopyEncounterText(const std::array<const char*, 4>& values) {
+    std::vector<std::string> out;
+    for (const char* value : values) {
+        if (value == nullptr) {
+            break;
+        }
+        out.emplace_back(value);
+    }
+    return out;
+}
+
+void ForceStaticEncounter(GameEngine& engine, const EncounterEntry& entry) {
+    engine.dev_forceEncounter(entry.typeId,
+                              entry.encounterId == nullptr ? "" : entry.encounterId,
+                              entry.titleEn,
+                              entry.descriptionEn,
+                              CopyEncounterText(entry.choicesEn),
+                              CopyEncounterText(entry.detailsEn));
+}
+
 const std::vector<EncounterEntry>& EncounterCatalogue() {
     static const std::vector<EncounterEntry> kEntries = {
         {"A1 Distress Beacon", "A1 求救信标", "event", "event_a1",
@@ -467,6 +520,51 @@ const std::vector<EncounterEntry>& EncounterCatalogue() {
     return kEntries;
 }
 
+const std::vector<SceneEntry>& SceneCatalogue() {
+    static const std::vector<SceneEntry> kEntries = {
+        {"Intro · Game Opening", "序章 · 游戏开场", "route", "game_intro"},
+        {"Location · Repair Station", "地点 · 维修站", "location", "repair"},
+        {"Location · Salvage Wreck", "地点 · 残骸打捞", "location", "salvage"},
+        {"Location · Black Market", "地点 · 黑市", "location", "market"},
+        {"Service · Repair Retrofit", "服务 · 维修升级", "service", "repair_upgrade"},
+        {"Service · Market Upgrade", "服务 · 黑市升级", "service", "market_upgrade"},
+        {"Service · Market Purge", "服务 · 黑市移除", "service", "market_purge"},
+        {"Service · Free Event Upgrade", "服务 · 事件免费升级", "service", "event_upgrade"},
+        {"Service · Free Event Purge", "服务 · 事件免费移除", "service", "event_purge"},
+        {"Event · Distress Beacon", "事件 · 求救信标", "event_static", "event_a1"},
+        {"Event · Ghost Ship", "事件 · 幽灵舰", "event_static", "event_a2"},
+        {"Event · Strange Signal", "事件 · 诡异信号", "event_static", "event_b1"},
+        {"Event · Space Fold", "事件 · 空间折叠", "event_static", "event_b2"},
+        {"Event · Ark Beacon", "事件 · 方舟信标", "event_static", "event_b3"},
+        {"Event · Reactor Leak", "事件 · 反应堆泄漏", "event_static", "event_c1"},
+        {"Event · Hull Breach", "事件 · 舰体破损", "event_static", "event_c2"},
+        {"Event · Deck Chaos", "事件 · 牌组紊乱", "event_static", "event_c3"},
+        {"Event · Smuggler Cache", "事件 · 走私货舱", "event_static", "event_d1"},
+        {"Event · Wandering Trader", "事件 · 游商", "event_static", "event_d2"},
+        {"Event · Pirate Ambush", "事件 · 海盗伏击", "event_static", "event_d3"},
+        {"Event · Cryo Pod", "事件 · 冷冻舱", "event_static", "event_d4"},
+        {"Story Boss · Broker Echo", "剧情 Boss · 经纪人回响", "story_boss", "the_pale_broker"},
+        {"Story Boss · Cinder Shrine Signal", "剧情 Boss · 灰烬圣所信号", "story_boss", "saint_of_cinders"},
+        {"Story Boss · Beneath Choir Resonance", "剧情 Boss · 深渊合唱回响", "story_boss", "the_choir_beneath"},
+        {"Story Boss · Prototype Zero Trace", "剧情 Boss · 零号原型轨迹", "story_boss", "salvager_zero"},
+        {"Escape Route · Prologue", "逃亡路线 · 序章", "route", "escape_prologue"},
+        {"Escape Route · 1 Patrol Outpost", "逃亡路线 · 1 联邦哨站", "route", "escape_1"},
+        {"Escape Route · 2 Smuggling Port", "逃亡路线 · 2 走私港", "route", "escape_2"},
+        {"Escape Route · 3 Radiation Belt", "逃亡路线 · 3 辐射带", "route", "escape_3"},
+        {"Escape Route · 4 Pirate Pursuit", "逃亡路线 · 4 海盗追击", "route", "escape_4"},
+        {"Escape Route · 5 Escape Pod", "逃亡路线 · 5 逃生舱", "route", "escape_5"},
+        {"Escape Route · 6 Jump Point", "逃亡路线 · 6 跃迁点", "route", "escape_6"},
+        {"Escape Route · 7 Edge Barrier", "逃亡路线 · 7 边缘屏障", "route", "escape_7"},
+        {"Escape Route · 8 Safe Station", "逃亡路线 · 8 安全站", "route", "escape_8"},
+        {"Truth Route · 1 Memory Fragment", "真相路线 · 1 记忆碎片", "route", "truth_1"},
+        {"Truth Route · 2 Guardian AI", "真相路线 · 2 守护 AI", "route", "truth_2"},
+        {"Truth Route · 3 Captain Consciousness", "真相路线 · 3 船长意识", "route", "truth_3"},
+        {"Truth Route · 4 Collapse Point", "真相路线 · 4 崩塌点", "route", "truth_4"},
+        {"Truth Route · 5 Birth Truth", "真相路线 · 5 起源真相", "route", "truth_5"},
+    };
+    return kEntries;
+}
+
 // Look up an encounter by its engine encounterId. Returns nullptr if the
 // catalogue does not own that ID (e.g. random escape/truth events).
 const EncounterEntry* FindEncounterById(const std::string& id) {
@@ -482,6 +580,144 @@ const EncounterEntry* FindEncounterById(const std::string& id) {
 }
 
 }  // namespace
+
+void GameEngine::dev_openDebugScene(const std::string& sceneKey,
+                                    const std::string& payload) {
+    const std::string shipId = state_.player.shipId.empty() ? "vanguard" : state_.player.shipId;
+    if (!(sceneKey == "route" && payload == "game_intro")) {
+        dev_initRunIfNeeded(state_.difficulty, shipId);
+    }
+
+    state_.reward = {};
+    state_.animation = {};
+    state_.battleLog.clear();
+    state_.activeNodeType.clear();
+    state_.activeNodeName.clear();
+
+    if (sceneKey == "event_static") {
+        const EncounterEntry* entry = FindEncounterById(payload);
+        if (entry != nullptr) {
+            ForceStaticEncounter(*this, *entry);
+        }
+        return;
+    }
+
+    if (sceneKey == "location") {
+        if (payload == "repair") {
+            startEncounterForNode({"repair", "Repair Station", "A maintenance dock answers your ping.", 1, ""});
+        } else if (payload == "salvage") {
+            startEncounterForNode({"salvage", "Derelict Wreck", "Broken hulls drift in a silent salvage field.", 1, ""});
+        } else if (payload == "market") {
+            startEncounterForNode({"market", "Black Market", "Encrypted trade beacons flare nearby.", 2, ""});
+        }
+        return;
+    }
+
+    if (sceneKey == "service") {
+        if (payload == "repair_upgrade") {
+            enterRepairUpgrade(0);
+        } else if (payload == "market_upgrade") {
+            enterMarketUpgrade(0);
+        } else if (payload == "market_purge") {
+            enterMarketPurge(0);
+        } else if (payload == "event_upgrade") {
+            enterEventUpgrade(0);
+        } else if (payload == "event_purge") {
+            enterEventPurge(0);
+        }
+        return;
+    }
+
+    if (sceneKey == "story_boss") {
+        const EnemyTemplate* enemy = enemyTemplateById(payload);
+        if (enemy != nullptr) {
+            startEncounterForNode({"event", enemy->name, "A hidden flagship signature demands immediate attention.", 4, enemy->id});
+        }
+        return;
+    }
+
+    if (sceneKey == "route") {
+        if (payload == "game_intro") {
+            startNewRun(state_.difficulty, shipId);
+            return;
+        }
+
+        if (payload == "escape_prologue") {
+            g_sa_beacon_activated = 1;
+            g_sa_escape_stage = 1;
+            g_sa_escape_intro_pending = true;
+            g_sa_escape_battle_pending = false;
+            g_sa_truth_stage = 0;
+            g_sa_truth_post_battle = false;
+            startEncounterForNode({"event", "Escape Decision", "Developer route jump.", 1, ""});
+            return;
+        }
+
+        if (payload.rfind("escape_", 0) == 0) {
+            const int stage = std::atoi(payload.c_str() + 7);
+            if (stage >= 1 && stage <= 8) {
+                g_sa_beacon_activated = 1;
+                g_sa_escape_stage = stage;
+                g_sa_escape_intro_pending = false;
+                g_sa_escape_battle_pending = false;
+                g_sa_truth_stage = 0;
+                g_sa_truth_post_battle = false;
+                startEncounterForNode({"event", "Escape Route", "Developer route jump.", 1, ""});
+            }
+            return;
+        }
+
+        if (payload.rfind("truth_", 0) == 0) {
+            const int stage = std::atoi(payload.c_str() + 6);
+            if (stage >= 1 && stage <= 5) {
+                g_sa_beacon_activated = 1;
+                g_sa_truth_stage = stage;
+                g_sa_truth_post_battle = true;
+                g_sa_escape_stage = 0;
+                g_sa_escape_intro_pending = false;
+                startEncounterForNode({"event", "Truth Route", "Developer route jump.", 1, ""});
+            }
+        }
+    }
+}
+
+void GameEngine::dev_reloadCurrentEncounter() {
+    const std::string& encounterId = state_.encounter.encounterId;
+
+    if (state_.encounter.typeId == "repair" && encounterId.empty()) {
+        dev_openDebugScene("location", "repair");
+        return;
+    }
+    if (state_.encounter.typeId == "salvage" && encounterId.empty()) {
+        dev_openDebugScene("location", "salvage");
+        return;
+    }
+    if (encounterId == "market_shop") {
+        dev_openDebugScene("location", "market");
+        return;
+    }
+    if (encounterId == "repair_upgrade" || encounterId == "market_upgrade" ||
+        encounterId == "market_purge" || encounterId == "event_upgrade" ||
+        encounterId == "event_purge") {
+        dev_openDebugScene("service", encounterId);
+        return;
+    }
+    if (encounterId == "event_story_boss") {
+        const std::string enemyId = state_.encounter.payloadIds.empty() ? "" : state_.encounter.payloadIds.front();
+        if (!enemyId.empty()) {
+            dev_openDebugScene("story_boss", enemyId);
+        }
+        return;
+    }
+    if (encounterId == "game_intro" || encounterId == "escape_prologue" ||
+        encounterId.rfind("escape_", 0) == 0 || encounterId.rfind("truth_", 0) == 0) {
+        dev_openDebugScene("route", encounterId);
+        return;
+    }
+    if (FindEncounterById(encounterId) != nullptr) {
+        dev_openDebugScene("event_static", encounterId);
+    }
+}
 
 // =============================================================================
 // DevModeUi implementation.
@@ -517,9 +753,10 @@ DevModeUi::DevModeUi(GameEngine& engine,
         enemy_ids_.push_back(id);
         enemy_labels_.push_back(name);
     }
-    for (const auto& entry : EncounterCatalogue()) {
+    for (const auto& entry : SceneCatalogue()) {
         encounter_labels_.emplace_back();
-        encounter_ids_.push_back(entry.encounterId == nullptr ? "" : entry.encounterId);
+        encounter_ids_.push_back(entry.sceneKey == nullptr ? "" : entry.sceneKey);
+        encounter_payloads_.push_back(entry.payload == nullptr ? "" : entry.payload);
     }
     rebuildDestinationOptions();
     battle_node_labels_ = {"normal", "elite", "boss"};
@@ -542,7 +779,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
         }
     }, AccentButton(kGold));
     password_cancel_button_ = Button(&password_cancel_label_, [&] {
-        closeOverlay();
+        dismissModal();
     }, AccentButton(kEnemy));
 
     // -------- Options modal components --------
@@ -572,29 +809,16 @@ DevModeUi::DevModeUi(GameEngine& engine,
         } else {
             engine_.dev_jumpToSector(sec, dep);
         }
-        status_line_ = "OK";
+        dismissModal();
     }, AccentButton(kHull));
 
     encounter_menu_ = Menu(&encounter_labels_, &encounter_index_);
     trigger_encounter_button_ = Button(&label_trigger_encounter_, [&] {
-        const auto& cat = EncounterCatalogue();
-        if (encounter_index_ < 0 || encounter_index_ >= static_cast<int>(cat.size())) return;
-        const auto& e = cat[encounter_index_];
-        const bool zh = (language_ == UiLanguage::Chinese);
-        std::vector<std::string> choices;
-        std::vector<std::string> details;
-        for (size_t i = 0; i < e.choicesEn.size(); ++i) {
-            const char* c = zh ? e.choicesZh[i] : e.choicesEn[i];
-            const char* d = zh ? e.detailsZh[i] : e.detailsEn[i];
-            if (c == nullptr) break;
-            choices.emplace_back(c);
-            details.emplace_back(d != nullptr ? d : "");
+        if (encounter_index_ < 0 || encounter_index_ >= static_cast<int>(encounter_ids_.size())) {
+            return;
         }
-        engine_.dev_forceEncounter(e.typeId, e.encounterId == nullptr ? "" : e.encounterId,
-                                   zh ? e.titleZh : e.titleEn,
-                                   zh ? e.descriptionZh : e.descriptionEn,
-                                   choices, details);
-        status_line_ = "OK";
+        engine_.dev_openDebugScene(encounter_ids_[encounter_index_], encounter_payloads_[encounter_index_]);
+        dismissModal();
     }, AccentButton(kHull));
 
     battle_node_toggle_ = Toggle(&battle_node_labels_, &battle_node_index_);
@@ -603,11 +827,11 @@ DevModeUi::DevModeUi(GameEngine& engine,
         if (enemy_ids_.empty()) return;
         const std::string nodeType = battle_node_labels_[battle_node_index_];
         engine_.dev_startBattleWith(nodeType, enemy_ids_[enemy_index_]);
-        status_line_ = "OK";
+        dismissModal();
     }, AccentButton(kGold));
     skip_battle_button_ = Button(&label_skip_battle_, [&] {
         engine_.dev_skipCurrentBattleAsVictory();
-        status_line_ = "OK";
+        dismissModal();
     }, AccentButton(kEnemy));
 
     card_menu_ = Menu(&card_labels_, &card_index_);
@@ -629,16 +853,19 @@ DevModeUi::DevModeUi(GameEngine& engine,
     ending_menu_ = Menu(&ending_labels_, &ending_index_);
     show_ending_button_ = Button(&label_show_ending_, [&] {
         engine_.dev_showEnding(ending_index_);
-        closeOverlay();
+        dismissModal();
     }, AccentButton(kGold));
 
     return_map_button_ = Button(&label_return_map_, [&] {
         engine_.dev_returnToMap();
-        status_line_ = "OK";
+        dismissModal();
     }, AccentButton(kHull));
 
     close_button_ = Button(&close_label_, [&] {
-        closeOverlay();
+        dismissModal();
+    }, AccentButton(kEnemy));
+    modal_exit_dev_button_ = Button(&modal_exit_dev_label_, [&] {
+        exitDeveloperMode();
     }, AccentButton(kEnemy));
 
     password_page_ = Container::Vertical({
@@ -648,13 +875,14 @@ DevModeUi::DevModeUi(GameEngine& engine,
     });
 
     main_page_ = Container::Vertical({
+        close_button_,
         difficulty_toggle_, ship_toggle_, init_run_button_,
         destination_menu_, jump_button_,
         encounter_menu_, trigger_encounter_button_,
         battle_node_toggle_, enemy_menu_, start_battle_button_, skip_battle_button_,
         card_menu_, add_to_hand_button_, add_to_draw_button_, play_top_button_,
         ending_menu_, show_ending_button_,
-        return_map_button_, close_button_,
+        return_map_button_, modal_exit_dev_button_,
     });
 
     pages_ = Container::Tab({password_page_, main_page_}, &page_);
@@ -668,6 +896,8 @@ DevModeUi::DevModeUi(GameEngine& engine,
     // Persistent debug overlay (floating button + modal panel).
     // ---------------------------------------------------------------
     floating_button_ = Button(&label_floating_button_, [&] { openDebugPanel(); },
+                              AccentButton(kEnemy));
+    exit_dev_button_ = Button(&label_floating_exit_dev_, [&] { exitDeveloperMode(); },
                               AccentButton(kEnemy));
 
     auto step_button = [&](std::string* label, std::function<void()> action) {
@@ -704,26 +934,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
     }, AccentButton(kGold));
 
     dbg_reload_event_button_ = Button(&label_debug_reload_event_, [&] {
-        const RunState& s = engine_.state();
-        const EncounterEntry* entry = FindEncounterById(s.encounter.encounterId);
-        if (entry == nullptr) {
-            return;
-        }
-        const bool zh = (language_ == UiLanguage::Chinese);
-        std::vector<std::string> choices;
-        std::vector<std::string> details;
-        for (size_t i = 0; i < entry->choicesEn.size(); ++i) {
-            const char* c = zh ? entry->choicesZh[i] : entry->choicesEn[i];
-            const char* d = zh ? entry->detailsZh[i] : entry->detailsEn[i];
-            if (c == nullptr) break;
-            choices.emplace_back(c);
-            details.emplace_back(d != nullptr ? d : "");
-        }
-        engine_.dev_forceEncounter(entry->typeId,
-                                   entry->encounterId == nullptr ? "" : entry->encounterId,
-                                   zh ? entry->titleZh : entry->titleEn,
-                                   zh ? entry->descriptionZh : entry->descriptionEn,
-                                   choices, details);
+        engine_.dev_reloadCurrentEncounter();
     }, AccentButton(kHull));
 
     dbg_skip_battle_button_ = Button(&label_debug_skip_battle_, [&] {
@@ -734,6 +945,8 @@ DevModeUi::DevModeUi(GameEngine& engine,
     }, AccentButton(kHull));
     dbg_close_button_ = Button(&label_debug_close_, [&] { closeDebugPanel(); },
                                AccentButton(kEnemy));
+    dbg_exit_dev_button_ = Button(&label_debug_exit_dev_, [&] { exitDeveloperMode(); },
+                                  AccentButton(kEnemy));
 
     debug_panel_container_ = Container::Vertical({
         dbg_hp_dec5_, dbg_hp_dec_, dbg_hp_inc_, dbg_hp_inc5_,
@@ -744,10 +957,11 @@ DevModeUi::DevModeUi(GameEngine& engine,
         dbg_card_menu_, dbg_add_to_hand_button_,
         dbg_reload_event_button_,
         dbg_skip_battle_button_, dbg_return_map_button_,
-        dbg_close_button_,
+        dbg_close_button_, dbg_exit_dev_button_,
     });
 
-    overlay_interactive_ = Container::Stacked({debug_panel_container_, floating_button_});
+    floating_bar_ = Container::Horizontal({floating_button_, exit_dev_button_});
+    overlay_interactive_ = Container::Tab({floating_bar_, debug_panel_container_}, &overlay_page_);
     overlay_root_ = Renderer(overlay_interactive_, [this] {
         rebuildLabels();
         return renderOverlay();
@@ -755,24 +969,66 @@ DevModeUi::DevModeUi(GameEngine& engine,
 }
 
 void DevModeUi::open() {
-    page_ = Password;
+    page_ = unlocked_ ? Main : Password;
     password_input_.clear();
     status_line_.clear();
 }
 
-void DevModeUi::closeOverlay() {
+void DevModeUi::dismissModal() {
     visible_ = false;
-    page_ = Password;
     password_input_.clear();
+    status_line_.clear();
     if (on_close_) on_close_();
 }
 
+void DevModeUi::exitDeveloperMode() {
+    engine_.dev_shutdownSession();
+    visible_ = false;
+    resetUiState();
+    if (on_close_) on_close_();
+}
+
+bool DevModeUi::handleOverlayEvent(Event event) {
+    if (!debug_panel_visible_) {
+        return false;
+    }
+    if (event == Event::Escape) {
+        closeDebugPanel();
+        return true;
+    }
+    if (overlay_interactive_ && overlay_interactive_->OnEvent(event)) {
+        return true;
+    }
+    return true;
+}
+
+void DevModeUi::resetUiState() {
+    page_ = Password;
+    password_input_.clear();
+    status_line_.clear();
+    unlocked_ = false;
+    debug_panel_visible_ = false;
+    overlay_page_ = 0;
+    destination_index_ = 0;
+    encounter_index_ = 0;
+    enemy_index_ = 0;
+    battle_node_index_ = 0;
+    card_index_ = 0;
+    debug_card_index_ = 0;
+    ending_index_ = 0;
+}
+
 void DevModeUi::openDebugPanel() {
+    if (!unlocked_) {
+        return;
+    }
     debug_panel_visible_ = true;
+    overlay_page_ = 1;
 }
 
 void DevModeUi::closeDebugPanel() {
     debug_panel_visible_ = false;
+    overlay_page_ = 0;
 }
 
 void DevModeUi::rebuildDestinationOptions() {
@@ -808,13 +1064,14 @@ void DevModeUi::rebuildLabels() {
     title_label_ = Tr(language_, "Developer Mode", "开发者模式");
     password_prompt_label_ = Tr(language_, "Enter password", "请输入密码");
     password_confirm_label_ = Tr(language_, "Confirm", "确认");
-    password_cancel_label_ = Tr(language_, "Cancel", "取消");
+    password_cancel_label_ = Tr(language_, "Close", "关闭");
     password_error_label_ = Tr(language_, "Wrong password.", "密码错误。");
-    close_label_ = Tr(language_, "Exit Developer Mode", "退出开发者模式");
+    close_label_ = " x ";
+    modal_exit_dev_label_ = Tr(language_, "Exit Developer Mode", "退出开发者模式");
 
     section_run_ = Tr(language_, "Run Setup", "航程设定");
     section_destination_ = Tr(language_, "Destination", "目的地");
-    section_encounter_ = Tr(language_, "Encounter", "事件");
+    section_encounter_ = Tr(language_, "Scene Navigation", "场景导航");
     section_battle_ = Tr(language_, "Battle", "战斗");
     section_cards_ = Tr(language_, "Cards", "卡牌");
     section_ending_ = Tr(language_, "Ending", "结局");
@@ -823,7 +1080,7 @@ void DevModeUi::rebuildLabels() {
     label_character_ = Tr(language_, "Character", "角色");
     label_init_run_ = Tr(language_, "Initialize Run", "初始化航程");
     label_jump_ = Tr(language_, "Jump", "跳转");
-    label_trigger_encounter_ = Tr(language_, "Trigger Encounter", "触发事件");
+    label_trigger_encounter_ = Tr(language_, "Open Selected Scene", "打开选中场景");
     label_start_battle_ = Tr(language_, "Start Battle", "开始战斗");
     label_skip_battle_ = Tr(language_, "Skip Battle (Victory)", "跳过战斗（胜利）");
     label_add_to_hand_ = Tr(language_, "Add To Hand", "加入手牌");
@@ -834,8 +1091,10 @@ void DevModeUi::rebuildLabels() {
     label_status_ = Tr(language_, "Status", "状态");
 
     label_floating_button_ = Tr(language_, " DEV ", " 调试 ");
+    label_floating_exit_dev_ = Tr(language_, " Exit Dev Mode ", " 退出开发者模式 ");
     label_debug_panel_title_ = Tr(language_, "Debug Panel", "调试面板");
     label_debug_close_ = Tr(language_, "Close Panel", "关闭面板");
+    label_debug_exit_dev_ = Tr(language_, "Exit Developer Mode", "退出开发者模式");
     label_debug_reload_event_ = Tr(language_, "Reload Current Event", "重新加载当前事件");
     label_debug_section_stats_ = Tr(language_, "Live Stats", "实时数值");
     label_debug_section_cards_ = Tr(language_, "Card Library", "卡牌库");
@@ -878,9 +1137,9 @@ void DevModeUi::rebuildLabels() {
         enemy_labels_[i] = TranslateGameText(language_, enemies[i].second);
     }
 
-    const auto& cat = EncounterCatalogue();
-    for (size_t i = 0; i < cat.size() && i < encounter_labels_.size(); ++i) {
-        encounter_labels_[i] = zh ? cat[i].labelZh : cat[i].labelEn;
+    const auto& scenes = SceneCatalogue();
+    for (size_t i = 0; i < scenes.size() && i < encounter_labels_.size(); ++i) {
+        encounter_labels_[i] = zh ? scenes[i].labelZh : scenes[i].labelEn;
     }
 
     battle_node_labels_[0] = Tr(language_, "Normal", "普通");
@@ -909,8 +1168,12 @@ Element DevModeUi::renderPassword() const {
         rows.push_back(separator());
         rows.push_back(text(status_line_) | color(kEnemy));
     }
-    return window(text(title_label_) | color(kGold), vbox(std::move(rows))) |
-           size(WIDTH, GREATER_THAN, 40) | bgcolor(kPanel) | center;
+    Element panel = window(text(title_label_) | color(kGold), vbox(std::move(rows))) |
+                    size(WIDTH, GREATER_THAN, 40) | bgcolor(kPanel);
+    return dbox({
+        filler() | bgcolor(kAbyss),
+        vbox({filler(), hbox({filler(), panel, filler()}), filler()}),
+    });
 }
 
 Element DevModeUi::renderMain() const {
@@ -956,7 +1219,10 @@ Element DevModeUi::renderMain() const {
     }));
 
     Elements rows;
-    rows.push_back(text(title_label_) | bold | color(kGold) | center);
+    rows.push_back(hbox({
+        text(title_label_) | bold | color(kGold) | flex,
+        close_button_->Render(),
+    }));
     rows.push_back(separatorDouble());
     const RunState& s = engine_.state();
     const std::string status =
@@ -976,37 +1242,34 @@ Element DevModeUi::renderMain() const {
     rows.push_back(hbox({
         return_map_button_->Render() | flex,
         text(" "),
-        close_button_->Render() | flex,
+        modal_exit_dev_button_->Render() | flex,
     }));
 
-    return vbox(std::move(rows)) | vscroll_indicator | yframe |
-           size(HEIGHT, LESS_THAN, 50) |
-           borderDouble | bgcolor(kAbyss);
+    Element panel = vbox(std::move(rows)) | vscroll_indicator | yframe |
+                    size(HEIGHT, LESS_THAN, 50) |
+                    borderDouble | bgcolor(kAbyss);
+    return dbox({
+        filler() | bgcolor(kAbyss),
+        vbox({filler(), hbox({filler(), panel, filler()}), filler()}),
+    });
 }
 
 Element DevModeUi::renderOverlay() const {
-    if (!unlocked_) {
+    if (!unlocked_ || visible_) {
         return text("");
     }
 
     if (debug_panel_visible_) {
-        // Render the debug panel centered with a small floating button still
-        // visible at the bottom-left for symmetry.
         Element panel = renderDebugPanel();
-        Element floating = floating_button_->Render();
         return dbox({
-            vbox({
-                filler(),
-                hbox({floating, filler()}),
-            }),
-            vbox({filler(), hbox({filler(), panel | flex_grow, filler()}), filler()}),
+            filler() | bgcolor(kAbyss),
+            vbox({filler(), hbox({filler(), panel | flex_grow, filler()}), filler()}) | bgcolor(kAbyss),
         });
     }
 
-    Element floating = floating_button_->Render();
     return vbox({
         filler(),
-        hbox({floating, filler()}),
+        hbox({floating_button_->Render(), filler(), exit_dev_button_->Render()}),
     });
 }
 
@@ -1081,7 +1344,11 @@ Element DevModeUi::renderDebugPanel() const {
     rows.push_back(cards_section);
     rows.push_back(misc_section);
     rows.push_back(separator());
-    rows.push_back(dbg_close_button_->Render());
+    rows.push_back(hbox({
+        dbg_close_button_->Render() | flex,
+        text(" "),
+        dbg_exit_dev_button_->Render() | flex,
+    }));
 
     return vbox(std::move(rows)) | vscroll_indicator | yframe |
            size(HEIGHT, LESS_THAN, 36) | size(WIDTH, GREATER_THAN, 60) |

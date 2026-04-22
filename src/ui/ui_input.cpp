@@ -100,8 +100,12 @@ bool StarAbyssApp::HandleEvent(Event event) {
     // for the password). Only Escape is intercepted here as a safety exit.
     if (devModeVisible_) {
         if (event == Event::Escape) {
-            devModeVisible_ = false;
-            SyncUi();
+            if (devModeUi_ && devModeUi_->unlocked()) {
+                devModeUi_->exitDeveloperMode();
+            } else {
+                devModeVisible_ = false;
+                SyncUi();
+            }
             return true;
         }
         return false;
@@ -109,7 +113,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
 
     // Same exclusive-priority rule for the persistent debug panel.
     if (devModeUi_ && devModeUi_->debugPanelVisible()) {
-        return false;
+        return devModeUi_->handleOverlayEvent(event);
     }
 
     if (handle_mouse_wheel(event)) {

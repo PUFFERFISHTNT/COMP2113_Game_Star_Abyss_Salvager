@@ -1,8 +1,16 @@
 #include "ui/star_abyss_app.h"
 
+#include "engine/game_dev.h"
 #include "ui/ui_localization.h"
 
 void StarAbyssApp::SyncUi() {
+    if (engine_.state().page == AppPage::MainMenu &&
+        activePage_ != static_cast<int>(AppPage::MainMenu) &&
+        devModeUi_ != nullptr && devModeUi_->unlocked()) {
+        devModeUi_->exitDeveloperMode();
+        return;
+    }
+
     const RunState& state = engine_.state();
     const int previous_page = activePage_;
     activePage_ = static_cast<int>(state.page);

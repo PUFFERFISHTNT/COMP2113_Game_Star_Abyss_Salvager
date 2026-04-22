@@ -132,7 +132,15 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     };
     pages_ = Container::Tab(std::move(page_list), &activePage_);
     devModeUi_ = std::make_shared<dev_mode::DevModeUi>(
-        engine_, screen_, language_, devModeVisible_, [this] { SyncUi(); });
+        engine_, screen_, language_, devModeVisible_, [this] {
+            devModeVisible_ = false;
+            cardViewerVisible_ = false;
+            cardViewerMode_ = CardViewerMode::None;
+            saveDialogVisible_ = false;
+            saveDialogMode_ = SaveDialogMode::None;
+            battlePileInspector_ = BattlePileInspector::None;
+            SyncUi();
+        });
     devModePage_ = devModeUi_->component();
     auto modalStack = Modal(
         Modal(Modal(pages_, cardViewerPage_, &cardViewerVisible_), saveDialogPage_, &saveDialogVisible_),

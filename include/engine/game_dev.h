@@ -57,6 +57,9 @@ public:
     ftxui::Component overlay() const { return overlay_root_; }
 
     void open();
+    void dismissModal();
+    void exitDeveloperMode();
+    bool handleOverlayEvent(ftxui::Event event);
     bool unlocked() const { return unlocked_; }
     bool debugPanelVisible() const { return debug_panel_visible_; }
 
@@ -71,7 +74,7 @@ private:
     ftxui::Element renderMain() const;
     ftxui::Element renderOverlay() const;
     ftxui::Element renderDebugPanel() const;
-    void closeOverlay();
+    void resetUiState();
     void rebuildDestinationOptions();
     void openDebugPanel();
     void closeDebugPanel();
@@ -97,6 +100,7 @@ private:
     int encounter_index_ = 0;
     std::vector<std::string> encounter_labels_;
     std::vector<std::string> encounter_ids_;
+    std::vector<std::string> encounter_payloads_;
 
     int enemy_index_ = 0;
     std::vector<std::string> enemy_labels_;
@@ -121,6 +125,7 @@ private:
     std::string password_cancel_label_;
     std::string password_error_label_;
     std::string close_label_;
+    std::string modal_exit_dev_label_;
     std::string section_run_;
     std::string section_destination_;
     std::string section_encounter_;
@@ -142,8 +147,10 @@ private:
     std::string label_status_;
 
     std::string label_floating_button_;
+    std::string label_floating_exit_dev_;
     std::string label_debug_panel_title_;
     std::string label_debug_close_;
+    std::string label_debug_exit_dev_;
     std::string label_debug_reload_event_;
     std::string label_debug_section_stats_;
     std::string label_debug_section_cards_;
@@ -191,6 +198,7 @@ private:
     ftxui::Component show_ending_button_;
     ftxui::Component return_map_button_;
     ftxui::Component close_button_;
+    ftxui::Component modal_exit_dev_button_;
 
     ftxui::Component password_page_;
     ftxui::Component main_page_;
@@ -198,7 +206,9 @@ private:
     ftxui::Component root_;
 
     // Components for the persistent debug overlay (floating button + panel).
+    int overlay_page_ = 0;
     ftxui::Component floating_button_;
+    ftxui::Component exit_dev_button_;
     ftxui::Component dbg_hp_dec_, dbg_hp_inc_, dbg_hp_dec5_, dbg_hp_inc5_;
     ftxui::Component dbg_shield_dec_, dbg_shield_inc_, dbg_shield_dec5_, dbg_shield_inc5_;
     ftxui::Component dbg_energy_dec_, dbg_energy_inc_;
@@ -210,7 +220,9 @@ private:
     ftxui::Component dbg_skip_battle_button_;
     ftxui::Component dbg_return_map_button_;
     ftxui::Component dbg_close_button_;
+    ftxui::Component dbg_exit_dev_button_;
     ftxui::Component debug_panel_container_;
+    ftxui::Component floating_bar_;
     ftxui::Component overlay_interactive_;
     ftxui::Component overlay_root_;
 };
