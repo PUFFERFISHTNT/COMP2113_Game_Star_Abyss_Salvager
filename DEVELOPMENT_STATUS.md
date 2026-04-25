@@ -2,7 +2,7 @@
 
 ## 1. Purpose of This Document
 
-This file is a technical handoff for the trimmed Linux release package of **Star Abyss Salvager**.
+This file is a technical handoff for the current repository version of **Star Abyss Salvager**.
 
 It documents:
 
@@ -17,17 +17,28 @@ This is intentionally much more detailed than a normal README because the projec
 
 ## 2. Release Scope
 
-This `github_release` folder is not the full historical repository. It is a **minimal deliverable package** that keeps only the files needed to build and run the current FTXUI game on Linux with `make`.
+This repository is a **runtime-focused game package** for the current FTXUI version of the project.
+
+It is no longer organized around only two giant source files. The codebase now has:
+
+- a thin bootstrap layer in `src/tui_main.cpp`
+- a top-level application controller in `src/tui_app.cpp`
+- a central gameplay API in `src/tui_game.cpp`
+- gameplay modules under `src/engine/`
+- UI modules under `src/ui/`
+- public headers under `include/`
+- runtime card data in `data/cards.json`
+- vendored FTXUI sources under `vendor/FTXUI`
 
 Included:
 
 - current FTXUI-based entry point
-- current gameplay engine
-- current UI controller
+- modularized gameplay engine
+- modularized UI controller and page renderers
 - vendored offline FTXUI source
 - static card data file
 - runtime save directory
-- Linux-only build script
+- cross-platform `Makefile` with POSIX and Windows branches
 
 Excluded:
 
@@ -43,24 +54,29 @@ This means the release package is optimized for final offline delivery, not for 
 
 The current playable version is a **terminal roguelike deckbuilder** with a state-driven architecture.
 
-At runtime there are three main layers:
+At runtime there are four practical layers:
 
 1. `src/tui_main.cpp`
    Boots FTXUI, enables mouse tracking, and starts the main screen loop.
 
 2. `src/tui_app.cpp`
-   Owns presentation, layout, language switching, input routing, save/load dialogs, button wiring, and page rendering.
+   Constructs the top-level `StarAbyssApp`, wires buttons and dialogs, and owns lifecycle behavior such as autosave and the UI ticker.
 
 3. `src/tui_game.cpp`
-   Owns gameplay state, battle rules, route generation, encounter resolution, reward generation, serialization, and leaderboard writing.
+   Hosts the `GameEngine` façade, the canonical `RunState`, and high-level gameplay entry points.
 
-This is an intentionally good split:
+4. `src/engine/*.cpp` and `src/ui/*.cpp`
+   Hold the real feature modules: battle rules, encounters, routes, rewards, saves, dev tools, localization, input routing, page renderers, card viewer, and shared panels.
 
-- UI concerns stay in `tui_app.cpp`
-- gameplay rules stay in `tui_game.cpp`
-- bootstrapping stays in `tui_main.cpp`
+This is a better split than the older architecture:
 
-That separation should be preserved in future work.
+- bootstrap stays in `tui_main.cpp`
+- app assembly stays in `tui_app.cpp`
+- engine API stays centered in `tui_game.cpp` / `include/tui_game.h`
+- gameplay rules are separated into engine modules
+- rendering and input are separated into UI modules
+
+That separation should be preserved. Future refactors should continue splitting by responsibility rather than re-centralizing logic into one file.
 
 ## 4. Core Source Files
 
@@ -75,58 +91,92 @@ Responsibility:
 
 This file is intentionally tiny and should stay tiny.
 
-### 4.2 `src/tui_app.cpp`
+### 4.2 `src/tui_app.cpp` and `include/ui/star_abyss_app.h`
 
 Responsibility:
 
-- own the top-level `StarAbyssApp` controller
-- translate `RunState` into FTXUI layouts
-- map keyboard and mouse actions into engine calls
-- manage save and load dialog state
-- manage English / Chinese UI selection
-- render card panels, battle bridge, map screens, reward screens, information screens, and summary screens
-- provide battle animation framing, ASCII art placement, and general UX polish
+- construct `StarAbyssApp`
+- wire FTXUI buttons, toggles, menus, modal stacks, and overlays
+- manage language preference persistence
+- own autosave hooks and save dialog entry points
+- bridge between `GameEngine` and the modular UI render / input files
+- host the long-lived UI state that is not part of `RunState`
 
 Important note:
 
-`tui_app.cpp` currently also contains a large amount of translation logic and UI helper logic. This is convenient for the playable version, but it is one of the biggest future refactor candidates.
+`StarAbyssApp` is now the real UI shell. Rendering and input are mostly split out into `src/ui/`, but the controller is still the main integration point.
 
-### 4.3 `src/tui_game.cpp`
-
-Responsibility:
-
-- initialize all built-in cards, enemies, relics, and ship templates
-- own the canonical run state
-- generate route options
-- resolve encounters
-- run the battle turn loop
-- apply card effects
-- apply enemy intents
-- produce rewards
-- serialize saves
-- deserialize saves
-- validate loaded content references
-- write leaderboard entries
-
-This is currently the single gameplay authority.
-
-### 4.4 `include/tui_game.h`
+### 4.3 `src/tui_game.cpp` and `include/tui_game.h`
 
 Responsibility:
 
-- define all core state structs
-- define `AppPage`
-- expose the `GameEngine` public API
+- define the public gameplay API used by the UI
+- own the canonical `RunState`
+- expose `GameEngine` methods for run flow, battles, encounters, rewards, saves, and information screens
+- define the state structs used by both engine and UI
+- aggregate the private helper surface implemented across `src/engine/*.cpp`
 
-This header is the best quick map of the project state model.
+This pair is still the central gameplay authority, even though the implementation is now split across multiple engine files.
 
-### 4.5 `include/tui_app.h`
+### 4.4 `src/engine/`
 
 Responsibility:
 
-- expose `CreateApp(ftxui::ScreenInteractive&)`
+- `game_battle.cpp`: turn flow, card effects, heat/form/auxiliary combat logic, enemy intent resolution
+- `game_card_services.cpp`: market purge/upgrade services, event/repair service screens, deck-instance upgrade handling
+- `game_card_json.cpp`: card JSON loader, path resolution, upgrade-definition parsing
+- `game_content.cpp`: initialize enemies, ships, relics, obtained-card registry, and card pool loading
+- `game_encounter.cpp`: node-specific encounter branching and event outcomes
+- `game_info.cpp`: help text, summary screens, leaderboard presentation and writing
+- `game_reward.cpp`: reward generation, random card/relic selection
+- `game_route.cpp`: route generation, sector progression, special-route state handling
+- `game_save.cpp`: save/load serialization, validation, save slot helpers
+- `game_dev.cpp`: developer mode hooks and debug scene helpers
 
-Minimal and stable.
+This directory is the main gameplay implementation surface.
+
+### 4.5 `src/ui/`
+
+Responsibility:
+
+- `ui_input.cpp`: global keyboard/mouse routing, service-screen shortcuts, page-specific hotkeys
+- `ui_sync.cpp`: refresh visible labels and active page state from `RunState`
+- `ui_panels.cpp`: shared card/status/action panel building blocks
+- `ui_localization.cpp`: UI and gameplay string translation helpers
+- `ui_card_viewer.cpp`: owned-card viewer and library rendering
+- `ui_save_dialog.cpp`: save/load modal rendering
+- `ui_art.cpp`: ASCII art and decorative rendering helpers
+- `ui_page_*.cpp`: page-specific renderers for main menu, setup, map, encounter, battle, reward, summary, and info screens
+
+This directory now carries most presentation logic, which is a major improvement over the earlier all-in-one UI layout.
+
+### 4.6 Public Headers and Runtime Assets
+
+Important support files:
+
+- `include/engine/*.h`: per-module engine declarations and high-level ownership notes
+- `include/ui/*.h`: UI helper declarations and modal/render contracts
+- `data/cards.json`: runtime card database and upgrade definitions
+- `Makefile`: offline build entry point and object-layout definition
+- `README.md`: quick-start and operator-facing build/run instructions
+- `DEVELOPMENT_STATUS.md`: technical handoff and current architecture status
+
+### 4.7 Current Repository Layout
+
+The current top-level structure that matters for development is:
+
+- `src/`
+- `src/engine/`
+- `src/ui/`
+- `include/`
+- `include/engine/`
+- `include/ui/`
+- `data/`
+- `save/`
+- `vendor/FTXUI/`
+- `obj/` after builds
+
+There is also an untracked local workspace file under `src/engine/*.code-workspace` in the current tree; it is editor metadata, not part of the runtime architecture.
 
 ## 5. Runtime State Architecture
 
@@ -142,6 +192,8 @@ That state is made of several sub-structures:
 - `AnimationState`
 - route option list
 - battle log list
+- auxiliary ship list
+- market offer cache
 
 This gives the current game a flat, serializable data model that is easy to save and reload.
 
@@ -169,19 +221,26 @@ The player state currently tracks:
 - shield
 - energy and max energy
 - heat and max heat
+- overheat rounds
 - credits, still stored internally in the `scrap` field
 - next turn energy buffer
+- next turn draw buffer
 - opening battle bonuses
 - next attack multiplier
 - reward bonus from salvage effects
 - attack count played this turn
+- combat form state
+- many temporary combat modifiers for heat, summon, overload, and auxiliary-ship effects
+- blackbox protocol pending state
 - emergency battery consumption flag
 - relic list
 - draw pile
 - hand
 - discard pile
+- exile pile
+- active ability list
 
-This is enough to support the current combat loop and save system.
+This is no longer a minimal player struct. It now supports a richer combat ruleset with forms, auxiliary ships, temporary summons, heat triggers, and battle-only modifiers.
 
 ### 5.3 `EnemyState`
 
@@ -191,6 +250,9 @@ The enemy state tracks:
 - behavior label
 - HP and max HP
 - shield
+- heat and max heat
+- enemy overheat state
+- cooling cooldown
 - current intent kind
 - current intent label
 - current intent value
@@ -215,7 +277,7 @@ It stores:
 - hidden payload ids
 - hidden payload values
 
-This is flexible, but it is also string-heavy and should eventually become more strongly typed.
+This is flexible enough to power both button-list encounters and full-deck service galleries, but it is still string-heavy and should eventually become more strongly typed.
 
 ### 5.5 `RewardState`
 
@@ -241,6 +303,24 @@ This tracks:
 - active flag
 
 It is lightweight but effective for terminal battle feedback.
+
+### 5.7 `RunState` as the Save Boundary
+
+`RunState` itself also carries several fields that are not part of the nested sub-structs:
+
+- sector and depth progression
+- node count per sector
+- battle turn count
+- market upgrade and purge visit state
+- pending sector advance / victory flags
+- active node type and name
+- current status line
+- route options
+- battle log
+- current market offer ids
+- auxiliary ship state
+
+In practice, `RunState` is the authoritative save/load boundary for the current game.
 
 ## 6. Gameplay Systems Already Implemented
 
@@ -360,10 +440,12 @@ Reward screen already distinguishes:
 Implemented encounter families include:
 
 - repair station choices
+- repair-station full-deck upgrade service
 - salvage credits
 - salvage card reward
 - distress beacon outcomes
 - strange signal outcomes
+- event-based full-deck upgrade service
 - reactor leak outcomes
 - smuggler cache outcomes
 
@@ -375,8 +457,10 @@ Implemented:
 
 - card purchase offers
 - one-card purge service
+- full-deck upgrade service
 - purge pagination for larger decks
 - visible current credit amount in the market UI
+- explicit return action from the upgrade screen even when the player cannot afford the service
 
 This is a real functional shop, not only a placeholder.
 
@@ -404,30 +488,34 @@ Implemented:
 
 ## 7. Content Database Status
 
-The current release is intentionally **code-authored**, not data-driven.
+The current release is **partly data-driven and partly code-authored**.
 
-All of the following are initialized in `GameEngine::initializeData()`:
+Loaded from `data/cards.json`:
 
 - cards
+- upgrade definitions for cards
+
+Initialized in `GameEngine::initializeData()` inside `src/engine/game_content.cpp`:
+
 - enemies
 - ships
 - relics
 
 Advantages of the current approach:
 
-- no extra runtime parsing dependencies
-- no risk of missing external content files
+- cards can now be balanced and upgraded without recompiling every definition into C++
+- enemies, ships, and relics are still easy to validate because they remain code-authored
 - easy offline delivery
-- easier save validation because ids are known in one place
+- save validation can still check ids against known runtime databases
 
 Disadvantages:
 
-- harder balancing iteration
-- more compile-time friction when adding content
+- the content pipeline is mixed instead of unified
+- enemies, relics, and route/event authored content still require C++ edits
 - translation coverage becomes manual
-- non-programmers cannot easily author new content
+- some balancing work is now in JSON while some remains in code, which increases cognitive overhead
 
-This is a major medium-term refactor target, but it was a reasonable choice for achieving a stable playable build quickly.
+This hybrid approach is a reasonable intermediate state. The next clean architectural step would be to choose one consistent authoring boundary per content family rather than keeping an accidental mix.
 
 ## 8. Battle Rules in the Current Build
 
@@ -531,6 +619,11 @@ Implemented effect categories include:
 - full heat clear
 - battle payout bonus
 - random volatile effect
+- auxiliary ship summoning and buffing
+- form shifts and form toggles
+- overload damage reduction
+- blackbox temporary-copy effects
+- upgrade-aware card instance references
 
 This is a good systems foundation for future card pool expansion.
 
@@ -579,6 +672,7 @@ Implemented:
 - ASCII ship and enemy art panels
 - combat lane animation area
 - card-panel style hand layout
+- full-deck service gallery for upgrade / purge screens
 - battle log
 - save and load manager dialogs
 - map dashboard
@@ -595,7 +689,23 @@ The UI does not mutate game rules directly. Instead:
 
 This is good architecture and should remain the rule.
 
-### 11.3 Translation Strategy
+### 11.3 Service Screen Interaction Status
+
+The service-screen interaction layer is no longer only button-driven.
+
+Current behavior for `market_upgrade`, `repair_upgrade`, and `event_upgrade`:
+
+- card upgrades can be selected from a full-deck gallery with keyboard or mouse
+- service exit actions are mapped to explicit keyboard shortcuts instead of relying on generic menu escape behavior
+- black market upgrade uses `Esc`, `B`, or `0` to return to the broker
+- repair-station and event upgrade screens use `Esc` or `0` to skip and continue
+- the service action card is directly clickable with the mouse
+- the service action target is resolved by payload id, not by assuming it is the last visible choice
+- the first stray mouse release after entering a service screen is ignored until the page has seen an intentional hover or press
+
+This matters because full-gallery service pages otherwise risk accidental upgrades or trapping the player in a credits-insufficient state.
+
+### 11.4 Translation Strategy
 
 The project currently has a mixed translation strategy:
 
@@ -644,6 +754,7 @@ The save format serializes a large portion of live runtime state, including:
 - info panel data
 - battle log
 - animation state
+- auxiliary ship state
 
 This is already much more complete than a basic "HP only" save system.
 
@@ -653,7 +764,7 @@ This is already much more complete than a basic "HP only" save system.
 - easy to inspect manually
 - easy to diff
 - robust enough to restore a mid-run battle or encounter state
-- validates ids against the compiled card / relic / enemy database on load
+- validates ids against the runtime card / relic / enemy database on load
 
 ### 12.2 Save Weaknesses
 
@@ -673,18 +784,25 @@ Future upgrades should preserve the current strengths while improving maintainab
 
 ## 13. Data and File I/O Dependencies
 
-The trimmed release has very small runtime file dependencies.
+The current repository has a small but important set of runtime file dependencies.
 
 Required relative paths:
 
+- `data/cards.json`
 - `data/leaderboard.txt` (created automatically after the first finished run)
 - `save/`
+- `save/*.sav`
+- `save/ui_language.txt` (created on first language preference write)
+- `save/obtained_cards.txt` (created when card discovery data is persisted)
 
 Important detail:
 
-Most gameplay content is not loaded from disk. It is compiled into the binary.
+Gameplay content is no longer entirely compiled into the binary.
 
-That means the game is relatively robust for offline course deployment, as long as the executable is launched from the repository root.
+- card definitions are loaded from `data/cards.json`
+- enemies, ships, relics, route logic, and event logic are still compiled in code
+
+That means the executable should still be launched from the repository root so these relative paths resolve correctly.
 
 ## 14. Build and Portability Status
 
@@ -694,22 +812,29 @@ The project has already been developed and smoke-tested in the current Windows e
 
 ### 14.2 Linux Delivery Status
 
-This release package is explicitly prepared for Linux delivery by:
+This repository is still explicitly prepared for Linux delivery by:
 
 - removing CMake from the release flow
 - vendoring FTXUI source
-- adding a Linux-only `Makefile`
+- keeping a `make`-based offline build
 - keeping the runtime layout relative and self-contained
 
 ### 14.3 Build Assumptions
 
-The provided release `Makefile` assumes:
+The provided `Makefile` currently assumes:
 
 - `g++`
 - GNU make
 - C++17 support
 - pthread support
 - a terminal environment that can display the TUI correctly
+
+It also currently:
+
+- branches between Windows and POSIX behavior
+- writes objects into `obj/<compiler-target>/...`
+- links vendored FTXUI sources directly instead of using a preinstalled library
+- adds `-lstdc++fs` on non-Clang toolchains for compatibility with older filesystem implementations
 
 ## 15. Known Technical Debt and Limitations
 
@@ -749,22 +874,23 @@ Recommended fix:
 
 Problem:
 
-- cards, enemies, relics, and ships are all built in code
+- enemies, relics, ships, routes, and event logic are still authored in C++
+- cards are authored in JSON, so the content system is split across two styles
 
 Risk:
 
-- balancing becomes slower
-- content authoring depends on C++ edits
+- onboarding requires understanding both code-authored and JSON-authored content paths
+- balancing effort is inconsistent between content families
 
 Recommended fix:
 
-- move gameplay content into structured data files after the rules stabilize
+- decide a clear long-term ownership model for each content family and document it explicitly
 
 ### 15.4 Engine Size Debt
 
 Problem:
 
-- `tui_game.cpp` currently owns a lot of responsibilities
+- the engine implementation is modularized, but `GameEngine` still exposes a very broad surface and many systems still share one state object
 
 Risk:
 
@@ -774,13 +900,13 @@ Risk:
 
 Recommended fix:
 
-- split into battle, encounter, rewards, serialization, and content database modules once the playable baseline is accepted
+- continue separating helper logic by subsystem and add narrower testable helpers around battle, save, and event logic
 
 ### 15.5 UI Controller Size Debt
 
 Problem:
 
-- `tui_app.cpp` contains rendering, translation, input routing, art generation, save dialog behavior, and page switching
+- the UI is split into modules, but `StarAbyssApp` still holds a large amount of long-lived modal, hover, scroll, and page wiring state
 
 Risk:
 
@@ -788,7 +914,7 @@ Risk:
 
 Recommended fix:
 
-- extract reusable view helpers and localization helpers into separate files
+- keep moving page-specific interaction state behind smaller helper abstractions where possible
 
 ### 15.6 Test Coverage Debt
 
@@ -818,6 +944,20 @@ Recommended fix:
 
 - add responsive layout fallbacks for smaller terminal widths
 
+### 15.8 Documentation Drift Debt
+
+Problem:
+
+- the codebase now changes faster than the handoff docs, README notes, and issue summaries
+
+Risk:
+
+- future contributors may trust outdated architecture notes and edit the wrong files
+
+Recommended fix:
+
+- treat `README.md` and `DEVELOPMENT_STATUS.md` as part of the feature-change checklist when modules are moved or responsibilities change
+
 ## 16. What Is Strong Enough to Keep
 
 The following parts are already good architectural decisions and should not be casually thrown away:
@@ -844,7 +984,8 @@ Goals:
 - verify all remaining mixed-language strings
 - test save/load from every page type
 - test battle rewards, elite rewards, and boss rewards
-- test black market purchase and purge edge cases
+- test black market purchase, purge, and upgrade-service edge cases
+- test repair-station and event upgrade screens for accidental mouse input on entry
 - test route progression across all three sectors
 
 Reason:
@@ -877,27 +1018,18 @@ Reason:
 
 This is one of the most obvious quality gaps still visible to players.
 
-### Priority 4: Split Large Source Files
+### Priority 4: Refine the Current Modular Split
 
-Recommended split for gameplay:
+Recommended follow-up areas:
 
-- `battle_system.cpp`
-- `encounter_system.cpp`
-- `reward_system.cpp`
-- `save_system.cpp`
-- `content_database.cpp`
-
-Recommended split for UI:
-
-- `ui_panels.cpp`
-- `ui_battle.cpp`
-- `ui_map.cpp`
-- `ui_dialogs.cpp`
-- `ui_localization.cpp`
+- further isolate battle-effect helpers that are currently still broad inside `game_battle.cpp`
+- narrow `GameEngine` helper surfaces where a full engine include is not required
+- keep service-screen UI state from growing too far inside `StarAbyssApp`
+- add clearer ownership notes when a new module is introduced
 
 Reason:
 
-This will reduce merge conflicts and make the codebase easier to maintain.
+The first modular split has already happened. The next step is to make those module boundaries cleaner rather than pretending the project is still monolithic.
 
 ### Priority 5: Move Content Out of Source
 
