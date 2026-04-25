@@ -236,16 +236,15 @@ void GameEngine::resolveEncounter(size_t index) {
                 if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Entered the fold. Skip 1 segment. +5 heat. Gained a rare card.";
             } else if (index == 1) {
-                changeHeat(-4);
-                g_sa_permanent_shield += 2;
-                if (state_.player.scrap >= 10) {
-                    state_.player.scrap -= 10;
-                    state_.statusLine = "Stabilized the space. -4 heat, +2 permanent shield. Costs 10 credits.";
-                } else {
+                if (state_.player.scrap < 10) {
                     state_.statusLine = "Not enough credits. The space fold collapses.";
                     finishCurrentNode();
                     return;
                 }
+                state_.player.scrap -= 10;
+                changeHeat(-4);
+                g_sa_permanent_shield += 2;
+                state_.statusLine = "Stabilized the space. -4 heat, +2 permanent shield. Costs 10 credits.";
             } else {
                 state_.player.nextAttackMultiplier = 2;
                 state_.statusLine = "Steered clear. Next battle's first attack enhanced.";
@@ -323,15 +322,14 @@ void GameEngine::resolveEncounter(size_t index) {
 
         if (eid == "event_c2") {  // Hull Breach
             if (index == 0) {
-                applyDamageToPlayer(4);
-                changeHeat(3);
-                if (state_.player.scrap >= 10) {
-                    state_.player.scrap -= 10;
-                    state_.statusLine = "Emergency welding complete. -4 HP, +3 heat, -10 credits.";
-                } else {
+                if (state_.player.scrap < 10) {
                     state_.statusLine = "Not enough credits for welding supplies.";
                     return;
                 }
+                state_.player.scrap -= 10;
+                applyDamageToPlayer(4);
+                changeHeat(3);
+                state_.statusLine = "Emergency welding complete. -4 HP, +3 heat, -10 credits.";
             } else if (index == 1) {
                 if (state_.player.scrap >= 8) {
                     state_.player.scrap -= 8;
@@ -488,15 +486,14 @@ void GameEngine::resolveEncounter(size_t index) {
                 g_sa_next_elite = true;
                 state_.statusLine = "Woke the sleeper. Cards enhanced. Next encounter may be elite.";
             } else if (index == 1) {
-                changeHeat(5);
-                state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 6);
-                if (state_.player.scrap >= 8) {
-                    state_.player.scrap -= 8;
-                    state_.statusLine = "Drained cryo energy. +5 heat, +6 HP, -8 credits.";
-                } else {
+                if (state_.player.scrap < 8) {
                     state_.statusLine = "Not enough credits to drain cryo energy.";
                     return;
                 }
+                state_.player.scrap -= 8;
+                changeHeat(5);
+                state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 6);
+                state_.statusLine = "Drained cryo energy. +5 heat, +6 HP, -8 credits.";
             } else {
                 state_.player.scrap += 18;
                 auto cards = randomCardChoices(1);

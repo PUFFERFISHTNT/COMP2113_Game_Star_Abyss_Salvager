@@ -5,6 +5,20 @@
 #include <fstream>
 #include <sstream>
 
+extern int g_sa_beacon_activated;
+extern int g_sa_escape_stage;
+extern int g_sa_truth_stage;
+extern bool g_sa_truth_post_battle;
+extern int g_sa_skip_segments;
+extern bool g_sa_next_elite;
+extern bool g_sa_heat_accel;
+extern bool g_sa_no_boss;
+extern int g_sa_permanent_shield;
+extern bool g_sa_escape_battle_pending;
+extern bool g_sa_escape_intro_pending;
+extern bool g_sa_game_intro_pending;
+extern std::string g_sa_event_epilogue;
+
 namespace {
 
 std::vector<std::string> Split(const std::string& line, char delimiter) {
@@ -27,6 +41,14 @@ int ToInt(const std::string& value, int fallback = 0) {
 
 std::string BoolToken(bool value) {
     return value ? "1" : "0";
+}
+
+std::string ValueAfterKey(const std::string& line, const char* key_with_delimiter) {
+    const std::string prefix(key_with_delimiter);
+    if (line.rfind(prefix, 0) != 0) {
+        return "";
+    }
+    return line.substr(prefix.size());
 }
 
 std::string PageToString(AppPage page) {
@@ -100,7 +122,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|19\n";
+    output << "VERSION|21\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -114,6 +136,19 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     output << "PENDINGVICTORY|" << BoolToken(state_.pendingVictory) << "\n";
     output << "ACTIVE|" << state_.activeNodeType << "|" << state_.activeNodeName << "\n";
     output << "STATUS|" << state_.statusLine << "\n";
+    output << "ROUTESTATE|" << g_sa_beacon_activated << "|"
+           << g_sa_escape_stage << "|"
+           << g_sa_truth_stage << "|"
+           << BoolToken(g_sa_truth_post_battle) << "|"
+           << g_sa_skip_segments << "|"
+           << BoolToken(g_sa_next_elite) << "|"
+           << BoolToken(g_sa_heat_accel) << "|"
+           << BoolToken(g_sa_no_boss) << "|"
+           << g_sa_permanent_shield << "|"
+           << BoolToken(g_sa_escape_battle_pending) << "|"
+           << BoolToken(g_sa_escape_intro_pending) << "|"
+           << BoolToken(g_sa_game_intro_pending) << "\n";
+    output << "ROUTEEPILOGUE|" << g_sa_event_epilogue << "\n";
 
     const PlayerState& player = state_.player;
     output << "PLAYER|" << player.shipId << "|" << player.shipName << "|"
@@ -196,6 +231,13 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << player.firstExitDefenseEnergyThisBattle << "|"
            << BoolToken(player.firstEnterOverloadDrawTriggeredThisBattle) << "|"
            << BoolToken(player.firstExitDefenseEnergyTriggeredThisBattle) << "\n";
+    output << "COND4|" << player.auxEndTurnExtraTriggersThisTurn << "|"
+           << player.auxEffectPercentBonusThisTurn << "|"
+           << player.overloadIncomingDamageReducePercentThisTurn << "|"
+           << player.firstSummonExtraCopies << "|"
+           << player.firstSummonExtraScope << "|"
+           << BoolToken(player.firstSummonUsedThisBattle) << "|"
+           << BoolToken(player.firstSummonUsedThisTurn) << "\n";
 
     const EnemyState& enemy = state_.enemy;
     output << "ENEMY|" << enemy.enemyId << "|" << enemy.name << "|" << enemy.behavior << "|"
@@ -274,6 +316,19 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.page = AppPage::Map;
     std::string line;
     std::vector<std::string>* activePile = nullptr;
+    int loaded_beacon_activated = 0;
+    int loaded_escape_stage = 0;
+    int loaded_truth_stage = 0;
+    bool loaded_truth_post_battle = false;
+    int loaded_skip_segments = 0;
+    bool loaded_next_elite = false;
+    bool loaded_heat_accel = false;
+    bool loaded_no_boss = false;
+    int loaded_permanent_shield = 0;
+    bool loaded_escape_battle_pending = false;
+    bool loaded_escape_intro_pending = false;
+    bool loaded_game_intro_pending = false;
+    std::string loaded_event_epilogue;
 
     while (std::getline(input, line)) {
         const std::vector<std::string> parts = Split(line, '|');
@@ -309,6 +364,21 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.activeNodeName = parts[2];
         } else if (key == "STATUS" && parts.size() >= 2) {
             loaded.statusLine = parts[1];
+        } else if (key == "ROUTESTATE" && parts.size() >= 13) {
+            loaded_beacon_activated = ToInt(parts[1], 0);
+            loaded_escape_stage = ToInt(parts[2], 0);
+            loaded_truth_stage = ToInt(parts[3], 0);
+            loaded_truth_post_battle = parts[4] == "1";
+            loaded_skip_segments = ToInt(parts[5], 0);
+            loaded_next_elite = parts[6] == "1";
+            loaded_heat_accel = parts[7] == "1";
+            loaded_no_boss = parts[8] == "1";
+            loaded_permanent_shield = ToInt(parts[9], 0);
+            loaded_escape_battle_pending = parts[10] == "1";
+            loaded_escape_intro_pending = parts[11] == "1";
+            loaded_game_intro_pending = parts[12] == "1";
+        } else if (key == "ROUTEEPILOGUE") {
+            loaded_event_epilogue = ValueAfterKey(line, "ROUTEEPILOGUE|");
         } else if (key == "PLAYER" && parts.size() >= 16) {
             loaded.player.shipId = parts[1];
             loaded.player.shipName = parts[2];
@@ -420,8 +490,19 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.player.firstExitDefenseEnergyThisBattle = ToInt(parts[5], 0);
             loaded.player.firstEnterOverloadDrawTriggeredThisBattle = parts[6] == "1";
             loaded.player.firstExitDefenseEnergyTriggeredThisBattle = parts[7] == "1";
-        } else if (key == "CARD" && parts.size() >= 2 && activePile != nullptr) {
-            activePile->push_back(parts[1]);
+        } else if (key == "COND4" && parts.size() >= 8) {
+            loaded.player.auxEndTurnExtraTriggersThisTurn = ToInt(parts[1], 0);
+            loaded.player.auxEffectPercentBonusThisTurn = ToInt(parts[2], 0);
+            loaded.player.overloadIncomingDamageReducePercentThisTurn = ToInt(parts[3], 0);
+            loaded.player.firstSummonExtraCopies = ToInt(parts[4], 0);
+            loaded.player.firstSummonExtraScope = ToInt(parts[5], 0);
+            loaded.player.firstSummonUsedThisBattle = parts[6] == "1";
+            loaded.player.firstSummonUsedThisTurn = parts[7] == "1";
+        } else if (key == "CARD" && activePile != nullptr) {
+            const std::string card_ref = ValueAfterKey(line, "CARD|");
+            if (!card_ref.empty()) {
+                activePile->push_back(card_ref);
+            }
         } else if (key == "ENEMY" && parts.size() >= 12) {
             loaded.enemy.enemyId = parts[1];
             loaded.enemy.name = parts[2];
@@ -546,6 +627,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.exitDefenseEnergyThisBattle = std::max(0, loaded.player.exitDefenseEnergyThisBattle);
     loaded.player.firstEnterOverloadDrawThisBattle = std::max(0, loaded.player.firstEnterOverloadDrawThisBattle);
     loaded.player.firstExitDefenseEnergyThisBattle = std::max(0, loaded.player.firstExitDefenseEnergyThisBattle);
+    loaded.player.auxEndTurnExtraTriggersThisTurn = std::max(0, loaded.player.auxEndTurnExtraTriggersThisTurn);
+    loaded.player.auxEffectPercentBonusThisTurn = std::max(0, loaded.player.auxEffectPercentBonusThisTurn);
+    loaded.player.overloadIncomingDamageReducePercentThisTurn =
+        std::max(0, std::min(100, loaded.player.overloadIncomingDamageReducePercentThisTurn));
+    loaded.player.firstSummonExtraCopies = std::max(0, loaded.player.firstSummonExtraCopies);
+    loaded.player.firstSummonExtraScope = std::max(0, loaded.player.firstSummonExtraScope);
     if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
         loaded.player.overheatRounds = 0;
     } else if (loaded.player.overheatRounds == 0) {
@@ -634,6 +721,20 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     if (loaded.statusLine.empty()) {
         loaded.statusLine = "Save loaded. Navigation restored.";
     }
+
+    g_sa_beacon_activated = std::max(0, std::min(1, loaded_beacon_activated));
+    g_sa_escape_stage = std::max(0, loaded_escape_stage);
+    g_sa_truth_stage = std::max(0, loaded_truth_stage);
+    g_sa_truth_post_battle = loaded_truth_post_battle;
+    g_sa_skip_segments = std::max(0, loaded_skip_segments);
+    g_sa_next_elite = loaded_next_elite;
+    g_sa_heat_accel = loaded_heat_accel;
+    g_sa_no_boss = loaded_no_boss;
+    g_sa_permanent_shield = std::max(0, loaded_permanent_shield);
+    g_sa_escape_battle_pending = loaded_escape_battle_pending;
+    g_sa_escape_intro_pending = loaded_escape_intro_pending;
+    g_sa_game_intro_pending = loaded_game_intro_pending;
+    g_sa_event_epilogue = loaded_event_epilogue;
 
     state_ = loaded;
     normalizeUpgradedCards();
