@@ -27,12 +27,36 @@ bool StarAbyssApp::HandleEvent(Event event) {
     const auto contains = [](const Box& box, int x, int y) {
         return x >= box.x_min && x <= box.x_max && y >= box.y_min && y <= box.y_max;
     };
-    const auto is_full_upgrade_gallery = [&]() {
-        return engine_.state().page == AppPage::Encounter &&
-               (engine_.state().encounter.encounterId == "market_upgrade" ||
-                engine_.state().encounter.encounterId == "repair_upgrade" ||
-                engine_.state().encounter.encounterId == "event_upgrade");
+    const auto& state = engine_.state();
+    const bool is_service_screen = state.page == AppPage::Encounter &&
+                                   (state.encounter.encounterId == "market_upgrade" ||
+                                    state.encounter.encounterId == "repair_upgrade" ||
+                                    state.encounter.encounterId == "event_upgrade");
+    const std::string service_screen_id = is_service_screen ? state.encounter.encounterId : "";
+    const bool is_market_upgrade_screen = is_service_screen && state.encounter.encounterId == "market_upgrade";
+    const bool is_repair_or_event_upgrade_screen =
+        is_service_screen &&
+        (state.encounter.encounterId == "repair_upgrade" || state.encounter.encounterId == "event_upgrade");
+    const auto execute_service_action = [&]() {
+        if (!serviceActionVisible_ || serviceActionChoiceIndex_ >= engine_.state().encounter.choices.size()) {
+            return false;
+        }
+        engine_.resolveEncounter(serviceActionChoiceIndex_);
+        AutoSave();
+        SyncUi();
+        return true;
     };
+
+    if (!is_service_screen) {
+        serviceMouseScreenId_.clear();
+        serviceMouseReleaseArmed_ = false;
+        serviceActionHovered_ = false;
+    } else if (serviceMouseScreenId_ != service_screen_id) {
+        serviceMouseScreenId_ = service_screen_id;
+        serviceMouseReleaseArmed_ = false;
+        serviceActionHovered_ = false;
+        serviceHoveredCardIndex_ = -1;
+    }
     const auto active_scroll_component = [&]() -> Component {
         if (saveDialogVisible_) {
             return saveDialogPage_;
@@ -120,7 +144,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
         return true;
     }
 
-    if (is_full_upgrade_gallery() && event.is_mouse()) {
+    if (is_service_screen && event.is_mouse()) {
         const int mouse_x = event.mouse().x;
         const int mouse_y = event.mouse().y;
         if (event.mouse().motion == Mouse::Moved) {
@@ -131,8 +155,15 @@ bool StarAbyssApp::HandleEvent(Event event) {
                     break;
                 }
             }
-            if (hovered_index != serviceHoveredCardIndex_) {
+            const bool action_hovered = serviceActionVisible_ && contains(serviceActionBox_, mouse_x, mouse_y);
+            const bool card_hover_changed = hovered_index != serviceHoveredCardIndex_;
+            const bool action_hover_changed = action_hovered != serviceActionHovered_;
+            if (card_hover_changed || action_hover_changed) {
                 serviceHoveredCardIndex_ = hovered_index;
+                serviceActionHovered_ = action_hovered;
+                if (hovered_index >= 0 || action_hovered) {
+                    serviceMouseReleaseArmed_ = true;
+                }
                 if (hovered_index >= 0) {
                     serviceFocusedCardIndex_ = hovered_index;
                 }
@@ -140,9 +171,31 @@ bool StarAbyssApp::HandleEvent(Event event) {
                 return true;
             }
         }
+        if (event.mouse().button == Mouse::Left && event.mouse().motion == Mouse::Pressed) {
+            bool pressed_target = false;
+            for (size_t i = 0; i < serviceCardBoxes_.size() && i < serviceCardChoiceIndices_.size(); ++i) {
+                if (contains(serviceCardBoxes_[i], mouse_x, mouse_y)) {
+                    serviceFocusedCardIndex_ = static_cast<int>(i);
+                    serviceHoveredCardIndex_ = static_cast<int>(i);
+                    serviceActionHovered_ = false;
+                    pressed_target = true;
+                    break;
+                }
+            }
+            if (!pressed_target && serviceActionVisible_ && contains(serviceActionBox_, mouse_x, mouse_y)) {
+                serviceHoveredCardIndex_ = -1;
+                serviceActionHovered_ = true;
+                pressed_target = true;
+            }
+            if (pressed_target) {
+                serviceMouseReleaseArmed_ = true;
+                SyncUi();
+                return true;
+            }
+        }
     }
 
-    if (is_full_upgrade_gallery() &&
+    if (is_service_screen &&
         event.is_mouse() &&
         event.mouse().button == Mouse::Left &&
         event.mouse().motion == Mouse::Released) {
@@ -150,6 +203,12 @@ bool StarAbyssApp::HandleEvent(Event event) {
         const int mouse_y = event.mouse().y;
         for (size_t i = 0; i < serviceCardBoxes_.size() && i < serviceCardChoiceIndices_.size(); ++i) {
             if (contains(serviceCardBoxes_[i], mouse_x, mouse_y)) {
+                if (!serviceMouseReleaseArmed_) {
+                    serviceMouseReleaseArmed_ = true;
+                    serviceFocusedCardIndex_ = static_cast<int>(i);
+                    SyncUi();
+                    return true;
+                }
                 serviceFocusedCardIndex_ = static_cast<int>(i);
                 engine_.resolveEncounter(serviceCardChoiceIndices_[i]);
                 AutoSave();
@@ -158,11 +217,17 @@ bool StarAbyssApp::HandleEvent(Event event) {
             }
         }
         if (serviceActionVisible_ && contains(serviceActionBox_, mouse_x, mouse_y)) {
-            return false;
+            if (!serviceMouseReleaseArmed_) {
+                serviceMouseReleaseArmed_ = true;
+                serviceActionHovered_ = true;
+                SyncUi();
+                return true;
+            }
+            return execute_service_action();
         }
     }
 
-    if (is_full_upgrade_gallery()) {
+    if (is_service_screen) {
         const int card_count = static_cast<int>(serviceCardChoiceIndices_.size());
         if (card_count > 0) {
             const int columns = std::max(1, serviceCardsPerRow_);
@@ -197,6 +262,19 @@ bool StarAbyssApp::HandleEvent(Event event) {
                 SyncUi();
                 return true;
             }
+        }
+    }
+
+    if (is_service_screen) {
+        if (event == Event::Escape) {
+            return execute_service_action();
+        }
+        if (is_market_upgrade_screen &&
+            (event == Event::Character('b') || event == Event::Character('B') || event == Event::Character('0'))) {
+            return execute_service_action();
+        }
+        if (is_repair_or_event_upgrade_screen && event == Event::Character('0')) {
+            return execute_service_action();
         }
     }
 

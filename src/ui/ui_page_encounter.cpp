@@ -67,6 +67,15 @@ std::string MakeCardRef(const std::string& base_id, int upgrade_level) {
     return upgrade_level <= 0 ? base_id : (base_id + "@" + std::to_string(upgrade_level));
 }
 
+size_t FindServiceActionChoiceIndex(const RunState& state, const std::string& target_payload) {
+    for (size_t i = 0; i < state.encounter.payloadIds.size() && i < state.encounter.choices.size(); ++i) {
+        if (state.encounter.payloadIds[i] == target_payload) {
+            return i;
+        }
+    }
+    return state.encounter.choices.size();
+}
+
 // Build a compact "before -> after" delta list so upgrade screens can explain
 // exactly what changes when the player confirms the service.
 void PushUpgradeDelta(std::vector<std::string>* lines,
@@ -371,12 +380,42 @@ Element StarAbyssApp::RenderEncounter() const {
             service_body.push_back(text(Tr(language_, "Move focus onto a target button to highlight that card here.", "把焦点移动到左侧目标按钮上，就会在这里同步高亮对应卡牌。")) |
                                    color(kDim));
         }
-        if (!options.empty()) {
+        const std::string service_action_payload =
+            state.encounter.encounterId == "market_upgrade" ? "service_back_market" : "service_skip_service";
+        const size_t service_action_choice_index = FindServiceActionChoiceIndex(state, service_action_payload);
+        if (!options.empty() && service_action_choice_index < state.encounter.choices.size()) {
             serviceActionVisible_ = true;
-            serviceActionChoiceIndex_ = state.encounter.choices.size() - 1;
+            serviceActionChoiceIndex_ = service_action_choice_index;
+            const bool market_upgrade_screen = state.encounter.encounterId == "market_upgrade";
+            const std::string action_keys = market_upgrade_screen
+                                                ? Tr(language_, "[Esc] [B] [0]", "[Esc] [B] [0]")
+                                                : Tr(language_, "[Esc] [0]", "[Esc] [0]");
+            const std::string action_title = market_upgrade_screen
+                                                 ? Tr(language_, "Click to Return", "点击返回")
+                                                 : Tr(language_, "Click to Skip", "点击跳过");
+            const std::string action_hint =
+                market_upgrade_screen
+                    ? Tr(language_,
+                         "If you cannot afford an upgrade, click this panel or press one of the keys above.",
+                         "如果金币不足无法升级，可点击此面板，或按上方任一按键返回。")
+                    : Tr(language_,
+                         "Click this panel or press one of the keys above to leave this service immediately.",
+                         "可点击此面板，或按上方任一按键立即离开当前服务。");
+            const Color action_accent = serviceActionHovered_ ? kGold : kEnemy;
+            const Color action_background = serviceActionHovered_ ? kPanel : kPanelAlt;
+            const Color action_hint_color = serviceActionHovered_ ? Color::White : kDim;
             service_body.push_back(separator());
-            service_body.push_back(window(text(Tr(language_, "Service Action", "服务操作")) | color(kHull),
-                                          vbox(std::move(options))) | reflect(serviceActionBox_) | bgcolor(kPanel));
+            service_body.push_back(window(text(action_title) | color(action_accent) | bold,
+                                          vbox({
+                                              text(action_keys) | color(action_accent) | bold | center,
+                                              separator(),
+                                              paragraph(action_hint) | color(action_hint_color),
+                                              separator(),
+                                              vbox(std::move(options)),
+                                          })) |
+                                   reflect(serviceActionBox_) |
+                                   borderStyled(ROUNDED, action_accent) |
+                                   bgcolor(action_background));
         }
         service_body.push_back(separator());
         service_body.push_back(vbox(std::move(body_cards)));

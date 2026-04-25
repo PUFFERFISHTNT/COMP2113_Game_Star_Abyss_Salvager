@@ -1015,6 +1015,12 @@ bool GameEngine::resolveUpgradeSelection(size_t index) {
         return true;
     }
 
+    const std::vector<std::string> currentCandidates = upgradeableCardInstanceRefs();
+    if (std::find(currentCandidates.begin(), currentCandidates.end(), payload) == currentCandidates.end()) {
+        state_.statusLine = "That card is no longer available for this upgrade.";
+        return true;
+    }
+
     std::string error;
     if (!upgradeCard(payload, source, &error)) {
         state_.statusLine = error;

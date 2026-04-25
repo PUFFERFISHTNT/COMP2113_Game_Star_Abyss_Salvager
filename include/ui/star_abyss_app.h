@@ -105,7 +105,11 @@ private:
     mutable std::vector<size_t> serviceCardChoiceIndices_;
     mutable ftxui::Box serviceActionBox_;
     mutable bool serviceActionVisible_ = false;
+    // Valid back/skip choice index for the current service screen action box.
     mutable size_t serviceActionChoiceIndex_ = 0;
+    mutable bool serviceActionHovered_ = false;
+    mutable bool serviceMouseReleaseArmed_ = false;
+    mutable std::string serviceMouseScreenId_;
     mutable int serviceFocusedCardIndex_ = 0;
     mutable int serviceHoveredCardIndex_ = -1;
     mutable int serviceCardsPerRow_ = 1;
