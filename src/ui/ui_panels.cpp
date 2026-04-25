@@ -251,6 +251,12 @@ std::string BattleKeyLabel(size_t index) {
 }
 
 std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
+    const std::string authored_description =
+        language == UiLanguage::English && !card.descriptionEn.empty() ? card.descriptionEn : card.description;
+    if (!authored_description.empty()) {
+        return authored_description;
+    }
+
     std::vector<std::string> clauses;
     if (card.shieldToDamage) {
         clauses.push_back(Tr(language, "Deal damage equal to your current shield, then lose that shield",
@@ -444,6 +450,9 @@ Color CardAccent(const CardDef* card) {
     if (card->type == "Defense") {
         return kShield;
     }
+    if (card->type == "Ability") {
+        return Color::RGB(186, 143, 255);
+    }
     if (card->type == "Control") {
         return kGold;
     }
@@ -481,6 +490,9 @@ Color CardBackground(const CardDef* card, bool playable) {
     if (card->type == "Defense") {
         return Color::RGB(18, 28, 58);
     }
+    if (card->type == "Ability") {
+        return Color::RGB(34, 20, 55);
+    }
     if (card->type == "Control") {
         return Color::RGB(49, 37, 15);
     }
@@ -502,14 +514,6 @@ Element ServiceDeckCardPanel(UiLanguage language,
     // The service grid mirrors the whole deck, but only cards enabled by the
     // current service context should look actionable.
     const CardDef& card = entry.card.def;
-    Elements description_lines;
-    for (const std::string& line : CardDescriptionLines(language, card)) {
-        description_lines.push_back(text(line) | color(Color::White));
-    }
-    if (description_lines.empty()) {
-        description_lines.push_back(text(TranslateGameText(language, card.description)) | color(Color::White));
-    }
-
     std::vector<std::string> facts = CardFacts(language, card);
     facts.insert(facts.begin(), Tr(language, "Copies x", "持有数量 x") + std::to_string(std::max(1, entry.copies)));
     const std::string fact_text = CompactFactText(language, facts);
@@ -544,7 +548,7 @@ Element ServiceDeckCardPanel(UiLanguage language,
              Tr(language, "Type: ", "类型：") + TranslateGameText(language, card.type)) |
             color(meta_color),
         separator(),
-        vbox(std::move(description_lines)),
+        paragraph(CardDescriptionText(language, card)) | color(Color::White),
         paragraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
                                     : fact_text) |
             color(selectable ? kDim : Color::RGB(117, 126, 142)),
@@ -570,6 +574,7 @@ Element ServiceDeckCardPanel(UiLanguage language,
 
 std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     std::vector<std::string> facts;
+    const bool ability_card = card.type == "Ability";
     if (card.damage > 0) {
         std::string line = Tr(language, "DMG ", "伤害 ") + std::to_string(card.damage);
         if (card.multiHit > 1) {
@@ -580,10 +585,10 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
         }
         facts.push_back(line);
     }
-    if (card.shield > 0) facts.push_back(Tr(language, "Shield +", "护盾 +") + std::to_string(card.shield));
+    if (!ability_card && card.shield > 0) facts.push_back(Tr(language, "Shield +", "护盾 +") + std::to_string(card.shield));
     if (card.heal > 0) facts.push_back(Tr(language, "Heal +", "治疗 +") + std::to_string(card.heal));
-    if (card.draw > 0) facts.push_back(Tr(language, "Draw +", "抽牌 +") + std::to_string(card.draw));
-    if (card.energy > 0) facts.push_back(Tr(language, "Energy +", "能量 +") + std::to_string(card.energy));
+    if (!ability_card && card.draw > 0) facts.push_back(Tr(language, "Draw +", "抽牌 +") + std::to_string(card.draw));
+    if (!ability_card && card.energy > 0) facts.push_back(Tr(language, "Energy +", "能量 +") + std::to_string(card.energy));
     if (card.nextTurnEnergy > 0) facts.push_back(Tr(language, "Next turn +", "下回合 +") + std::to_string(card.nextTurnEnergy) + Tr(language, " energy", " 能量"));
     if (card.heat > 0) facts.push_back(Tr(language, "Heat +", "热量 +") + std::to_string(card.heat));
     else if (card.heat < 0) facts.push_back(Tr(language, "Heat ", "热量 ") + std::to_string(card.heat));
@@ -633,6 +638,18 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.formChangesThisTurnThreshold > 0 && card.formChangesThisTurnBonusDamage > 0) {
         facts.push_back(Tr(language, "Form changes >= ", "形态变化 >= ") + std::to_string(card.formChangesThisTurnThreshold) +
                         Tr(language, " then DMG +", " 时伤害 +") + std::to_string(card.formChangesThisTurnBonusDamage));
+    }
+    if (ability_card && card.id == "df_29") {
+        facts.push_back(Tr(language, "On aux removal D/E ", "附属舰离场 抽牌/能量 ") +
+                        std::to_string(card.draw) + "/" + std::to_string(card.energy));
+    }
+    if (ability_card && card.id == "ib_28") {
+        facts.push_back(Tr(language, "Enter/exit Defense S/E ", "进入/脱离防御 护盾/能量 ") +
+                        std::to_string(card.shield) + "/" + std::to_string(card.energy));
+    }
+    if (ability_card && card.id == "ib_29") {
+        facts.push_back(Tr(language, "First Overload/Defense D/E ", "首次过载/防御离场 抽牌/能量 ") +
+                        std::to_string(card.draw) + "/" + std::to_string(card.energy));
     }
     if (card.firstEnterHighHeatEnergyThisBattle > 0 || card.firstEnterHighHeatDrawThisBattle > 0) {
         facts.push_back(Tr(language, "First high-heat E/D ", "首入高热量 能量/抽牌 ") +
@@ -742,6 +759,17 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
     } else if (state.player.form == 2) {
         lines.push_back(Tr(language, "Defense release bonus is defined by cards when exiting the form",
                            "防御形态离开奖励由具体切换卡决定"));
+    }
+    if (!state.player.activeAbilities.empty()) {
+        lines.push_back(Tr(language, "Active abilities:", "已启动能力："));
+        for (const ActiveAbilityState& ability : state.player.activeAbilities) {
+            const std::string name =
+                language == UiLanguage::English && !ability.nameEn.empty() ? ability.nameEn : ability.name;
+            const std::string description = language == UiLanguage::English && !ability.descriptionEn.empty()
+                                                ? ability.descriptionEn
+                                                : ability.description;
+            lines.push_back(name + ": " + description);
+        }
     }
     lines.push_back(Tr(language, "Active auxiliary ships: ", "在场附属舰：") + std::to_string(state.auxiliaryShips.size()));
     return lines;

@@ -155,6 +155,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Attack", "攻击"},
         {"Defense", "防御"},
         {"Utility", "功能"},
+        {"Ability", "能力"},
         {"Control", "控制"},
         {"Risk", "风险"},
         {"Deal 6 damage.", "造成 6 点伤害。"},

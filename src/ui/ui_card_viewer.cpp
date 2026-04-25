@@ -39,15 +39,6 @@ Element CardViewerEntryPanel(UiLanguage language,
                              bool obtained,
                              int card_width) {
     const CardDef& card = card_view.def;
-    Elements description_lines;
-    for (const std::string& line : CardDescriptionLines(language, card)) {
-        description_lines.push_back(text(line) | color(obtained ? Color::White : Color::RGB(170, 178, 194)));
-    }
-    if (description_lines.empty()) {
-        description_lines.push_back(text(TranslateGameText(language, card.description)) |
-                                    color(obtained ? Color::White : Color::RGB(170, 178, 194)));
-    }
-
     std::vector<std::string> facts = CardFacts(language, card);
     if (show_copies) {
         facts.insert(facts.begin(),
@@ -72,7 +63,8 @@ Element CardViewerEntryPanel(UiLanguage language,
                     Tr(language, "Type: ", "类型：") + TranslateGameText(language, card.type)) |
                    color(meta_color),
                separator(),
-               vbox(std::move(description_lines)),
+               paragraph(CardDescriptionText(language, card)) |
+                   color(obtained ? Color::White : Color::RGB(170, 178, 194)),
                paragraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
                                            : fact_text) |
                    color(fact_color),

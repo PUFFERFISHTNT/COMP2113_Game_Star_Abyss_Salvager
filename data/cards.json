@@ -42,6 +42,28 @@
       }
     },
     {
+      "id": "basic_cooling",
+      "name": "基础散热",
+      "type": "Utility",
+      "description": "降低 `3` 热量，抽 `1` 张牌。",
+      "rarity": "common",
+      "starterCopies": 1,
+      "cost": 1,
+      "draw": 1,
+      "heat": -3,
+      "name_en": "Basic Cooling",
+      "description_en": "Lose 3 Heat. Draw 1 card.",
+      "upgrade": {
+        "name": "基础散热+++",
+        "name_en": "Basic Cooling+++",
+        "description": "降低 `4` 热量，抽 `2` 张牌。",
+        "description_en": "Lose 4 Heat. Draw 2 cards.",
+        "cost": 1,
+        "draw": 2,
+        "heat": -4
+      }
+    },
+    {
       "id": "vg_01",
       "name": "点火射线",
       "type": "Attack",
@@ -486,11 +508,11 @@
       "upgrade": {
         "name": "反应堆短接+++",
         "name_en": "Reactor Short+++",
-        "description": "失去 `4` 生命，获得 `3` 能量与 `3` 热量。",
-        "description_en": "Lose 4 HP. Gain 3 Energy and 3 Heat.",
+        "description": "失去 `3` 生命，获得 `3` 能量与 `3` 热量。",
+        "description_en": "Lose 3 HP. Gain 3 Energy and 3 Heat.",
         "cost": 0,
         "energy": 3,
-        "selfDamage": 4
+        "selfDamage": 3
       }
     },
     {
@@ -647,10 +669,10 @@
       "upgrade": {
         "name": "部署拦截机+++",
         "name_en": "Deploy Interceptor+++",
-        "description": "召唤 `2` 架拦截机。",
-        "description_en": "Summon 2 Interceptor Drone.",
-        "cost": 1,
-        "summonDroneCount": 2,
+        "description": "召唤 `1` 架拦截机。",
+        "description_en": "Summon 1 Interceptor Drone.",
+        "cost": 0,
+        "summonDroneCount": 1,
         "summonDroneAttack": 4,
         "summonDroneShield": 0
       }
@@ -854,19 +876,19 @@
       "id": "df_11",
       "name": "蜂群扑杀",
       "type": "Attack",
-      "description": "造成 `4` 伤害。每有 `1` 个拦截机，再造成 `2` 伤害。",
+      "description": "造成 `5` 伤害。每有 `1` 个拦截机，再造成 `2` 伤害。",
       "rarity": "common",
       "cost": 1,
-      "damage": 4,
+      "damage": 5,
       "name_en": "Swarm Assault",
       "description_en": "Deal 4 damage. Deal +2 damage for each Interceptor Drone you have.",
       "upgrade": {
         "name": "蜂群扑杀+++",
         "name_en": "Swarm Assault+++",
-        "description": "造成 `6` 伤害。每有 `1` 个拦截机，再造成 `2` 伤害。",
+        "description": "造成 `7` 伤害。每有 `1` 个拦截机，再造成 `2` 伤害。",
         "description_en": "Deal 6 damage. Deal +2 damage for each Interceptor Drone you have.",
         "cost": 1,
-        "damage": 6
+        "damage": 7
       }
     },
     {
@@ -932,7 +954,7 @@
       "type": "Utility",
       "description": "将 `1` 个附属舰变为你选择的另一种基础附属舰。抽 `1` 张牌。",
       "rarity": "common",
-      "cost": 1,
+      "cost": 0,
       "draw": 1,
       "name_en": "Wing Rotation",
       "description_en": "Transform 1 Auxiliary Ship into another basic type of your choice. Draw 1 card.",
@@ -941,7 +963,7 @@
         "name_en": "Wing Rotation+++",
         "description": "将 `2` 个附属舰变为你选择的另一种基础附属舰。抽 `1` 张牌。",
         "description_en": "Transform 2 Auxiliary Ship into another basic type of your choice. Draw 1 card.",
-        "cost": 1,
+        "cost": 0,
         "draw": 2
       }
     },
@@ -1095,7 +1117,7 @@
     {
       "id": "df_23",
       "name": "中央母舰",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，你首次召唤附属舰时，额外召唤同类型 `1` 个。",
       "rarity": "uncommon",
       "cost": 1,
@@ -1106,11 +1128,11 @@
       "upgrade": {
         "name": "中央母舰+++",
         "name_en": "Command Carrier+++",
-        "description": "本场战斗中，你首次召唤附属舰时，额外召唤同类型 `2` 个。",
-        "description_en": "The first time you summon an Auxiliary Ship this battle, summon 2 extra copy of that type.",
+        "description": "本场战斗中，你每回合首次召唤附属舰时，额外召唤同类型 `1` 个。",
+        "description_en": "The first time you summon an Auxiliary Ship each turn this battle, summon 1 extra copy of that type.",
         "cost": 1,
-        "firstSummonExtraCopies": 2,
-        "firstSummonExtraScope": 1
+        "firstSummonExtraCopies": 1,
+        "firstSummonExtraScope": 2
       }
     },
     {
@@ -1126,10 +1148,10 @@
       "upgrade": {
         "name": "自律协议+++",
         "name_en": "Autonomy Protocol+++",
-        "description": "你的所有附属舰本回合效果提高 `50%`，向下取整。",
-        "description_en": "This turn, your Auxiliary Ship effects are increased by 65% (rounded down).",
+        "description": "你的所有附属舰本回合效果提高 `70%`，向下取整。",
+        "description_en": "This turn, your Auxiliary Ship effects are increased by 70% (rounded down).",
         "cost": 1,
-        "auxEffectPercentBonus": 65
+        "auxEffectPercentBonus": 70
       }
     },
     {
@@ -1227,7 +1249,7 @@
     {
       "id": "df_29",
       "name": "母巢核心",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，每当一个附属舰被摧毁或替换，抽 `1` 张牌并获得 `1` 能量。",
       "rarity": "rare",
       "cost": 2,
@@ -1797,13 +1819,12 @@
     {
       "id": "ib_28",
       "name": "永续静场",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，每次你进入 `防御形态`，获得 `5` 格挡；每次你脱离 `防御形态`，获得 `1` 能量。",
       "rarity": "rare",
       "cost": 2,
       "shield": 5,
       "energy": 1,
-      "formShift": 2,
       "name_en": "Perpetual Stillfield",
       "description_en": "This battle, whenever you enter Defense Form, Gain 5 Block; whenever you exit Defense Form, gain 1 Energy.",
       "upgrade": {
@@ -1813,20 +1834,18 @@
         "description_en": "This battle, whenever you enter Defense Form, gain 7 Block; whenever you exit Defense Form, gain 2 Energy.",
         "cost": 2,
         "shield": 7,
-        "energy": 2,
-        "formShift": 2
+        "energy": 2
       }
     },
     {
       "id": "ib_29",
       "name": "二相超越",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，你首次进入 `过载形态` 时抽 `2` 张牌；首次脱离 `防御形态` 时获得 `2` 能量。",
       "rarity": "rare",
       "cost": 2,
       "draw": 2,
       "energy": 2,
-      "formShift": 1,
       "name_en": "Dual-Phase Transcendence",
       "description_en": "This battle, the first time you enter Overload Form, draw 2 cards; the first time you exit Defense Form, gain 2 Energy.",
       "upgrade": {
@@ -1836,8 +1855,7 @@
         "description_en": "This battle, the first time you enter Overload Form, draw 3 cards; the first time you exit Defense Form, gain 3 Energy.",
         "cost": 2,
         "draw": 3,
-        "energy": 3,
-        "formShift": 1
+        "energy": 3
       }
     },
     {
@@ -2568,7 +2586,7 @@
     {
       "id": "vg_30",
       "name": "红巨星之心",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，首次进入高热量时，获得 `2` 能量并抽 `2` 张牌；之后每次进入高热量，抽 `1` 张牌。",
       "rarity": "rare",
       "cost": 2,
@@ -2639,7 +2657,7 @@
     {
       "id": "dfh_10",
       "name": "焚星母港",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，你每回合首次召唤附属舰时，使敌人获得 `4` 点热量；若召唤的是攻击型附属舰，改为 `6` 点。",
       "rarity": "rare",
       "cost": 2,
@@ -2689,7 +2707,7 @@
     {
       "id": "ibh_10",
       "name": "相变熔炉",
-      "type": "Utility",
+      "type": "Ability",
       "description": "本场战斗中，每次你进入 `过载形态`，使敌人获得 `5` 点热量；每次你脱离 `防御形态`，使敌人获得 `3` 点热量。",
       "rarity": "rare",
       "cost": 2,
@@ -2709,6 +2727,77 @@
         "enterOverloadEnemyHeatThisBattle": 7,
         "leaveDefenseEnemyHeatThisBattle": 4,
         "formShift": 0
+      }
+    },
+    {
+      "id": "vg_31",
+      "name": "余热点火",
+      "type": "Utility",
+      "description": "获得 `2` 热量，抽 `1` 张牌。",
+      "rarity": "common",
+      "cost": 0,
+      "draw": 1,
+      "heat": 2,
+      "name_en": "Residual Ignition",
+      "description_en": "Gain 2 Heat. Draw 1 card.",
+      "upgrade": {
+        "name": "余热点火+++",
+        "name_en": "Residual Ignition+++",
+        "description": "获得 `3` 热量，抽 `2` 张牌。",
+        "description_en": "Gain 3 Heat. Draw 2 cards.",
+        "cost": 0,
+        "draw": 2,
+        "heat": 3
+      }
+    },
+    {
+      "id": "df_31",
+      "name": "机库预热",
+      "type": "Utility",
+      "description": "获得 `2` 热量。召唤 `1` 架拦截机。",
+      "rarity": "common",
+      "cost": 1,
+      "heat": 2,
+      "summonDroneCount": 1,
+      "summonDroneAttack": 3,
+      "summonDroneShield": 0,
+      "summonDroneDuration": 2,
+      "name_en": "Hangar Warmup",
+      "description_en": "Gain 2 Heat. Deploy 1 Interceptor.",
+      "upgrade": {
+        "name": "机库预热+++",
+        "name_en": "Hangar Warmup+++",
+        "description": "获得 `3` 热量。召唤 `1` 架更强的拦截机。",
+        "description_en": "Gain 3 Heat. Deploy 1 stronger Interceptor.",
+        "cost": 1,
+        "heat": 3,
+        "summonDroneCount": 1,
+        "summonDroneAttack": 4,
+        "summonDroneShield": 0,
+        "summonDroneDuration": 2
+      }
+    },
+    {
+      "id": "ib_31",
+      "name": "换相排热",
+      "type": "Defense",
+      "description": "降低 `3` 热量，获得 `5` 格挡。进入 `防御形态`。",
+      "rarity": "common",
+      "cost": 1,
+      "shield": 5,
+      "heat": -3,
+      "formShift": 2,
+      "name_en": "Phase Venting",
+      "description_en": "Lose 3 Heat. Gain 5 Block. Enter Defense Form.",
+      "upgrade": {
+        "name": "换相排热+++",
+        "name_en": "Phase Venting+++",
+        "description": "降低 `4` 热量，获得 `7` 格挡。进入 `防御形态`。",
+        "description_en": "Lose 4 Heat. Gain 7 Block. Enter Defense Form.",
+        "cost": 1,
+        "shield": 7,
+        "heat": -4,
+        "formShift": 2
       }
     }
   ]

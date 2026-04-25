@@ -158,14 +158,9 @@ Element StarAbyssApp::RenderBattle() const {
         std::vector<std::string> facts = card != nullptr ? CardFacts(language_, *card)
                                                          : std::vector<std::string>{TranslateGameText(language_, "No module loaded.")};
         const std::string fact_text = CompactFactText(language_, facts);
-        Elements description_lines;
-        if (card != nullptr) {
-            for (const std::string& line : CardDescriptionLines(language_, *card)) {
-                description_lines.push_back(text(line) | color(Color::White));
-            }
-        } else {
-            description_lines.push_back(text(Tr(language_, "Draw cards and route power to fill this slot.", "抽牌并调度能量来填满这个槽位。")) | color(kDim));
-        }
+        const std::string description_text =
+            card != nullptr ? CardDescriptionText(language_, *card)
+                            : Tr(language_, "Draw cards and route power to fill this slot.", "抽牌并调度能量来填满这个槽位。");
         const Color accent = CardAccent(card);
         const Color frame_color = CardFrameColor(card);
         Element panel = vbox({
@@ -181,7 +176,7 @@ Element StarAbyssApp::RenderBattle() const {
                                     color(card != nullptr ? (playable ? kHull : kDim) : kDim),
                             }),
                             separator(),
-                            vbox(std::move(description_lines)),
+                            paragraph(description_text) | color(card != nullptr ? Color::White : kDim),
                             paragraph(fact_text) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
                         }) |
                         bgcolor(CardBackground(card, playable)) |
@@ -213,13 +208,6 @@ Element StarAbyssApp::RenderBattle() const {
     if (!inspected_pile.empty()) {
         for (size_t i = 0; i < inspected_pile.size(); ++i) {
             const CardDef& card = inspected_pile[i].def;
-            Elements description_lines;
-            for (const std::string& line : CardDescriptionLines(language_, card)) {
-                description_lines.push_back(text(line) | color(Color::White));
-            }
-            if (description_lines.empty()) {
-                description_lines.push_back(text(TranslateGameText(language_, card.description)) | color(Color::White));
-            }
             const std::vector<std::string> facts = CardFacts(language_, card);
             const std::string fact_text = CompactFactText(language_, facts);
             const std::string pile_position = i == 0
@@ -231,7 +219,7 @@ Element StarAbyssApp::RenderBattle() const {
                     text(Tr(language_, "Cost ", "费用 ") + std::to_string(card.cost) + "   " +
                          Tr(language_, "Type: ", "类型：") + TranslateGameText(language_, card.type)) |
                         color(kHull),
-                    vbox(std::move(description_lines)),
+                    paragraph(CardDescriptionText(language_, card)) | color(Color::White),
                     paragraph(fact_text.empty() ? Tr(language_, "No additional card facts.", "没有额外卡牌信息。") : fact_text) | color(kDim),
                 }) |
                 borderStyled(ROUNDED, CardFrameColor(&card)) |

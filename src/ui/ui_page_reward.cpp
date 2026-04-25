@@ -54,14 +54,8 @@ Element StarAbyssApp::RenderReward() const {
             fact_lines.push_back(TranslateGameText(language_, "No salvage option."));
         }
         const std::string fact_text = CompactFactText(language_, fact_lines);
-        Elements description_lines;
-        if (card != nullptr) {
-            for (const std::string& line : CardDescriptionLines(language_, *card)) {
-                description_lines.push_back(text(line) | color(Color::White));
-            }
-        } else {
-            description_lines.push_back(text(TranslateGameText(language_, "Unavailable")) | color(Color::White));
-        }
+        const std::string description_text =
+            card != nullptr ? CardDescriptionText(language_, *card) : TranslateGameText(language_, "Unavailable");
         const Color frame_color = CardFrameColor(card);
         Element card_panel = vbox({
                                  text(std::to_string(i + 1) + ". " +
@@ -76,7 +70,7 @@ Element StarAbyssApp::RenderReward() const {
                                           : Tr(language_, "No card offered in this slot.", "这个槽位没有可选卡牌。")) |
                                      color(card != nullptr ? kHull : kDim),
                                  separator(),
-                                 vbox(std::move(description_lines)),
+                                 paragraph(description_text) | color(Color::White),
                                  paragraph(fact_text) | color(kDim),
                              }) |
                              bgcolor(kPanel) |

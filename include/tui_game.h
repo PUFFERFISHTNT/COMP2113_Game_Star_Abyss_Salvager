@@ -156,6 +156,14 @@ struct AnimationState {
     bool active = false;
 };
 
+struct ActiveAbilityState {
+    std::string cardRef;
+    std::string name;
+    std::string nameEn;
+    std::string description;
+    std::string descriptionEn;
+};
+
 struct PlayerState {
     std::string shipId = "vanguard";
     std::string shipName = "Vanguard";
@@ -169,6 +177,7 @@ struct PlayerState {
     int overheatRounds = 0;
     int scrap = 0;
     int nextTurnEnergy = 0;
+    int nextTurnDraw = 0;
     int openingEnergyBonus = 0;
     int openingShieldBonus = 0;
     int nextAttackMultiplier = 1;
@@ -205,9 +214,15 @@ struct PlayerState {
     int overheatSelfDamageBlockThisTurn = 0;
     int auxOnRemoveDrawThisBattle = 0;
     int auxOnRemoveEnergyThisBattle = 0;
+    int enterDefenseShieldThisBattle = 0;
+    int exitDefenseEnergyThisBattle = 0;
+    int firstEnterOverloadDrawThisBattle = 0;
+    int firstExitDefenseEnergyThisBattle = 0;
     bool firstSummonUsedThisBattle = false;
     bool firstSummonUsedThisTurn = false;
     bool firstEnterHighHeatTriggeredThisBattle = false;
+    bool firstEnterOverloadDrawTriggeredThisBattle = false;
+    bool firstExitDefenseEnergyTriggeredThisBattle = false;
     bool firstSummonEnemyHeatTriggeredThisTurn = false;
     bool enteredOverloadThisTurn = false;
     bool exitedDefenseThisTurn = false;
@@ -221,6 +236,7 @@ struct PlayerState {
     std::vector<std::string> hand;
     std::vector<std::string> discardPile;
     std::vector<std::string> exilePile;
+    std::vector<ActiveAbilityState> activeAbilities;
 };
 
 struct AuxiliaryShipState {

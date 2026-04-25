@@ -46,6 +46,10 @@ bool IsAttackOrHybridSummon(const CardDef& card) {
     return card.summonDroneAttack >= card.summonDroneShield;
 }
 
+bool IsAbilityCard(const CardDef& card) {
+    return card.type == "Ability";
+}
+
 }  // namespace
 
 bool GameEngine::canPlayCard(size_t index) const {
@@ -93,7 +97,17 @@ void GameEngine::playCard(size_t index) {
     CardDef card = resolvedCard(resolvedRef);
 
     state_.player.energy -= card.cost;
-    if (!temporaryCopy) {
+    if (IsAbilityCard(card)) {
+        // Ability cards leave the combat deck after being played and remain
+        // visible as battle-long effects until the encounter ends.
+        ActiveAbilityState ability;
+        ability.cardRef = temporaryCopy ? "" : resolvedRef;
+        ability.name = card.name;
+        ability.nameEn = card.nameEn;
+        ability.description = card.description;
+        ability.descriptionEn = card.descriptionEn;
+        state_.player.activeAbilities.push_back(ability);
+    } else if (!temporaryCopy) {
         state_.player.discardPile.push_back(resolvedRef);
     }
     state_.player.hand.erase(state_.player.hand.begin() + static_cast<long long>(index));
@@ -112,6 +126,9 @@ void GameEngine::playCard(size_t index) {
     int energyValue = card.energy;
     int multiHitValue = std::max(1, card.multiHit);
     const int activeAuxCount = static_cast<int>(state_.auxiliaryShips.size());
+    const int activeGuardianAuxCount = static_cast<int>(std::count_if(
+        state_.auxiliaryShips.begin(), state_.auxiliaryShips.end(),
+        [](const AuxiliaryShipState& ship) { return ship.unitId == kAuxUnitGuardian; }));
     const bool hasPulseAux = std::any_of(
         state_.auxiliaryShips.begin(), state_.auxiliaryShips.end(),
         [](const AuxiliaryShipState& ship) { return ship.unitId == kAuxUnitPulse; });
@@ -175,6 +192,22 @@ void GameEngine::playCard(size_t index) {
     }
     if (baseCardId == "df_13" && hasPulseAux) {
         drawCount += 1;
+    }
+    if (baseCardId == "df_20" && activeGuardianAuxCount < 2) {
+        drawCount = 0;
+    }
+    if (baseCardId == "df_21") {
+        const int destroyedAuxCount = activeAuxCount;
+        outgoingDamage = card.damage * destroyedAuxCount;
+        drawCount = card.draw * destroyedAuxCount;
+        while (!state_.auxiliaryShips.empty()) {
+            AuxiliaryShipState ship = state_.auxiliaryShips.front();
+            state_.auxiliaryShips.erase(state_.auxiliaryShips.begin());
+            onAuxiliaryShipRemoved(ship, "furnace");
+        }
+        if (destroyedAuxCount > 0) {
+            log("Drone Furnace dismantles " + std::to_string(destroyedAuxCount) + " auxiliary ship(s).");
+        }
     }
     if (baseCardId == "df_22" && activeAuxCount > 0) {
         outgoingDamage += activeAuxCount * 3;
@@ -281,15 +314,17 @@ void GameEngine::playCard(size_t index) {
         energyValue = 0;
     }
     if (baseCardId == "df_29") {
-        state_.player.auxOnRemoveDrawThisBattle = std::max(state_.player.auxOnRemoveDrawThisBattle, 1);
-        state_.player.auxOnRemoveEnergyThisBattle = std::max(state_.player.auxOnRemoveEnergyThisBattle, 1);
+        state_.player.auxOnRemoveDrawThisBattle = std::max(state_.player.auxOnRemoveDrawThisBattle, card.draw);
+        state_.player.auxOnRemoveEnergyThisBattle = std::max(state_.player.auxOnRemoveEnergyThisBattle, card.energy);
+        drawCount = 0;
+        energyValue = 0;
     }
     if (baseCardId == "ib_17" && inOverload) {
         outgoingDamage += 7;
     }
     if (baseCardId == "ib_18") {
         drawCount = 0;
-        state_.player.formChangeDrawThisTurn += 1;
+        state_.player.formChangeDrawThisTurn += std::max(0, card.draw);
     }
     if (baseCardId == "ib_23") {
         if (state_.player.enteredOverloadThisTurn && state_.player.exitedDefenseThisTurn) {
@@ -304,6 +339,28 @@ void GameEngine::playCard(size_t index) {
             shieldValue = 0;
             energyValue = 0;
         }
+    }
+    if (baseCardId == "ib_21") {
+        if (inOverload) {
+            card.formExit = true;
+            card.formShift = 0;
+        } else {
+            energyValue = 0;
+        }
+    }
+    if (baseCardId == "ib_28") {
+        state_.player.enterDefenseShieldThisBattle = std::max(state_.player.enterDefenseShieldThisBattle, card.shield);
+        state_.player.exitDefenseEnergyThisBattle = std::max(state_.player.exitDefenseEnergyThisBattle, card.energy);
+        shieldValue = 0;
+        energyValue = 0;
+    }
+    if (baseCardId == "ib_29") {
+        state_.player.firstEnterOverloadDrawThisBattle =
+            std::max(state_.player.firstEnterOverloadDrawThisBattle, card.draw);
+        state_.player.firstExitDefenseEnergyThisBattle =
+            std::max(state_.player.firstExitDefenseEnergyThisBattle, card.energy);
+        drawCount = 0;
+        energyValue = 0;
     }
     if (baseCardId == "vgh_07" && state_.player.enemyHeatRaisedThisTurn > 0) {
         enemyHeatDelta += 4;
@@ -333,6 +390,22 @@ void GameEngine::playCard(size_t index) {
     if (baseCardId == "ibh_09" && enemyHighHeat) {
         outgoingDamage += 7;
         enemyHeatDelta += 4;
+    }
+    if (baseCardId == "ibh_06" && !inDefense) {
+        drawCount = 0;
+    }
+    if (baseCardId == "vg_25") {
+        const int heatChunks = std::min(3, std::max(0, state_.player.heat / 2));
+        drawCount = heatChunks * std::max(0, card.draw);
+    }
+    if (baseCardId == "vgh_10") {
+        enemyHeatDelta = std::min(std::max(0, state_.player.heat), std::max(0, card.enemyHeat));
+    }
+    if (baseCardId == "cl_08") {
+        drawCount = 0;
+        state_.player.nextTurnDraw += std::max(0, card.draw);
+        state_.player.nextTurnEnergy += std::max(0, card.nextTurnEnergy);
+        card.nextTurnEnergy = 0;
     }
     if (baseCardId == "cl_06" && state_.player.attacksPlayedThisTurn == 0) {
         shieldValue += 7;
@@ -605,6 +678,10 @@ void GameEngine::playCard(size_t index) {
         handleBattleVictory();
     } else if (state_.player.hp <= 0) {
         handleDefeat();
+    } else if (baseCardId == "cl_08") {
+        state_.statusLine = card.name + " bends the next turn, then ends your turn.";
+        endTurn();
+        return;
     } else {
         state_.statusLine = card.name + " resolved. " + std::to_string(state_.player.energy) + " energy remains.";
     }
@@ -715,10 +792,17 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.player.overheatSelfDamageBlockThisTurn = 0;
     state_.player.auxOnRemoveDrawThisBattle = 0;
     state_.player.auxOnRemoveEnergyThisBattle = 0;
+    state_.player.enterDefenseShieldThisBattle = 0;
+    state_.player.exitDefenseEnergyThisBattle = 0;
+    state_.player.firstEnterOverloadDrawThisBattle = 0;
+    state_.player.firstExitDefenseEnergyThisBattle = 0;
+    state_.player.nextTurnDraw = 0;
     state_.player.blackboxCopyCount = 0;
     state_.player.firstSummonUsedThisBattle = false;
     state_.player.firstSummonUsedThisTurn = false;
     state_.player.firstEnterHighHeatTriggeredThisBattle = false;
+    state_.player.firstEnterOverloadDrawTriggeredThisBattle = false;
+    state_.player.firstExitDefenseEnergyTriggeredThisBattle = false;
     state_.player.firstSummonEnemyHeatTriggeredThisTurn = false;
     state_.player.enteredOverloadThisTurn = false;
     state_.player.exitedDefenseThisTurn = false;
@@ -727,6 +811,7 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
     state_.player.exilePile.clear();
+    state_.player.activeAbilities.clear();
     state_.auxiliaryShips.clear();
     state_.page = AppPage::Battle;
     resumePage_ = AppPage::Battle;
@@ -788,6 +873,8 @@ void GameEngine::startPlayerTurn() {
     }
     state_.player.energy = std::max(0, energy);
     state_.player.nextTurnEnergy = 0;
+    const int extraTurnDraw = std::max(0, state_.player.nextTurnDraw);
+    state_.player.nextTurnDraw = 0;
     state_.player.attacksPlayedThisTurn = 0;
     state_.player.auxEndTurnExtraTriggersThisTurn = 0;
     state_.player.auxEffectPercentBonusThisTurn = 0;
@@ -822,6 +909,10 @@ void GameEngine::startPlayerTurn() {
     }
 
     drawCards(drawTarget - static_cast<int>(state_.player.hand.size()));
+    if (extraTurnDraw > 0) {
+        drawCards(extraTurnDraw);
+        log("Stored draw protocol draws " + std::to_string(extraTurnDraw) + " extra card(s).");
+    }
     state_.firstTurnOfBattle = false;
     log("Turn " + std::to_string(state_.battleTurn) + " begins with " + std::to_string(state_.player.energy) +
         " energy and " + std::to_string(static_cast<int>(state_.player.hand.size())) + " cards in hand.");
@@ -989,6 +1080,12 @@ void GameEngine::handleBattleVictory() {
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
+    for (const ActiveAbilityState& ability : state_.player.activeAbilities) {
+        if (!ability.cardRef.empty()) {
+            state_.player.drawPile.push_back(ability.cardRef);
+        }
+    }
+    state_.player.activeAbilities.clear();
     state_.player.exilePile.clear();
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
@@ -1045,6 +1142,12 @@ void GameEngine::handleDefeat() {
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
+    for (const ActiveAbilityState& ability : state_.player.activeAbilities) {
+        if (!ability.cardRef.empty()) {
+            state_.player.drawPile.push_back(ability.cardRef);
+        }
+    }
+    state_.player.activeAbilities.clear();
     state_.player.exilePile.clear();
     state_.enemy.heat = 0;
     state_.enemy.overheatRounds = 0;
@@ -1480,6 +1583,16 @@ void GameEngine::shiftPlayerForm(const CardDef& card) {
             changeEnemyHeat(state_.player.leaveDefenseEnemyHeatThisBattle);
             log("Defense stance release inflicts enemy heat.");
         }
+        if (state_.player.exitDefenseEnergyThisBattle > 0) {
+            state_.player.energy += state_.player.exitDefenseEnergyThisBattle;
+            log("Perpetual Stillfield grants +" + std::to_string(state_.player.exitDefenseEnergyThisBattle) + " energy.");
+        }
+        if (!state_.player.firstExitDefenseEnergyTriggeredThisBattle &&
+            state_.player.firstExitDefenseEnergyThisBattle > 0) {
+            state_.player.energy += state_.player.firstExitDefenseEnergyThisBattle;
+            state_.player.firstExitDefenseEnergyTriggeredThisBattle = true;
+            log("Dual-phase release grants +" + std::to_string(state_.player.firstExitDefenseEnergyThisBattle) + " energy.");
+        }
     }
 
     state_.player.form = nextForm;
@@ -1493,6 +1606,16 @@ void GameEngine::shiftPlayerForm(const CardDef& card) {
     if (nextForm == kPlayerFormOverload && state_.player.enterOverloadEnemyHeatThisBattle > 0) {
         changeEnemyHeat(state_.player.enterOverloadEnemyHeatThisBattle);
         log("Overload entry inflicts enemy heat.");
+    }
+    if (nextForm == kPlayerFormOverload && !state_.player.firstEnterOverloadDrawTriggeredThisBattle &&
+        state_.player.firstEnterOverloadDrawThisBattle > 0) {
+        drawCards(state_.player.firstEnterOverloadDrawThisBattle);
+        state_.player.firstEnterOverloadDrawTriggeredThisBattle = true;
+        log("Dual-phase entry draws " + std::to_string(state_.player.firstEnterOverloadDrawThisBattle) + " card(s).");
+    }
+    if (nextForm == kPlayerFormDefense && state_.player.enterDefenseShieldThisBattle > 0) {
+        state_.player.shield += state_.player.enterDefenseShieldThisBattle;
+        log("Perpetual Stillfield grants +" + std::to_string(state_.player.enterDefenseShieldThisBattle) + " shield.");
     }
     if (state_.player.formChangeDrawThisTurn > 0) {
         drawCards(state_.player.formChangeDrawThisTurn);
@@ -1515,11 +1638,32 @@ void GameEngine::togglePlayerForm() {
         if (previousForm == kPlayerFormDefense) {
             state_.player.exitedDefenseThisTurn = true;
             state_.player.exitedFormThisTurn = true;
+            if (state_.player.exitDefenseEnergyThisBattle > 0) {
+                state_.player.energy += state_.player.exitDefenseEnergyThisBattle;
+                log("Perpetual Stillfield grants +" + std::to_string(state_.player.exitDefenseEnergyThisBattle) + " energy.");
+            }
+            if (!state_.player.firstExitDefenseEnergyTriggeredThisBattle &&
+                state_.player.firstExitDefenseEnergyThisBattle > 0) {
+                state_.player.energy += state_.player.firstExitDefenseEnergyThisBattle;
+                state_.player.firstExitDefenseEnergyTriggeredThisBattle = true;
+                log("Dual-phase release grants +" + std::to_string(state_.player.firstExitDefenseEnergyThisBattle) + " energy.");
+            }
         } else if (previousForm != kPlayerFormNeutral) {
             state_.player.exitedFormThisTurn = true;
         }
         if (state_.player.form == kPlayerFormOverload && previousForm != kPlayerFormOverload) {
             state_.player.enteredOverloadThisTurn = true;
+        }
+        if (state_.player.form == kPlayerFormOverload &&
+            !state_.player.firstEnterOverloadDrawTriggeredThisBattle &&
+            state_.player.firstEnterOverloadDrawThisBattle > 0) {
+            drawCards(state_.player.firstEnterOverloadDrawThisBattle);
+            state_.player.firstEnterOverloadDrawTriggeredThisBattle = true;
+            log("Dual-phase entry draws " + std::to_string(state_.player.firstEnterOverloadDrawThisBattle) + " card(s).");
+        }
+        if (state_.player.form == kPlayerFormDefense && state_.player.enterDefenseShieldThisBattle > 0) {
+            state_.player.shield += state_.player.enterDefenseShieldThisBattle;
+            log("Perpetual Stillfield grants +" + std::to_string(state_.player.enterDefenseShieldThisBattle) + " shield.");
         }
         if (state_.player.formChangeDrawThisTurn > 0) {
             drawCards(state_.player.formChangeDrawThisTurn);

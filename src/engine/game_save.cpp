@@ -100,7 +100,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|17\n";
+    output << "VERSION|19\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -152,6 +152,11 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     for (const std::string& card : player.exilePile) {
         output << "CARD|" << card << "\n";
     }
+    output << "ACTIVEABILITIES|" << player.activeAbilities.size() << "\n";
+    for (const ActiveAbilityState& ability : player.activeAbilities) {
+        output << "ABILITY|" << ability.cardRef << "|" << ability.name << "|" << ability.nameEn
+               << "|" << ability.description << "|" << ability.descriptionEn << "\n";
+    }
     output << "BLACKBOX|" << player.blackboxImprintRef << "|" << player.blackboxCopyCount << "\n";
     output << "BLACKBOXPENDING|" << BoolToken(player.blackboxSelectionPending) << "|"
            << player.pendingBlackboxCopyCount << "\n";
@@ -184,6 +189,13 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << BoolToken(player.enteredOverloadThisTurn) << "|"
            << BoolToken(player.exitedDefenseThisTurn) << "|"
            << BoolToken(player.exitedFormThisTurn) << "\n";
+    output << "COND3|" << player.nextTurnDraw << "|"
+           << player.enterDefenseShieldThisBattle << "|"
+           << player.exitDefenseEnergyThisBattle << "|"
+           << player.firstEnterOverloadDrawThisBattle << "|"
+           << player.firstExitDefenseEnergyThisBattle << "|"
+           << BoolToken(player.firstEnterOverloadDrawTriggeredThisBattle) << "|"
+           << BoolToken(player.firstExitDefenseEnergyTriggeredThisBattle) << "\n";
 
     const EnemyState& enemy = state_.enemy;
     output << "ENEMY|" << enemy.enemyId << "|" << enemy.name << "|" << enemy.behavior << "|"
@@ -352,6 +364,17 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
         } else if (key == "EXILE") {
             loaded.player.exilePile.clear();
             activePile = &loaded.player.exilePile;
+        } else if (key == "ACTIVEABILITIES") {
+            loaded.player.activeAbilities.clear();
+            activePile = nullptr;
+        } else if (key == "ABILITY" && parts.size() >= 6) {
+            ActiveAbilityState ability;
+            ability.cardRef = parts[1];
+            ability.name = parts[2];
+            ability.nameEn = parts[3];
+            ability.description = parts[4];
+            ability.descriptionEn = parts[5];
+            loaded.player.activeAbilities.push_back(ability);
         } else if (key == "BLACKBOX" && parts.size() >= 3) {
             loaded.player.blackboxImprintRef = parts[1];
             loaded.player.blackboxCopyCount = ToInt(parts[2], 0);
@@ -389,6 +412,14 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.player.enteredOverloadThisTurn = parts[16] == "1";
             loaded.player.exitedDefenseThisTurn = parts[17] == "1";
             loaded.player.exitedFormThisTurn = parts[18] == "1";
+        } else if (key == "COND3" && parts.size() >= 8) {
+            loaded.player.nextTurnDraw = ToInt(parts[1], 0);
+            loaded.player.enterDefenseShieldThisBattle = ToInt(parts[2], 0);
+            loaded.player.exitDefenseEnergyThisBattle = ToInt(parts[3], 0);
+            loaded.player.firstEnterOverloadDrawThisBattle = ToInt(parts[4], 0);
+            loaded.player.firstExitDefenseEnergyThisBattle = ToInt(parts[5], 0);
+            loaded.player.firstEnterOverloadDrawTriggeredThisBattle = parts[6] == "1";
+            loaded.player.firstExitDefenseEnergyTriggeredThisBattle = parts[7] == "1";
         } else if (key == "CARD" && parts.size() >= 2 && activePile != nullptr) {
             activePile->push_back(parts[1]);
         } else if (key == "ENEMY" && parts.size() >= 12) {
@@ -510,6 +541,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.overheatSelfDamageBlockThisTurn = std::max(0, loaded.player.overheatSelfDamageBlockThisTurn);
     loaded.player.auxOnRemoveDrawThisBattle = std::max(0, loaded.player.auxOnRemoveDrawThisBattle);
     loaded.player.auxOnRemoveEnergyThisBattle = std::max(0, loaded.player.auxOnRemoveEnergyThisBattle);
+    loaded.player.nextTurnDraw = std::max(0, loaded.player.nextTurnDraw);
+    loaded.player.enterDefenseShieldThisBattle = std::max(0, loaded.player.enterDefenseShieldThisBattle);
+    loaded.player.exitDefenseEnergyThisBattle = std::max(0, loaded.player.exitDefenseEnergyThisBattle);
+    loaded.player.firstEnterOverloadDrawThisBattle = std::max(0, loaded.player.firstEnterOverloadDrawThisBattle);
+    loaded.player.firstExitDefenseEnergyThisBattle = std::max(0, loaded.player.firstExitDefenseEnergyThisBattle);
     if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
         loaded.player.overheatRounds = 0;
     } else if (loaded.player.overheatRounds == 0) {

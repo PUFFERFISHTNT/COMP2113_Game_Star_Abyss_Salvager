@@ -5,7 +5,6 @@ save/*.cards.json
 save/ui_language.txt
 data/leaderboard.txt
 star_abyss_salvager
-test/battle_smoke_check
 test/
 save/obtained_cards.txt
 .DS_Store
