@@ -465,7 +465,10 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Guardian Drone", "护卫机"},
         {"Repair Drone", "维修机"},
         {"Pulse Drone", "脉冲机"},
+        {"Queen Wasp Drone", "王蜂机"},
+        {"Thermal Escort Drone", "热核护航机"},
         {"Auxiliary Drone", "附属舰"},
+        {"Four support slots, newest summons replace the oldest when full.", "共 4 个支援位，满位时新召唤会替换最旧附属舰。"},
         {"Main Menu", "主菜单"},
         {"Launch Setup", "出航设置"},
         {"Difficulty", "难度"},
@@ -630,8 +633,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Gain 8 credits.", "获得 8 金币。"},
         {"Skip 1 segment, +5 heat, gain 1 rare card.", "跳过 1 个节点，+5 热量，获得 1 张稀有卡牌。"},
         {"-4 heat, +2 permanent shield, costs 10 credits.", "-4 热量，+2 永久护盾，花费 10 金币。"},
-        {"Next battle charged attack enhanced.", "下一场战斗蓄力攻击增强。"},
-        {"Gain legendary card, +8 heat. Unlocks true ending.", "获得传说卡牌，+8 热量。解锁真结局。"},
+        {"Next battle's first attack enhanced.", "下一场战斗的第一次攻击增强。"},
+        {"Gain rare card, +8 heat. Unlocks true ending.", "获得稀有卡牌，+8 热量。解锁真结局。"},
         {"+25 credits, gain relic, -6 HP.", "+25 金币，获得遗物，-6 生命。"},
         {"Trigger escape route. No more bosses.", "触发逃离路线。不再有 Boss 战。"},
         {"Lose 3 HP but reduce 4 heat.", "失去 3 生命，但减少 4 热量。"},
@@ -677,10 +680,10 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Delete 1 low-quality card, lose 4 HP.", "删除 1 张低品质卡牌，失去 4 生命。"},
         {"Upgrade 2 random cards.", "升级 2 张随机卡牌。"},
         {"Permanent max HP +6.", "永久最大生命 +6。"},
-        {"Gain 1 special Truth card.", "获得 1 张特殊真相卡牌。"},
+        {"Gain 1 rare card.", "获得 1 张稀有卡牌。"},
         {"Gain a rare relic, lose 8 HP.", "获得 1 件稀有遗物，失去 8 生命。"},
         {"+2 initial energy next battle, +5 heat.", "下一场战斗初始能量 +2，+5 热量。"},
-        {"Gain 1 legendary card.", "获得 1 张传说卡牌。"},
+        {"Gain 1 rare card.", "获得 1 张稀有卡牌。"},
         {"+4 permanent opening shield.", "+4 永久初始护盾。"},
         {"Reduce 10 heat, +10 HP.", "减少 10 热量，+10 生命。"},
         {"+8 heat.", "+8 热量。"},
@@ -1259,7 +1262,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Not enough credits. The space fold collapses.") return "金币不足。空间折叠坍缩了。";
     if (text == "Steered clear. Next battle's first attack enhanced.") return "绕道避开。下场战斗首次攻击增强。";
     // Event B3 – Ark Beacon
-    if (text == "The Ark's beacon activates. Gained a legendary card. +8 heat. Something awakens.") return "方舟信标激活。获得 1 张传说卡牌。+8 热量。有什么苏醒了。";
+    if (text == "The Ark's beacon activates. Gained a rare card. +8 heat. Something awakens.") return "方舟信标激活。获得 1 张稀有卡牌。+8 热量。有什么苏醒了。";
     if (text == "Dismantled the beacon. +25 credits, gained a relic, -6 HP.") return "拆解了信标。+25 金币，获得遗物，-6 生命。";
     if (text == "Blocked the beacon. Escape route initiated. No more boss encounters.") return "封锁了信标。逃离路线已启动。不再有 Boss 战。";
     if (text == "Signal lock confirmed. Story boss battle engaged.") return "信号锁定完成。剧情 Boss 战已开始。";
@@ -1329,7 +1332,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Counter-attacking the pirates! Elite battle!") return "反击海盗！精英战斗！";
     if (text == "Took the medical kit. +8 HP.") return "取走了医疗包。+8 生命。";
     if (text == "Drained fuel. +2 initial energy next battle.") return "抽取了燃料。下场战斗初始能量 +2。";
-    if (text == "Took the emergency chip. +3 HP recovery.") return "取走了应急芯片。+3 生命恢复。";
+    if (text == "Took the emergency chip. +3 HP recovery next battle.") return "取走了应急芯片。下一场战斗恢复 3 生命。";
     if (text == "Forced the jump. Skip 2 segments. +7 heat.") return "强制跃迁。跳过 2 个节点。+7 热量。";
     if (text == "Stabilized coordinates. -5 heat, -8 credits.") return "稳定了坐标。-5 热量，-8 金币。";
     if (text == "Not enough credits to stabilize.") return "金币不足，无法稳定坐标。";
@@ -1345,12 +1348,12 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     // Truth route event status lines
     if (text == "Merged memories. 2 cards upgraded.") return "融合了记忆。2 张卡牌已升级。";
     if (text == "Extracted energy. Permanent max HP +6.") return "提取了能量。永久最大生命 +6。";
-    if (text == "Saved the log. Gained a Truth card.") return "保存了日志。获得 1 张真相卡牌。";
+    if (text == "Saved the log. Gained a rare card.") return "保存了日志。获得 1 张稀有卡牌。";
     if (text == "Force breakthrough. Gained a rare relic. -8 HP.") return "强行突破。获得稀有遗物。-8 生命。";
     if (text == "Override permissions. +2 initial energy next battle, +5 heat.") return "覆写权限。下场战斗初始能量 +2，+5 热量。";
     if (text == "Sneaked around the AI. -12 credits.") return "潜行绕过了 AI。-12 金币。";
     if (text == "Not enough credits to bypass.") return "金币不足，无法绕过。";
-    if (text == "Listened to the truth. Gained a legendary card.") return "聆听了真相。获得 1 张传说卡牌。";
+    if (text == "Listened to the truth. Gained a rare card.") return "聆听了真相。获得 1 张稀有卡牌。";
     if (text == "Gained ship permissions. +4 permanent opening shield.") return "获取了飞船权限。+4 永久初始护盾。";
     if (text == "Drained core energy. -10 heat, +10 HP.") return "抽取了核心能量。-10 热量，+10 生命。";
     if (text == "Engines full. +8 heat.") return "引擎全力运转。+8 热量。";

@@ -232,7 +232,7 @@ void GameEngine::resolveEncounter(size_t index) {
             if (index == 0) {
                 g_sa_skip_segments = 1;
                 changeHeat(5);
-                auto cards = randomCardChoices(1);
+                auto cards = randomCardChoicesByRarity(1, CardRarity::Rare);
                 if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
                 state_.statusLine = "Entered the fold. Skip 1 segment. +5 heat. Gained a rare card.";
             } else if (index == 1) {
@@ -246,7 +246,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 g_sa_permanent_shield += 2;
                 state_.statusLine = "Stabilized the space. -4 heat, +2 permanent shield. Costs 10 credits.";
             } else {
-                state_.player.nextAttackMultiplier = 2;
+                state_.player.nextBattleFirstAttackMultiplier = 2;
                 state_.statusLine = "Steered clear. Next battle's first attack enhanced.";
             }
             finishCurrentNode();
@@ -255,16 +255,13 @@ void GameEngine::resolveEncounter(size_t index) {
 
         if (eid == "event_b3") {  // Ark Beacon
             if (index == 0) {
-                // Activate beacon: legendary card (approx: rare card + upgrade), +8 heat, unlock truth
-                auto cards = randomCardChoices(1);
+                auto cards = randomCardChoicesByRarity(1, CardRarity::Rare);
                 if (!cards.empty()) {
                     queueOwnedCardToDiscard(cards[0]);
-                    std::string upgName, upgErr;
-                    upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }
                 changeHeat(8);
                 g_sa_beacon_activated = 1;
-                state_.statusLine = "The Ark's beacon activates. Gained a legendary card. +8 heat. Something awakens.";
+                state_.statusLine = "The Ark's beacon activates. Gained a rare card. +8 heat. Something awakens.";
             } else if (index == 1) {
                 state_.player.scrap += 25;
                 const std::string relicId = randomRelic();
@@ -625,8 +622,8 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.openingEnergyBonus += 2;
                 state_.statusLine = "Drained fuel. +2 initial energy next battle.";
             } else {
-                state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 3);
-                state_.statusLine = "Took the emergency chip. +3 HP recovery.";
+                state_.player.nextBattleHeal += 3;
+                state_.statusLine = "Took the emergency chip. +3 HP recovery next battle.";
             }
             finishCurrentNode();
             return;
@@ -725,14 +722,11 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.hp += 6;
                 state_.statusLine = "Extracted energy. Permanent max HP +6.";
             } else {
-                // Gain 1 special card (approximation: rare card + upgrade)
-                auto cards = randomCardChoices(1);
+                auto cards = randomCardChoicesByRarity(1, CardRarity::Rare);
                 if (!cards.empty()) {
                     queueOwnedCardToDiscard(cards[0]);
-                    std::string upgName, upgErr;
-                    upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }
-                state_.statusLine = "Saved the log. Gained a Truth card.";
+                state_.statusLine = "Saved the log. Gained a rare card.";
             }
             finishCurrentNode();
             return;
@@ -763,14 +757,11 @@ void GameEngine::resolveEncounter(size_t index) {
 
         if (eid == "truth_3") {  // First Captain's Consciousness
             if (index == 0) {
-                // Gain 1 legendary card (approximation: rare card + upgrade)
-                auto cards = randomCardChoices(1);
+                auto cards = randomCardChoicesByRarity(1, CardRarity::Rare);
                 if (!cards.empty()) {
                     queueOwnedCardToDiscard(cards[0]);
-                    std::string upgName, upgErr;
-                    upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 }
-                state_.statusLine = "Listened to the truth. Gained a legendary card.";
+                state_.statusLine = "Listened to the truth. Gained a rare card.";
             } else if (index == 1) {
                 g_sa_permanent_shield += 4;
                 state_.statusLine = "Gained ship permissions. +4 permanent opening shield.";

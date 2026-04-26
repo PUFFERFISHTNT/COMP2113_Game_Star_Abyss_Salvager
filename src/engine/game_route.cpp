@@ -197,12 +197,20 @@ void GameEngine::generateRouteOptions() {
     if (state_.sector >= 2) {
         types.push_back("market");
     }
+    bool force_next_elite = false;
     if (g_sa_next_elite) {
-        types.insert(types.begin(), "elite");
+        force_next_elite = true;
         g_sa_next_elite = false;
     }
     ShuffleVector(types, rng_);
-    types.resize(std::min<size_t>(3, types.size()));
+    if (force_next_elite) {
+        types.erase(std::remove(types.begin(), types.end(), "elite"), types.end());
+        types.resize(std::min<size_t>(2, types.size()));
+        types.push_back("elite");
+        ShuffleVector(types, rng_);
+    } else {
+        types.resize(std::min<size_t>(3, types.size()));
+    }
 
     for (const std::string& type : types) {
         if (type == "battle") {
@@ -446,7 +454,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
                     "They are the remains of the first interstellar colonization fleet, the Ark. "
                     "Every anomalous signal you collected is its voice echoing across billions of spatial residues.";
                 state_.encounter.choices = {"Merge memories", "Extract energy", "Save the log"};
-                state_.encounter.details = {"Upgrade 2 random cards.", "Permanent max HP +6.", "Gain 1 special Truth card."};
+                state_.encounter.details = {"Upgrade 2 random cards.", "Permanent max HP +6.", "Gain 1 rare card."};
                 break;
             case 2:
                 state_.encounter.encounterId = "truth_2";
@@ -466,7 +474,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
                     "Humanity attempted to use the Ark Core to forge a stable new universe. "
                     "The Star Abyss is what remained after that experiment failed.";
                 state_.encounter.choices = {"Listen to the truth", "Gain ship permissions", "Drain core energy"};
-                state_.encounter.details = {"Gain 1 legendary card.", "+4 permanent opening shield.", "Reduce 10 heat, +10 HP."};
+                state_.encounter.details = {"Gain 1 rare card.", "+4 permanent opening shield.", "Reduce 10 heat, +10 HP."};
                 break;
             case 4:
                 state_.encounter.encounterId = "truth_4";
@@ -519,13 +527,13 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.title = "Space Fold";
         state_.encounter.description = "A spatial anomaly warps the region ahead. Energy readings are off the charts.";
         state_.encounter.choices = {"Enter the fold", "Stabilize the space", "Steer clear"};
-        state_.encounter.details = {"Skip 1 segment, +5 heat, gain 1 rare card.", "-4 heat, +2 permanent shield, costs 10 credits.", "Next battle charged attack enhanced."};
+        state_.encounter.details = {"Skip 1 segment, +5 heat, gain 1 rare card.", "-4 heat, +2 permanent shield, costs 10 credits.", "Next battle's first attack enhanced."};
     } else if (r <= 65) {
         state_.encounter.encounterId = "event_b3";
         state_.encounter.title = "Ark Beacon";
         state_.encounter.description = "A massive signal source emerges from the void. This is the Ark's beacon.";
         state_.encounter.choices = {"Activate the beacon", "Dismantle the beacon", "Block the beacon"};
-        state_.encounter.details = {"Gain legendary card, +8 heat. Unlocks true ending.", "+25 credits, gain relic, -6 HP.", "Trigger escape route. No more bosses."};
+        state_.encounter.details = {"Gain rare card, +8 heat. Unlocks true ending.", "+25 credits, gain relic, -6 HP.", "Trigger escape route. No more bosses."};
     } else if (r <= 73) {
         state_.encounter.encounterId = "event_c1";
         state_.encounter.title = "Reactor Leak";
@@ -711,8 +719,6 @@ void GameEngine::finishCurrentNode() {
         state_.statusLine = g_sa_event_epilogue;
         g_sa_event_epilogue.clear();
     }
-
-    state_.player.openingShieldBonus += g_sa_permanent_shield;
 
     state_.activeNodeType.clear();
     state_.activeNodeName.clear();

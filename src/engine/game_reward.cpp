@@ -65,6 +65,29 @@ std::vector<std::string> GameEngine::randomCardChoices(size_t count) {
     return pool;
 }
 
+std::vector<std::string> GameEngine::randomCardChoicesByRarity(size_t count, CardRarity rarity) {
+    std::vector<std::string> pool;
+    for (const CardDef& card : cardPool_) {
+        if (card.starterCopies != 0) {
+            continue;
+        }
+        if (IsColorlessCardId(card.id)) {
+            continue;
+        }
+        if (card.rarity != rarity) {
+            continue;
+        }
+        if (MatchesShipCardPool(card.id, state_.player.shipId)) {
+            pool.push_back(card.id);
+        }
+    }
+    ShuffleVector(pool, rng_);
+    if (pool.size() > count) {
+        pool.resize(count);
+    }
+    return pool;
+}
+
 std::vector<std::string> GameEngine::randomMarketCardChoices(size_t count) {
     std::vector<std::string> pool;
     for (const CardDef& card : cardPool_) {
