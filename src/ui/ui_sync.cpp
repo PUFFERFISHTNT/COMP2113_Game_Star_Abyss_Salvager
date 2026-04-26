@@ -64,6 +64,7 @@ void StarAbyssApp::SyncUi() {
     for (std::string& label : mapLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : encounterLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : battleCardLabels_) label = TranslateGameText(language_, "Empty Slot");
+    for (std::string& label : battleTransformLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : rewardLabels_) label = TranslateGameText(language_, "Unavailable");
 
     for (size_t i = 0; i < state.routeOptions.size() && i < mapLabels_.size(); ++i) {
@@ -75,6 +76,18 @@ void StarAbyssApp::SyncUi() {
     const std::vector<CardView> hand = engine_.handCards();
     for (size_t i = 0; i < hand.size() && i < battleCardLabels_.size(); ++i) {
         battleCardLabels_[i] = TranslateGameText(language_, hand[i].def.name);
+    }
+    const std::vector<std::string> transform_targets = engine_.auxiliaryTransformTargetUnitIds();
+    for (size_t i = 0; i < transform_targets.size() && i < battleTransformLabels_.size(); ++i) {
+        if (transform_targets[i] == "aux_interceptor") {
+            battleTransformLabels_[i] = TranslateGameText(language_, "Interceptor Drone");
+        } else if (transform_targets[i] == "aux_guardian") {
+            battleTransformLabels_[i] = TranslateGameText(language_, "Guardian Drone");
+        } else if (transform_targets[i] == "aux_repair") {
+            battleTransformLabels_[i] = TranslateGameText(language_, "Repair Drone");
+        } else if (transform_targets[i] == "aux_pulse") {
+            battleTransformLabels_[i] = TranslateGameText(language_, "Pulse Drone");
+        }
     }
     if (state.page != AppPage::Battle) {
         battlePileInspector_ = BattlePileInspector::None;

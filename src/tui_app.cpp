@@ -67,6 +67,14 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     for (size_t i = 0; i < battleCardButtons_.size(); ++i) {
         battleCardButtons_[i] = Button(&battleCardLabels_[i], [&, i] { engine_.playCard(i); AutoSave(); SyncUi(); }, AccentButton(kHull));
     }
+    for (size_t i = 0; i < battleTransformButtons_.size(); ++i) {
+        battleTransformButtons_[i] = Button(&battleTransformLabels_[i], [&, i] {
+            if (engine_.selectAuxiliaryTransformTarget(i)) {
+                AutoSave();
+            }
+            SyncUi();
+        }, AccentButton(kGold));
+    }
 
     difficultyToggle_ = Toggle(&difficultyEntries_, &difficultyIndex_);
     shipToggle_ = Toggle(&shipEntries_, &shipIndex_);
@@ -114,6 +122,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
                               [&] { return RenderEncounter(); });
     {
         std::vector<Component> battle_components(battleCardButtons_.begin(), battleCardButtons_.end());
+        battle_components.insert(battle_components.end(), battleTransformButtons_.begin(), battleTransformButtons_.end());
         battle_components.push_back(battleOwnedCardsButton_);
         battle_components.push_back(battleDrawPileButton_);
         battle_components.push_back(battleDiscardPileButton_);

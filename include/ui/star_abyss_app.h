@@ -101,6 +101,7 @@ private:
     int saveSelected_ = 0;
     std::string saveNameInput_ = "save1";
     mutable ftxui::Box battleLaneRowsBox_;
+    mutable std::vector<ftxui::Box> battleAuxBoxes_;
     mutable std::vector<ftxui::Box> serviceCardBoxes_;
     mutable std::vector<size_t> serviceCardChoiceIndices_;
     mutable ftxui::Box serviceActionBox_;
@@ -125,6 +126,7 @@ private:
     std::array<std::string, kMapSlots> mapLabels_{};
     std::array<std::string, kEncounterSlots> encounterLabels_{};
     std::array<std::string, kBattleSlots> battleCardLabels_{};
+    std::array<std::string, 4> battleTransformLabels_{};
     std::array<std::string, kRewardSlots> rewardLabels_{};
     std::string startRunLabel_ = "Launch Run";
     std::string setupBackLabel_ = "Back";
@@ -159,6 +161,7 @@ private:
     std::array<ftxui::Component, kMapSlots> mapButtons_{};
     std::array<ftxui::Component, kEncounterSlots> encounterButtons_{};
     std::array<ftxui::Component, kBattleSlots> battleCardButtons_{};
+    std::array<ftxui::Component, 4> battleTransformButtons_{};
     std::array<ftxui::Component, kRewardSlots> rewardButtons_{};
 
     ftxui::Component difficultyToggle_;

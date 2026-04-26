@@ -278,6 +278,25 @@ bool StarAbyssApp::HandleEvent(Event event) {
         }
     }
 
+    if (engine_.state().page == AppPage::Battle &&
+        engine_.auxiliaryTransformSelectionPending() &&
+        !engine_.auxiliaryTransformTargetChoicePending() &&
+        event.is_mouse() &&
+        event.mouse().button == Mouse::Left &&
+        event.mouse().motion == Mouse::Released) {
+        const int mouse_x = event.mouse().x;
+        const int mouse_y = event.mouse().y;
+        for (size_t i = 0; i < battleAuxBoxes_.size(); ++i) {
+            if (contains(battleAuxBoxes_[i], mouse_x, mouse_y)) {
+                if (engine_.selectAuxiliaryTransformShip(i)) {
+                    AutoSave();
+                }
+                SyncUi();
+                return true;
+            }
+        }
+    }
+
     if (event == Event::PageUp || event == Event::PageDown) {
         const int delta = event == Event::PageUp ? -kPageScrollLines : kPageScrollLines;
         if (saveDialogVisible_ && forward_scroll_event(event)) {
@@ -389,7 +408,26 @@ bool StarAbyssApp::HandleEvent(Event event) {
         const char c = chars[0];
         const AppPage page = engine_.state().page;
 
-        if (page == AppPage::Battle && c == '0') {
+        if (page == AppPage::Battle && engine_.auxiliaryTransformTargetChoicePending() &&
+            c >= '1' && c <= '4') {
+            if (engine_.selectAuxiliaryTransformTarget(static_cast<size_t>(c - '1'))) {
+                AutoSave();
+            }
+            SyncUi();
+            return true;
+        }
+
+        if (page == AppPage::Battle && engine_.auxiliaryTransformSelectionPending() &&
+            !engine_.auxiliaryTransformTargetChoicePending() &&
+            c >= '1' && c <= '4') {
+            if (engine_.selectAuxiliaryTransformShip(static_cast<size_t>(c - '1'))) {
+                AutoSave();
+            }
+            SyncUi();
+            return true;
+        }
+
+        if (page == AppPage::Battle && c == '0' && !engine_.auxiliaryTransformSelectionPending()) {
             engine_.playCard(9);
             AutoSave();
             SyncUi();

@@ -49,14 +49,14 @@ std::string AuxiliaryShipSummary(UiLanguage language, const AuxiliaryShipState& 
     return summary;
 }
 
-Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship) {
+Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship, bool highlighted) {
     if (ship == nullptr) {
         return vbox({
                    text("[" + std::to_string(slot_index + 1) + "] " + Tr(language, "Empty Slot", "空槽位")) | color(kDim) | bold,
                    text(Tr(language, "Reserve bay for support craft", "附属舰停机位待命")) | color(Color::RGB(108, 120, 142)),
                }) |
-               borderStyled(ROUNDED, Color::RGB(76, 87, 110)) |
-               bgcolor(Color::RGB(10, 17, 31));
+               borderStyled(ROUNDED, highlighted ? Color::RGB(242, 190, 77) : Color::RGB(76, 87, 110)) |
+               bgcolor(highlighted ? Color::RGB(42, 34, 12) : Color::RGB(10, 17, 31));
     }
 
     struct VisualStyle {
@@ -77,6 +77,12 @@ Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliarySh
         if (value.unitId == "aux_pulse") {
             return VisualStyle{"~*", Color::RGB(246, 196, 91), Color::RGB(50, 34, 13)};
         }
+        if (value.unitId == "aux_queen_wasp") {
+            return VisualStyle{"W*", Color::RGB(255, 186, 76), Color::RGB(58, 31, 10)};
+        }
+        if (value.unitId == "aux_thermal_escort") {
+            return VisualStyle{"T*", Color::RGB(255, 128, 91), Color::RGB(61, 22, 16)};
+        }
         return VisualStyle{"<>", Color::RGB(146, 228, 255), Color::RGB(14, 31, 52)};
     };
     const VisualStyle style = style_for_ship(*ship);
@@ -89,25 +95,38 @@ Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliarySh
                    color(style.accent) | bold,
                text(AuxiliaryShipSummary(language, *ship)) | color(Color::White),
            }) |
-           borderStyled(ROUNDED, style.accent) |
-           bgcolor(style.background);
+           borderStyled(ROUNDED, highlighted ? Color::RGB(242, 190, 77) : style.accent) |
+           bgcolor(highlighted ? Color::RGB(66, 49, 16) : style.background);
 }
 
-Element AuxiliaryShipPanel(UiLanguage language, const RunState& state) {
+Element AuxiliaryShipPanel(UiLanguage language,
+                           const RunState& state,
+                           std::vector<ftxui::Box>* slot_boxes,
+                           int selected_slot,
+                           bool selection_pending) {
     Elements slots;
-    for (int i = 0; i < 3; ++i) {
+    if (slot_boxes != nullptr) {
+        slot_boxes->clear();
+    }
+    for (int i = 0; i < 4; ++i) {
         const AuxiliaryShipState* ship =
             i < static_cast<int>(state.auxiliaryShips.size()) ? &state.auxiliaryShips[static_cast<size_t>(i)] : nullptr;
-        slots.push_back(AuxiliaryShipSlot(language, i, ship) | flex);
-        if (i < 2) {
+        const bool highlighted = selection_pending && selected_slot == i;
+        Element slot = AuxiliaryShipSlot(language, i, ship, highlighted) | flex;
+        if (slot_boxes != nullptr) {
+            slot_boxes->push_back({});
+            slot = slot | reflect(slot_boxes->back());
+        }
+        slots.push_back(std::move(slot));
+        if (i < 3) {
             slots.push_back(separator());
         }
     }
 
     return window(text(Tr(language, "Auxiliary Bay", "附属舰机库")) | color(kHull) | bold,
                   vbox({
-                      text(Tr(language, "Three support slots, newest summons replace the oldest when full.",
-                              "共 3 个支援位，满位时新召唤会替换最旧附属舰。")) |
+                      text(Tr(language, "Four support slots, newest summons replace the oldest when full.",
+                              "共 4 个支援位，满位时新召唤会替换最旧附属舰。")) |
                           color(kDim),
                       separator(),
                       hbox(std::move(slots)),
@@ -122,10 +141,18 @@ Element AuxiliaryShipPanel(UiLanguage language, const RunState& state) {
 Element StarAbyssApp::RenderBattle() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;
+    const bool aux_transform_pending = engine_.auxiliaryTransformSelectionPending();
+    const bool aux_transform_target_pending = engine_.auxiliaryTransformTargetChoicePending();
     const std::string battle_hint =
         state.player.blackboxSelectionPending
             ? Tr(language_, "Blackbox Protocol: click a hand card to exile as imprint",
                  "黑箱协议：点击一张手牌作为放逐刻印目标")
+            : aux_transform_target_pending
+                ? Tr(language_, "Wing Rotation: choose a target drone type with 1-4 or click below",
+                     "机群轮转：按 1-4 或点击下方选择目标附属舰类型")
+                : aux_transform_pending
+                    ? Tr(language_, "Wing Rotation: choose an auxiliary ship with 1-4 or click a slot",
+                         "机群轮转：按 1-4 或点击槽位选择要转换的附属舰")
             : (Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
                Tr(language_, "Play cards, then press E to end turn", "出牌后按 E 结束回合"));
     Elements ship_lines = PlayerArt(state, ambientTick_);
@@ -291,8 +318,46 @@ Element StarAbyssApp::RenderBattle() const {
                 flex | bgcolor(kPanel),
         }),
         separator(),
-        AuxiliaryShipPanel(language_, state),
+        AuxiliaryShipPanel(language_,
+                           state,
+                           &battleAuxBoxes_,
+                           engine_.auxiliaryTransformSelectedShipIndex(),
+                           aux_transform_pending && !aux_transform_target_pending),
         separator(),
+        aux_transform_target_pending
+            ? window(text(Tr(language_, "Wing Rotation Target", "机群轮转目标")) | color(kGold),
+                     hbox({
+                         ActionPanel("[1] " + TranslateGameText(language_, battleTransformLabels_[0]),
+                                     Tr(language_, "Transform the selected auxiliary ship into this basic type.",
+                                        "将选中的附属舰转换成该基础类型。"),
+                                     battleTransformButtons_[0],
+                                     kHull),
+                         ActionPanel("[2] " + TranslateGameText(language_, battleTransformLabels_[1]),
+                                     Tr(language_, "Transform the selected auxiliary ship into this basic type.",
+                                        "将选中的附属舰转换成该基础类型。"),
+                                     battleTransformButtons_[1],
+                                     kGold),
+                         ActionPanel("[3] " + TranslateGameText(language_, battleTransformLabels_[2]),
+                                     Tr(language_, "Transform the selected auxiliary ship into this basic type.",
+                                        "将选中的附属舰转换成该基础类型。"),
+                                     battleTransformButtons_[2],
+                                     kEnemy),
+                         ActionPanel("[4] " + TranslateGameText(language_, battleTransformLabels_[3]),
+                                     Tr(language_, "Transform the selected auxiliary ship into this basic type.",
+                                        "将选中的附属舰转换成该基础类型。"),
+                                     battleTransformButtons_[3],
+                                     kHull),
+                     })) |
+                bgcolor(kPanelAlt)
+            : (aux_transform_pending
+                   ? window(text(Tr(language_, "Wing Rotation", "机群轮转")) | color(kGold),
+                            text(Tr(language_,
+                                    "Select an occupied auxiliary slot [1-4] to choose the ship that will be transformed.",
+                                    "选择一个已占用的附属舰槽位 [1-4]，决定要被转换的目标。")) |
+                                color(Color::White)) |
+                         bgcolor(kPanelAlt)
+                   : text("")),
+        aux_transform_pending ? separator() : text(""),
         window(text(Tr(language_, "Command Deck", "指令手牌")) | color(kGold),
                vbox(std::move(command_deck_rows))) |
             bgcolor(kPanelAlt),
