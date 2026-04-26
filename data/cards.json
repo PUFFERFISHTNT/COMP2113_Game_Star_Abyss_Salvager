@@ -1172,7 +1172,7 @@
         "description_en": "Destroy 2 Auxiliary Ship. Gain immediate rewards equal to twice its normal total trigger value this turn.",
         "cost": 0,
         "auxDestroyCount": 2,
-        "auxDestroyRewardMultiplierPercent": 260
+        "auxDestroyRewardMultiplierPercent": 200
       }
     },
     {
@@ -2810,19 +2810,21 @@
       "id": "df_32",
       "name": "扩展机库",
       "type": "Ability",
-      "description": "本场战斗中，附属舰槽位增加 `2` 个。",
+      "description": "本场战斗中，你首次召唤附属舰时，额外召唤同类型 `2` 个。",
       "rarity": "rare",
       "cost": 1,
-      "auxSlotBonus": 2,
+      "firstSummonExtraCopies": 2,
+      "firstSummonExtraScope": 1,
       "name_en": "Expanded Hangar",
-      "description_en": "This battle, gain 2 additional Auxiliary Ship slots.",
+      "description_en": "The first time you summon an Auxiliary Ship this battle, summon 2 extra copies of that type.",
       "upgrade": {
         "name": "扩展机库+++",
         "name_en": "Expanded Hangar+++",
-        "description": "本场战斗中，附属舰槽位增加 `3` 个。",
-        "description_en": "This battle, gain 3 additional Auxiliary Ship slots.",
+        "description": "本场战斗中，你每回合首次召唤附属舰时，额外召唤同类型 `2` 个。",
+        "description_en": "The first time you summon an Auxiliary Ship each turn this battle, summon 2 extra copies of that type.",
         "cost": 1,
-        "auxSlotBonus": 3
+        "firstSummonExtraCopies": 2,
+        "firstSummonExtraScope": 2
       }
     },
     {

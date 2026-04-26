@@ -108,7 +108,7 @@ Element AuxiliaryShipPanel(UiLanguage language,
                            int selected_slot,
                            bool selection_pending) {
     Elements slots;
-    const int slot_count = std::max(4, 4 + state.player.auxSlotBonusThisBattle);
+    const int slot_count = kMaxAuxiliaryShips;
     if (slot_boxes != nullptr) {
         slot_boxes->assign(static_cast<size_t>(slot_count), {});
     }
@@ -155,8 +155,8 @@ Element StarAbyssApp::RenderBattle() const {
                 ? Tr(language_, "Wing Rotation: choose a target drone type with 1-4 or click below",
                      "机群轮转：按 1-4 或点击下方选择目标附属舰类型")
                 : aux_transform_pending
-                    ? Tr(language_, "Wing Rotation: choose an auxiliary ship with a number key or click a slot",
-                         "机群轮转：按数字键或点击槽位选择要转换的附属舰")
+                    ? Tr(language_, "Wing Rotation: choose an auxiliary ship with 1-3 or click a slot",
+                         "机群轮转：按 1-3 或点击槽位选择要转换的附属舰")
             : (Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
                Tr(language_, "Play cards, then press E to end turn", "出牌后按 E 结束回合"));
     Elements ship_lines = PlayerArt(state, ambientTick_);
@@ -359,8 +359,8 @@ Element StarAbyssApp::RenderBattle() const {
             : (aux_transform_pending
                    ? window(text(Tr(language_, "Wing Rotation", "机群轮转")) | color(kGold),
                             text(Tr(language_,
-                                    "Select an occupied auxiliary slot by number or click to choose the ship that will be transformed.",
-                                    "按数字键或点击已占用的附属舰槽位，决定要被转换的目标。")) |
+                                    "Select an occupied auxiliary slot [1-3] or click to choose the ship that will be transformed.",
+                                    "按 [1-3] 或点击已占用的附属舰槽位，决定要被转换的目标。")) |
                                 color(Color::White)) |
                          bgcolor(kPanelAlt)
                    : text("")),

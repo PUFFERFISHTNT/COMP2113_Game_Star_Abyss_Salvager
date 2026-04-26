@@ -332,9 +332,6 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
         clauses.push_back(Tr(language, "Auxiliary effect output +", "附属舰效果提升 +") +
                           std::to_string(card.auxEffectPercentBonus) + "%");
     }
-    if (card.auxSlotBonus > 0) {
-        clauses.push_back(Tr(language, "Auxiliary slots +", "附属舰槽位 +") + std::to_string(card.auxSlotBonus));
-    }
     if (card.auxDestroyCount > 0) {
         clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
                           Tr(language, " auxiliary ships for immediate rewards x", " 个附属舰并按即时收益倍率 x") +
@@ -631,9 +628,6 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     }
     if (card.auxEffectPercentBonus > 0) {
         facts.push_back(Tr(language, "Aux effect +", "附属舰效果 +") + std::to_string(card.auxEffectPercentBonus) + "%");
-    }
-    if (card.auxSlotBonus > 0) {
-        facts.push_back(Tr(language, "Aux slots +", "附属舰槽位 +") + std::to_string(card.auxSlotBonus));
     }
     if (card.auxDestroyCount > 0) {
         facts.push_back(Tr(language, "Dismantle x", "拆解数量 x") + std::to_string(card.auxDestroyCount));

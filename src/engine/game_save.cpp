@@ -688,7 +688,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.firstExitDefenseEnergyThisBattle = std::max(0, loaded.player.firstExitDefenseEnergyThisBattle);
     loaded.player.auxEndTurnExtraTriggersThisTurn = std::max(0, loaded.player.auxEndTurnExtraTriggersThisTurn);
     loaded.player.auxEffectPercentBonusThisTurn = std::max(0, loaded.player.auxEffectPercentBonusThisTurn);
-    loaded.player.auxSlotBonusThisBattle = std::max(0, loaded.player.auxSlotBonusThisBattle);
+    loaded.player.auxSlotBonusThisBattle = 0;
     loaded.player.overloadIncomingDamageReducePercentThisTurn =
         std::max(0, std::min(100, loaded.player.overloadIncomingDamageReducePercentThisTurn));
     loaded.player.firstSummonExtraCopies = std::max(0, loaded.player.firstSummonExtraCopies);
@@ -744,6 +744,10 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                            return aux.unitId.empty() || aux.displayName.empty();
                        }),
         loaded.auxiliaryShips.end());
+    if (loaded.auxiliaryShips.size() > static_cast<size_t>(kMaxAuxiliaryShips)) {
+        loaded.auxiliaryShips.erase(loaded.auxiliaryShips.begin(),
+                                    loaded.auxiliaryShips.end() - kMaxAuxiliaryShips);
+    }
 
     if (shipTemplateById(loaded.player.shipId) == nullptr) {
         if (error != nullptr) {

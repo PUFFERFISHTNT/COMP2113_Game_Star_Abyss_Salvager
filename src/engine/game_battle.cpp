@@ -8,7 +8,6 @@ extern int g_sa_permanent_shield;
 
 namespace {
 
-constexpr int kBaseAuxiliaryShipSlots = 4;
 constexpr int kPlayerFormNeutral = 0;
 constexpr int kPlayerFormOverload = 1;
 constexpr int kPlayerFormDefense = 2;
@@ -40,7 +39,8 @@ enum class AuxiliaryTriggerContext {
 };
 
 int MaxAuxiliaryShipSlots(const PlayerState& player) {
-    return std::max(kBaseAuxiliaryShipSlots, kBaseAuxiliaryShipSlots + player.auxSlotBonusThisBattle);
+    (void)player;
+    return kMaxAuxiliaryShips;
 }
 
 std::pair<std::string, std::string> AuxiliaryUnitProfileForCard(const CardDef& card) {
@@ -236,6 +236,9 @@ void GameEngine::playCard(size_t index) {
     int extraTwoDamageHits = 0;
     const int clearedHeat = state_.player.heat;
     const int activeAuxCount = static_cast<int>(state_.auxiliaryShips.size());
+    const int activeInterceptorAuxCount = static_cast<int>(std::count_if(
+        state_.auxiliaryShips.begin(), state_.auxiliaryShips.end(),
+        [](const AuxiliaryShipState& ship) { return ship.unitId == kAuxUnitInterceptor; }));
     const int activeGuardianAuxCount = static_cast<int>(std::count_if(
         state_.auxiliaryShips.begin(), state_.auxiliaryShips.end(),
         [](const AuxiliaryShipState& ship) { return ship.unitId == kAuxUnitGuardian; }));
@@ -300,6 +303,12 @@ void GameEngine::playCard(size_t index) {
     if (baseCardId == "df_10" && activeAuxCount == 0) {
         energyValue = 0;
     }
+    if (baseCardId == "df_11") {
+        outgoingDamage += activeInterceptorAuxCount * 2;
+    }
+    if (baseCardId == "df_12") {
+        shieldValue += activeGuardianAuxCount * 2;
+    }
     if (baseCardId == "df_13" && hasPulseAux) {
         drawCount = 3;
     }
@@ -328,6 +337,9 @@ void GameEngine::playCard(size_t index) {
     }
     if (baseCardId == "dfh_08") {
         enemyHeatDelta = 0;
+    }
+    if (baseCardId == "dfh_09") {
+        enemyHeatDelta *= activeInterceptorAuxCount;
     }
     if (baseCardId == "df_30" && activeAuxCount > 0) {
         extraTwoDamageHits = activeAuxCount;
@@ -764,8 +776,7 @@ void GameEngine::playCard(size_t index) {
         log("Auxiliary effect output is amplified this turn.");
     }
     if (card.auxSlotBonus > 0) {
-        state_.player.auxSlotBonusThisBattle += card.auxSlotBonus;
-        log("Auxiliary bay expands by " + std::to_string(card.auxSlotBonus) + " slot(s) this battle.");
+        log("Auxiliary bay remains capped at " + std::to_string(kMaxAuxiliaryShips) + " slot(s).");
     }
     if (card.auxDestroyCount > 0) {
         resolveAuxiliaryShipDestroyRewards(card);
@@ -1639,63 +1650,10 @@ void GameEngine::resolveAuxiliaryShipsEndTurn() {
     }
 
     const int triggerTimes = std::max(1, 1 + state_.player.auxEndTurnExtraTriggersThisTurn);
-    const int bonusPercent = std::max(0, state_.player.auxEffectPercentBonusThisTurn);
-    std::function<void(size_t, bool)> resolve_trigger = [&](size_t ship_index, bool allow_aura) {
-        if (ship_index >= state_.auxiliaryShips.size()) {
-            return;
-        }
-        const AuxiliaryShipState ship = state_.auxiliaryShips[ship_index];
-        const int attack = (ship.attack * (100 + bonusPercent) + 99) / 100;
-        const int shield = (ship.shield * (100 + bonusPercent) + 99) / 100;
-        const int heal = (ship.heal * (100 + bonusPercent) + 99) / 100;
-        const int bonus_damage = (ship.endTurnDamage * (100 + bonusPercent) + 99) / 100;
-        const int bonus_heat = (ship.endTurnEnemyHeat * (100 + bonusPercent) + 99) / 100;
-        bool triggered = false;
-        if (attack > 0) {
-            applyDamageToEnemy(attack, false, 1);
-            log(ship.displayName + " fires for " + std::to_string(attack) + ".");
-            triggered = true;
-        }
-        if (shield > 0) {
-            state_.player.shield += shield;
-            log(ship.displayName + " reinforces shield by " + std::to_string(shield) + ".");
-            triggered = true;
-        }
-        if (heal > 0) {
-            const int before = state_.player.hp;
-            state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + heal);
-            log(ship.displayName + " repairs hull for " + std::to_string(state_.player.hp - before) + " HP.");
-            triggered = true;
-        }
-        if (bonus_damage > 0) {
-            applyDamageToEnemy(bonus_damage, false, 1);
-            log(ship.displayName + " unleashes a special strike for " + std::to_string(bonus_damage) + ".");
-            triggered = true;
-        }
-        if (bonus_heat > 0) {
-            changeEnemyHeat(bonus_heat);
-            log(ship.displayName + " spikes enemy heat by " + std::to_string(bonus_heat) + ".");
-            triggered = true;
-        }
-        if (triggered && state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
-            changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
-        }
-        if (allow_aura && ship.endTurnExtraOtherTriggers > 0) {
-            for (int aura = 0; aura < ship.endTurnExtraOtherTriggers; ++aura) {
-                for (size_t other_index = 0; other_index < state_.auxiliaryShips.size(); ++other_index) {
-                    if (other_index == ship_index) {
-                        continue;
-                    }
-                    resolve_trigger(other_index, false);
-                }
-            }
-        }
-    };
-
     const size_t ship_count = state_.auxiliaryShips.size();
     for (size_t ship_index = 0; ship_index < ship_count; ++ship_index) {
         for (int trigger = 0; trigger < triggerTimes; ++trigger) {
-            resolve_trigger(ship_index, true);
+            resolveAuxiliaryShipTrigger(ship_index, true, false);
         }
         if (ship_index < state_.auxiliaryShips.size() &&
             state_.auxiliaryShips[ship_index].remainingTurns > 0) {
@@ -1706,37 +1664,75 @@ void GameEngine::resolveAuxiliaryShipsEndTurn() {
     clearDestroyedAuxiliaryShips();
 }
 
+void GameEngine::resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, bool immediateContext) {
+    if (shipIndex >= state_.auxiliaryShips.size()) {
+        return;
+    }
+
+    const AuxiliaryShipState ship = state_.auxiliaryShips[shipIndex];
+    const int bonusPercent = std::max(0, state_.player.auxEffectPercentBonusThisTurn);
+    const int attack = (ship.attack * (100 + bonusPercent) + 99) / 100;
+    const int shield = (ship.shield * (100 + bonusPercent) + 99) / 100;
+    const int heal = (ship.heal * (100 + bonusPercent) + 99) / 100;
+    const int bonusDamage = (ship.endTurnDamage * (100 + bonusPercent) + 99) / 100;
+    const int bonusHeat = (ship.endTurnEnemyHeat * (100 + bonusPercent) + 99) / 100;
+    bool triggered = false;
+
+    if (attack > 0) {
+        applyDamageToEnemy(attack, false, 1);
+        log(ship.displayName + (immediateContext ? " executes an immediate attack for " : " fires for ") +
+            std::to_string(attack) + ".");
+        triggered = true;
+    }
+    if (shield > 0) {
+        state_.player.shield += shield;
+        log(ship.displayName + (immediateContext ? " grants immediate shield +" : " reinforces shield by ") +
+            std::to_string(shield) + ".");
+        triggered = true;
+    }
+    if (heal > 0) {
+        const int before = state_.player.hp;
+        state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + heal);
+        log(ship.displayName + (immediateContext ? " performs immediate hull repair +" : " repairs hull for ") +
+            std::to_string(state_.player.hp - before) + " HP.");
+        triggered = true;
+    }
+    if (bonusDamage > 0) {
+        applyDamageToEnemy(bonusDamage, false, 1);
+        log(ship.displayName +
+            (immediateContext ? " unleashes an immediate special strike for " : " unleashes a special strike for ") +
+            std::to_string(bonusDamage) + ".");
+        triggered = true;
+    }
+    if (bonusHeat > 0) {
+        changeEnemyHeat(bonusHeat);
+        log(ship.displayName + (immediateContext ? " spikes immediate enemy heat by " : " spikes enemy heat by ") +
+            std::to_string(bonusHeat) + ".");
+        triggered = true;
+    }
+    if (triggered && state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
+        changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
+    }
+    if (allowAura && ship.endTurnExtraOtherTriggers > 0) {
+        for (int aura = 0; aura < ship.endTurnExtraOtherTriggers; ++aura) {
+            for (size_t otherIndex = 0; otherIndex < state_.auxiliaryShips.size(); ++otherIndex) {
+                if (otherIndex == shipIndex) {
+                    continue;
+                }
+                resolveAuxiliaryShipTrigger(otherIndex, false, immediateContext);
+            }
+        }
+    }
+}
+
 void GameEngine::triggerAuxiliaryShipsNow(int times) {
     if (times <= 0 || state_.auxiliaryShips.empty()) {
         return;
     }
-    const int bonusPercent = std::max(0, state_.player.auxEffectPercentBonusThisTurn);
     for (int t = 0; t < times; ++t) {
-        for (const AuxiliaryShipState& ship : state_.auxiliaryShips) {
-            const int attack = (ship.attack * (100 + bonusPercent) + 99) / 100;
-            const int shield = (ship.shield * (100 + bonusPercent) + 99) / 100;
-            const int heal = (ship.heal * (100 + bonusPercent) + 99) / 100;
-            bool triggered = false;
-            if (attack > 0) {
-                applyDamageToEnemy(attack, false, 1);
-                log(ship.displayName + " executes an immediate attack for " + std::to_string(attack) + ".");
-                triggered = true;
-            }
-            if (shield > 0) {
-                state_.player.shield += shield;
-                log(ship.displayName + " grants immediate shield +" + std::to_string(shield) + ".");
-                triggered = true;
-            }
-            if (heal > 0) {
-                const int before = state_.player.hp;
-                state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + heal);
-                log(ship.displayName + " performs immediate hull repair +" +
-                    std::to_string(state_.player.hp - before) + " HP.");
-                triggered = true;
-            }
-            if (triggered && state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
-                changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
-            }
+        const size_t shipCount = state_.auxiliaryShips.size();
+        for (size_t shipIndex = 0; shipIndex < shipCount; ++shipIndex) {
+            resolveAuxiliaryShipTrigger(shipIndex, true, true);
         }
     }
 }

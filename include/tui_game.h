@@ -8,6 +8,7 @@
 
 inline constexpr int kBattleDrawCount = 5;
 inline constexpr int kBattleHandLimit = 10;
+inline constexpr int kMaxAuxiliaryShips = 3;
 inline constexpr int kMarketCardUpgradeBaseCost = 50;
 inline constexpr int kCardUpgradeMaxLevel = 1;
 
@@ -508,6 +509,7 @@ private:
     void advancePlayerOverheatRound();
     void summonAuxiliaryShips(const CardDef& card, const std::string& baseCardId = "");
     void resolveAuxiliaryShipsEndTurn();
+    void resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, bool immediateContext);
     void triggerAuxiliaryShipsNow(int times);
     void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
     bool resolveBlackboxProtocol(size_t handIndex);

@@ -419,7 +419,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
 
         if (page == AppPage::Battle && engine_.auxiliaryTransformSelectionPending() &&
             !engine_.auxiliaryTransformTargetChoicePending() &&
-            c >= '1' && c <= '9') {
+            c >= '1' && c <= '3') {
             if (engine_.selectAuxiliaryTransformShip(static_cast<size_t>(c - '1'))) {
                 AutoSave();
             }
