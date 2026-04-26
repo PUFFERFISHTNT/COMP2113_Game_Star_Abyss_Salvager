@@ -630,7 +630,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Lose 5 HP but gain 1 rare relic.", "失去 5 生命，但获得 1 件稀有遗物。"},
         {"Gain 8 HP and 2 heat.", "获得 8 生命和 2 热量。"},
         {"Forced into a small battle. Defeat: game over.", "被迫进入小型战斗。失败即结束。"},
-        {"Higher encounter chance next. Gain 1 random card.", "下一次遭遇概率提高。获得 1 张随机卡牌。"},
+        {"Elite encounter chance increased next. Gain 1 random card.", "下次精英遭遇概率提高。获得 1 张随机卡牌。"},
         {"Reduce 4 heat.", "减少 4 热量。"},
         {"Gain 8 credits.", "获得 8 金币。"},
         {"Skip 1 segment, +5 heat, gain 1 rare card.", "跳过 1 个节点，+5 热量，获得 1 张稀有卡牌。"},
@@ -656,7 +656,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Costs 12 credits.", "花费 12 金币。"},
         {"Forced elite battle. Defeat: game over.", "强制精英战斗。失败即结束。"},
         {"+6 heat.", "+6 热量。"},
-        {"Cards enhanced. Next fight must be elite.", "卡牌增强。下次战斗必为精英。"},
+        {"Cards enhanced. Elite encounter chance increased next.", "卡牌增强。下次精英遭遇概率提高。"},
         {"+5 heat, +6 HP, costs 8 credits.", "+5 热量，+6 生命，花费 8 金币。"},
         {"+18 credits, gain card, -8 HP.", "+18 金币，获得卡牌，-8 生命。"},
         {"+4 heat.", "+4 热量。"},
@@ -1255,7 +1255,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "The ghost ship responds with supplies. +8 HP, +2 heat.") return "幽灵船提供了补给。+8 生命，+2 热量。";
     if (text == "The ghost ship's defenses activate! Battle!") return "幽灵船的防御系统启动了！战斗！";
     // Event B1 – Strange Signal
-    if (text == "Locked onto the signal. Gained a card. Next encounter may be elite.") return "锁定了信号。获得 1 张卡牌。下次遭遇可能是精英。";
+    if (text == "Locked onto the signal. Gained a card. Elite encounter chance increased next.") return "锁定了信号。获得 1 张卡牌。下次精英遭遇概率提高。";
     if (text == "Blocked the interference. -4 heat.") return "屏蔽了干扰。-4 热量。";
     if (text == "Recorded the spectrum. +8 credits.") return "记录了频谱。+8 金币。";
     // Event B2 – Space Fold
@@ -1307,7 +1307,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "You fight back against the pirates! Elite battle!") return "你反击海盗！精英战斗！";
     if (text == "Escaped at full speed. +6 heat.") return "全速逃跑了。+6 热量。";
     // Event D4 – Cryo Pod
-    if (text == "Woke the sleeper. Cards enhanced. Next encounter may be elite.") return "唤醒了沉睡者。卡牌增强。下次遭遇可能是精英。";
+    if (text == "Woke the sleeper. Cards enhanced. Elite encounter chance increased next.") return "唤醒了沉睡者。卡牌增强。下次精英遭遇概率提高。";
     if (text == "Drained cryo energy. +5 heat, +6 HP, -8 credits.") return "抽取了冷冻能量。+5 热量，+6 生命，-8 金币。";
     if (text == "Not enough credits to drain cryo energy.") return "金币不足，无法抽取冷冻能量。";
     if (text == "Scavenged supplies. +18 credits, gained a card, -8 HP.") return "搜刮了补给。+18 金币，获得 1 张卡牌，-8 生命。";

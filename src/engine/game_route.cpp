@@ -521,7 +521,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.title = "Strange Signal";
         state_.encounter.description = "An anomalous frequency keeps syncing to your navigation core.";
         state_.encounter.choices = {"Trace the signal", "Block interference", "Record the spectrum"};
-        state_.encounter.details = {"Higher encounter chance next. Gain 1 random card.", "Reduce 4 heat.", "Gain 8 credits."};
+        state_.encounter.details = {"Elite encounter chance increased next. Gain 1 random card.", "Reduce 4 heat.", "Gain 8 credits."};
     } else if (r <= 45) {
         state_.encounter.encounterId = "event_b2";
         state_.encounter.title = "Space Fold";
@@ -575,7 +575,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
         state_.encounter.title = "Cryo Pod";
         state_.encounter.description = "A drifting cryo pod with a faint life sign. Someone is in deep freeze.";
         state_.encounter.choices = {"Wake the sleeper", "Drain cryo energy", "Scavenge supplies"};
-        state_.encounter.details = {"Cards enhanced. Next fight must be elite.", "+5 heat, +6 HP, costs 8 credits.", "+18 credits, gain card, -8 HP."};
+        state_.encounter.details = {"Cards enhanced. Elite encounter chance increased next.", "+5 heat, +6 HP, costs 8 credits.", "+18 credits, gain card, -8 HP."};
     }
 }
 

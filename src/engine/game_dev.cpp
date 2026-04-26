@@ -451,7 +451,7 @@ const std::vector<EncounterEntry>& EncounterCatalogue() {
          "一段异常频率持续同步到你的导航核心。",
          {"Trace the signal", "Block interference", "Record the spectrum", nullptr},
          {"追踪信号", "屏蔽干扰", "记录频谱", nullptr},
-         {"Higher encounter chance next. Gain 1 random card.", "Reduce 4 heat.", "Gain 8 credits.", nullptr},
+         {"Elite encounter chance increased next. Gain 1 random card.", "Reduce 4 heat.", "Gain 8 credits.", nullptr},
          {"下一段事件几率提高。获得 1 张随机卡。", "降低 4 热量。", "获得 8 金币。", nullptr}},
         {"B2 Space Fold", "B2 空间折叠", "event", "event_b2",
          "Space Fold", "空间折叠",
@@ -523,7 +523,7 @@ const std::vector<EncounterEntry>& EncounterCatalogue() {
          "一个漂浮的冷冻舱内有微弱生命迹象。",
          {"Wake the sleeper", "Drain cryo energy", "Scavenge supplies", nullptr},
          {"唤醒沉睡者", "抽取冷冻能量", "搜刮补给", nullptr},
-         {"Cards enhanced. Next fight must be elite.", "+5 heat, +6 HP, costs 8 credits.", "+18 credits, gain card, -8 HP.", nullptr},
+         {"Cards enhanced. Elite encounter chance increased next.", "+5 heat, +6 HP, costs 8 credits.", "+18 credits, gain card, -8 HP.", nullptr},
          {"卡牌强化，下一场必为精英战。", "+5 热量，+6 生命，花费 8 金币。", "+18 金币，获得 1 张卡，-8 生命。", nullptr}},
 
         {"Repair Station", "维修站", "repair", "",

@@ -216,7 +216,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 g_sa_next_elite = true;
                 auto cards = randomCardChoices(1);
                 if (!cards.empty()) queueOwnedCardToDiscard(cards[0]);
-                state_.statusLine = "Locked onto the signal. Gained a card. Next encounter may be elite.";
+                state_.statusLine = "Locked onto the signal. Gained a card. Elite encounter chance increased next.";
             } else if (index == 1) {
                 changeHeat(-4);
                 state_.statusLine = "Blocked the interference. -4 heat.";
@@ -476,12 +476,12 @@ void GameEngine::resolveEncounter(size_t index) {
 
         if (eid == "event_d4") {  // Cryo Pod
             if (index == 0) {
-                // Cards enhanced + next fight must be elite
+                // Cards enhanced + higher elite encounter chance next
                 std::string upgName, upgErr;
                 upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 upgradeRandomCard(CardUpgradeSource::EventReward, &upgName, &upgErr);
                 g_sa_next_elite = true;
-                state_.statusLine = "Woke the sleeper. Cards enhanced. Next encounter may be elite.";
+                state_.statusLine = "Woke the sleeper. Cards enhanced. Elite encounter chance increased next.";
             } else if (index == 1) {
                 if (state_.player.scrap < 8) {
                     state_.statusLine = "Not enough credits to drain cryo energy.";
