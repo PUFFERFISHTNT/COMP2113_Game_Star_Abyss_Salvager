@@ -476,6 +476,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Pulse Drone", "脉冲机"},
         {"Queen Wasp Drone", "王蜂机"},
         {"Thermal Escort Drone", "热核护航机"},
+        {"Burner Drone", "燃烧机"},
         {"Auxiliary Drone", "附属舰"},
         {"Four support slots, newest summons replace the oldest when full.", "共 4 个支援位，满位时新召唤会替换最旧附属舰。"},
         {"Main Menu", "主菜单"},
@@ -1518,6 +1519,16 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     }
     if (StartsWith(text, "First summon this turn adds enemy heat by ") && EndsWith(text, ".")) {
         return "本回合首次召唤使敌方热量增加 " + text.substr(41, text.size() - 42) + " 点。";
+    }
+    if (StartsWith(text, " spikes enemy heat by ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" spikes enemy heat by ");
+        return TranslateGameText(language, text.substr(0, split)) + " 使敌方热量增加 " +
+               text.substr(split + 22, text.size() - split - 23) + " 点。";
+    }
+    if (StartsWith(text, " spikes immediate enemy heat by ") && EndsWith(text, ".")) {
+        const size_t split = text.find(" spikes immediate enemy heat by ");
+        return TranslateGameText(language, text.substr(0, split)) + " 立即使敌方热量增加 " +
+               text.substr(split + 32, text.size() - split - 33) + " 点。";
     }
 
     return text;

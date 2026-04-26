@@ -38,18 +38,39 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
     return std::max(22, std::min(34, computed_width));
 }
 
-std::string AuxiliaryShipSummary(UiLanguage language, const AuxiliaryShipState& ship) {
-    std::string summary = Tr(language, "ATK ", "攻击 ") + std::to_string(ship.attack) + " / " +
-                          Tr(language, "SHD ", "护盾 ") + std::to_string(ship.shield);
+std::vector<std::string> AuxiliaryShipDetailLines(UiLanguage language, const AuxiliaryShipState& ship) {
+    std::vector<std::string> lines;
+    std::vector<std::string> primary;
+    if (ship.attack > 0) {
+        primary.push_back(Tr(language, "ATK ", "攻击 ") + std::to_string(ship.attack));
+    }
+    if (ship.shield > 0) {
+        primary.push_back(Tr(language, "SHD ", "护盾 ") + std::to_string(ship.shield));
+    }
     if (ship.heal > 0) {
-        summary += " / " + Tr(language, "REP ", "修复 ") + std::to_string(ship.heal);
+        primary.push_back(Tr(language, "REP ", "修复 ") + std::to_string(ship.heal));
     }
-    if (ship.remainingTurns > 0) {
-        summary += "  " + Tr(language, "T ", "回合 ") + std::to_string(ship.remainingTurns);
-    } else {
-        summary += "  " + Tr(language, "T INF", "回合 常驻");
+    if (!primary.empty()) {
+        std::string joined = primary.front();
+        for (size_t i = 1; i < primary.size(); ++i) {
+            joined += " / " + primary[i];
+        }
+        lines.push_back(joined);
     }
-    return summary;
+    if (ship.endTurnExtraOtherTriggers > 0) {
+        lines.push_back(Tr(language, "Other Aux EOT x", "其他附属舰在回合末额外触发 x") +
+                        std::to_string(ship.endTurnExtraOtherTriggers));
+    }
+    if (ship.endTurnDamage > 0) {
+        lines.push_back(Tr(language, "EOT DMG ", "回合末伤害 ") + std::to_string(ship.endTurnDamage));
+    }
+    if (ship.endTurnEnemyHeat > 0) {
+        lines.push_back(Tr(language, "EOT Heat +", "回合末敌方热量 +") + std::to_string(ship.endTurnEnemyHeat));
+    }
+    lines.push_back(ship.remainingTurns > 0
+                        ? Tr(language, "T ", "回合 ") + std::to_string(ship.remainingTurns)
+                        : Tr(language, "T INF", "回合 常驻"));
+    return lines;
 }
 
 Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship, bool highlighted) {
@@ -86,18 +107,24 @@ Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliarySh
         if (value.unitId == "aux_thermal_escort") {
             return VisualStyle{"T*", Color::RGB(255, 128, 91), Color::RGB(61, 22, 16)};
         }
+        if (value.unitId == "aux_burner") {
+            return VisualStyle{"B*", Color::RGB(255, 95, 95), Color::RGB(62, 16, 16)};
+        }
         return VisualStyle{"<>", Color::RGB(146, 228, 255), Color::RGB(14, 31, 52)};
     };
     const VisualStyle style = style_for_ship(*ship);
 
     // Keep each slot compact and scannable so the player can confirm support
     // ship composition without opening extra panels.
-    return vbox({
-               text("[" + std::to_string(slot_index + 1) + "] " + style.icon + " " +
-                    TranslateGameText(language, ship->displayName)) |
-                   color(style.accent) | bold,
-               text(AuxiliaryShipSummary(language, *ship)) | color(Color::White),
-           }) |
+    Elements content = {
+        text("[" + std::to_string(slot_index + 1) + "] " + style.icon + " " +
+             TranslateGameText(language, ship->displayName)) |
+            color(style.accent) | bold,
+    };
+    for (const std::string& line : AuxiliaryShipDetailLines(language, *ship)) {
+        content.push_back(text(line) | color(Color::White));
+    }
+    return vbox(std::move(content)) |
            borderStyled(ROUNDED, highlighted ? Color::RGB(242, 190, 77) : style.accent) |
            bgcolor(highlighted ? Color::RGB(66, 49, 16) : style.background);
 }
@@ -147,8 +174,9 @@ Element StarAbyssApp::RenderBattle() const {
     const int terminal_width = Terminal::Size().dimx;
     const bool aux_transform_pending = engine_.auxiliaryTransformSelectionPending();
     const bool aux_transform_target_pending = engine_.auxiliaryTransformTargetChoicePending();
+    const bool blackbox_selection_pending = state.player.blackboxSelectionPending;
     const std::string battle_hint =
-        state.player.blackboxSelectionPending
+        blackbox_selection_pending
             ? Tr(language_, "Blackbox Protocol: click a hand card to exile as imprint",
                  "黑箱协议：点击一张手牌作为放逐刻印目标")
             : aux_transform_target_pending
@@ -186,6 +214,9 @@ Element StarAbyssApp::RenderBattle() const {
     Elements current_row;
     for (size_t i = 0; i < visible_slots; ++i) {
         const CardDef* card = i < hand.size() ? &hand[i].def : nullptr;
+        const std::string raw_ref = i < hand.size() ? hand[i].ref : "";
+        const bool blackbox_target = blackbox_selection_pending && card != nullptr && raw_ref.rfind("tmp|", 0) != 0;
+        const bool blackbox_invalid = blackbox_selection_pending && card != nullptr && !blackbox_target;
         const bool playable = card != nullptr && engine_.canPlayCard(i);
         std::vector<std::string> facts = card != nullptr ? CardFacts(language_, *card)
                                                          : std::vector<std::string>{TranslateGameText(language_, "No module loaded.")};
@@ -201,6 +232,14 @@ Element StarAbyssApp::RenderBattle() const {
                                 color(card != nullptr ? (playable ? accent : kDim) : kDim) | bold,
                             separator(),
                             battleCardButtons_[i]->Render(),
+                            blackbox_selection_pending
+                                ? text(blackbox_target
+                                           ? Tr(language_, "Select this card as the imprint target",
+                                                "选择这张牌作为刻印目标")
+                                           : Tr(language_, "Temporary copies cannot be chosen",
+                                                "临时复制品不能作为刻印目标")) |
+                                      color(blackbox_target ? kGold : kEnemy)
+                                : text(""),
                             hbox({
                                 text(Tr(language_, "Cost ", "费用 ") + std::to_string(card != nullptr ? card->cost : 0)) | color(card != nullptr ? accent : kDim),
                                 filler(),
@@ -212,7 +251,7 @@ Element StarAbyssApp::RenderBattle() const {
                             WrappedParagraph(fact_text, card_text_width) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
                         }) |
                         bgcolor(CardBackground(card, playable)) |
-                        borderStyled(ROUNDED, frame_color) |
+                        borderStyled(ROUNDED, blackbox_target ? kGold : (blackbox_invalid ? kEnemy : frame_color)) |
                         size(WIDTH, EQUAL, card_width) |
                         size(HEIGHT, GREATER_THAN, 10);
 
@@ -309,6 +348,22 @@ Element StarAbyssApp::RenderBattle() const {
                 flex,
         }),
         separator(),
+        blackbox_selection_pending
+            ? window(text(Tr(language_, "Blackbox Imprint Selection", "黑箱刻印选择")) | color(kGold) | bold,
+                     vbox({
+                         paragraph(Tr(language_,
+                                      "Choose 1 non-copy card from your hand. It will be exiled for this battle, and a [Copy] will be added to your hand each turn in addition to your normal draw.",
+                                      "从你的手牌中选择 1 张非复制牌。它会在本场战斗中被移除，之后每回合开始时，都会额外将一张[复制品]加入你的手牌，不占用你正常的抽 5 张。")) |
+                             color(Color::White),
+                         separator(),
+                         text(Tr(language_,
+                                 "Gold frame: selectable target   Red frame: not selectable",
+                                 "金框：可选目标   红框：不可选")) |
+                             color(kDim),
+                     })) |
+                bgcolor(kPanel)
+            : text(""),
+        blackbox_selection_pending ? separator() : text(""),
         hbox({
             window(text(TranslateGameText(language_, state.player.shipName)) | color(kHull), vbox(std::move(ship_lines))) | flex | bgcolor(kPanel),
             window(text(Tr(language_, "Combat Lane", "战斗航道")) | color(kGold),

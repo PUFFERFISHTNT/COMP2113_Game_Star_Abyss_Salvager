@@ -608,12 +608,33 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.clearHeat) facts.push_back(Tr(language, "Clear heat", "清空热量"));
     if (card.salvageBonus > 0) facts.push_back(Tr(language, "Battle credits +", "战斗金币 +") + std::to_string(card.salvageBonus));
     if (card.summonDroneCount > 0) facts.push_back(Tr(language, "Summon drones x", "部署附属舰 x") + std::to_string(card.summonDroneCount));
-    if (card.summonDroneAttack != 0 || card.summonDroneShield != 0) {
+    if (card.summonDroneCount > 0) {
         const bool repair_drone = card.name.find("维修") != std::string::npos ||
                                   card.nameEn.find("Repair") != std::string::npos;
-        facts.push_back((repair_drone ? Tr(language, "Drone stats A/R ", "附属舰攻修 ")
-                                      : Tr(language, "Drone stats A/S ", "附属舰攻防 ")) +
-                        std::to_string(card.summonDroneAttack) + "/" + std::to_string(card.summonDroneShield));
+        const bool burner_drone = card.id == "dfh_01";
+        const bool thermal_escort = card.id == "dfh_08";
+        const bool queen_wasp = card.id == "df_27";
+        const bool special_aux_end_turn_payload = thermal_escort || queen_wasp;
+        if (!burner_drone && card.summonDroneAttack > 0) {
+            facts.push_back(Tr(language, "Drone ATK ", "附属舰攻击 ") + std::to_string(card.summonDroneAttack));
+        }
+        if (repair_drone) {
+            if (card.summonDroneShield > 0) {
+                facts.push_back(Tr(language, "Drone REP ", "附属舰修复 ") + std::to_string(card.summonDroneShield));
+            }
+        } else if (card.summonDroneShield > 0) {
+            facts.push_back(Tr(language, "Drone SHD ", "附属舰护盾 ") + std::to_string(card.summonDroneShield));
+        }
+        if (queen_wasp && card.damage > 0) {
+            facts.push_back(Tr(language, "Drone EOT dmg ", "附属舰回合末伤害 ") + std::to_string(card.damage));
+        }
+        if ((burner_drone || thermal_escort) && card.enemyHeat > 0) {
+            facts.push_back(Tr(language, "Drone EOT heat +", "附属舰回合末敌方热量 +") + std::to_string(card.enemyHeat));
+        }
+        if (special_aux_end_turn_payload && card.auxEndTurnExtraTriggerTimes > 0) {
+            facts.push_back(Tr(language, "Other aux EOT x", "其他附属舰在回合末额外触发 x") +
+                            std::to_string(card.auxEndTurnExtraTriggerTimes));
+        }
     }
     if (card.summonDroneDuration > 0) facts.push_back(Tr(language, "Drone duration ", "附属舰持续 ") + std::to_string(card.summonDroneDuration));
     if (card.buffDroneAttack != 0 || card.buffDroneShield != 0) {
@@ -623,7 +644,7 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.auxImmediateTriggerTimes > 0) {
         facts.push_back(Tr(language, "Aux immediate x", "附属舰立即触发 x") + std::to_string(card.auxImmediateTriggerTimes));
     }
-    if (card.auxEndTurnExtraTriggerTimes > 0) {
+    if (card.auxEndTurnExtraTriggerTimes > 0 && card.id != "df_27" && card.id != "dfh_08") {
         facts.push_back(Tr(language, "Aux end-turn +x", "附属舰回合末 +x") + std::to_string(card.auxEndTurnExtraTriggerTimes));
     }
     if (card.auxEffectPercentBonus > 0) {

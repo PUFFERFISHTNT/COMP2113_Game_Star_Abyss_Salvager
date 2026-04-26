@@ -21,6 +21,7 @@ constexpr const char* kAuxUnitRepair = "aux_repair";
 constexpr const char* kAuxUnitPulse = "aux_pulse";
 constexpr const char* kAuxUnitQueenWasp = "aux_queen_wasp";
 constexpr const char* kAuxUnitThermalEscort = "aux_thermal_escort";
+constexpr const char* kAuxUnitBurner = "aux_burner";
 
 struct AuxiliaryUnitRecipe {
     std::string unitId;
@@ -83,13 +84,16 @@ AuxiliaryUnitRecipe BasicAuxiliaryRecipeForId(const std::string& unit_id, bool u
 AuxiliaryUnitRecipe AuxiliaryRecipeForCard(const std::string& base_card_id, const CardDef& card) {
     if (base_card_id == "df_27") {
         return {kAuxUnitQueenWasp, "Queen Wasp Drone", std::max(0, card.summonDroneAttack),
-                std::max(0, card.summonDroneShield), 0, std::max(0, card.damage), 0,
+                std::max(0, card.summonDroneShield), 0, 0, 0,
                 std::max(0, card.auxEndTurnExtraTriggerTimes)};
     }
     if (base_card_id == "dfh_08") {
         return {kAuxUnitThermalEscort, "Thermal Escort Drone", std::max(0, card.summonDroneAttack),
                 std::max(0, card.summonDroneShield), 0, 0, std::max(0, card.enemyHeat),
                 std::max(0, card.auxEndTurnExtraTriggerTimes)};
+    }
+    if (base_card_id == "dfh_01") {
+        return {kAuxUnitBurner, "Burner Drone", 0, 0, 0, 0, std::max(0, card.enemyHeat), 0};
     }
 
     const auto profile = AuxiliaryUnitProfileForCard(card);
@@ -152,7 +156,7 @@ bool GameEngine::canPlayCard(size_t index) const {
         return false;
     }
     if (state_.player.blackboxSelectionPending) {
-        return index < state_.player.hand.size();
+        return index < state_.player.hand.size() && !isTemporaryCopyRef(state_.player.hand[index]);
     }
     if (state_.player.auxTransformSelectionPending) {
         return false;
@@ -333,7 +337,6 @@ void GameEngine::playCard(size_t index) {
     }
     if (baseCardId == "df_27") {
         outgoingDamage = 0;
-        card.auxEndTurnExtraTriggerTimes = 0;
     }
     if (baseCardId == "dfh_08") {
         enemyHeatDelta = 0;
@@ -763,11 +766,12 @@ void GameEngine::playCard(size_t index) {
         return;
     }
 
+    const bool summoned_aux_carries_own_end_turn_aura = baseCardId == "df_27" || baseCardId == "dfh_08";
     summonAuxiliaryShips(card, baseCardId);
     if (card.auxImmediateTriggerTimes > 0) {
         triggerAuxiliaryShipsNow(card.auxImmediateTriggerTimes);
     }
-    if (card.auxEndTurnExtraTriggerTimes > 0) {
+    if (card.auxEndTurnExtraTriggerTimes > 0 && !summoned_aux_carries_own_end_turn_aura) {
         state_.player.auxEndTurnExtraTriggersThisTurn += card.auxEndTurnExtraTriggerTimes;
         log("Auxiliary ships will trigger extra times at end of turn.");
     }
@@ -1123,7 +1127,7 @@ void GameEngine::startPlayerTurn() {
         state_.player.openingShieldBonus = 0;
     }
 
-    drawCards(drawTarget - static_cast<int>(state_.player.hand.size()));
+    drawCards(drawTarget);
     if (extraTurnDraw > 0) {
         drawCards(extraTurnDraw);
         log("Stored draw protocol draws " + std::to_string(extraTurnDraw) + " extra card(s).");
