@@ -178,7 +178,7 @@ std::vector<std::string> GameEngine::randomMarketCardChoices(size_t count) {
 std::string GameEngine::randomRelic() {
     std::vector<std::string> candidates;
     for (const RelicDef& relic : relicPool_) {
-        if (!hasRelic(relic.id)) {
+        if (relic.id != "origin" && !hasRelic(relic.id)) {
             candidates.push_back(relic.id);
         }
     }

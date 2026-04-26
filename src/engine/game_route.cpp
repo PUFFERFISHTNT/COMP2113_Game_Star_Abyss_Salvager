@@ -474,7 +474,9 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
                     "Humanity attempted to use the Ark Core to forge a stable new universe. "
                     "The Star Abyss is what remained after that experiment failed.";
                 state_.encounter.choices = {"Listen to the truth", "Gain ship permissions", "Drain core energy"};
-                state_.encounter.details = {"Gain 1 rare card.", "+4 permanent opening shield.", "Reduce 10 heat, +10 HP."};
+                state_.encounter.details = {"Gain 1 rare card.",
+                                            "+4 permanent opening shield. Stacks with other opening shield effects.",
+                                            "Reduce 10 heat, +10 HP."};
                 break;
             case 4:
                 state_.encounter.encounterId = "truth_4";
@@ -494,7 +496,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
                     "It is the cosmic singularity of a new world. "
                     "Whoever controls it can dictate the rules of this space.";
                 state_.encounter.choices = {"Accept the truth", "Extract the origin"};
-                state_.encounter.details = {"All cards permanently enhanced.", "Gain ultimate relic, lose 10 HP."};
+                state_.encounter.details = {"All cards permanently enhanced.", "Gain Origin relic, lose 10 HP."};
                 break;
         }
         return;

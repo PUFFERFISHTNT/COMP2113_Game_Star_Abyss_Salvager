@@ -772,7 +772,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Listened to the truth. Gained a rare card.";
             } else if (index == 1) {
                 g_sa_permanent_shield += 4;
-                state_.statusLine = "Gained ship permissions. +4 permanent opening shield.";
+                state_.statusLine = "Gained ship permissions. +4 permanent opening shield. Stacks with other opening shield effects.";
             } else {
                 changeHeat(-10);
                 state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 10);
@@ -816,11 +816,10 @@ void GameEngine::resolveEncounter(size_t index) {
                 }
                 state_.statusLine = "Accepted the truth. All cards permanently enhanced.";
             } else {
-                // Gain ultimate relic, lose 10 HP
-                const std::string relicId = randomRelic();
-                if (!relicId.empty()) grantRelic(relicId);
+                // Gain Origin relic, lose 10 HP
                 applyDamageToPlayer(10);
-                state_.statusLine = "Extracted the origin. Gained ultimate relic, -10 HP.";
+                grantRelic("origin");
+                state_.statusLine = "Extracted the origin. Gained Origin relic, -10 HP.";
             }
             finishCurrentNode();
             return;

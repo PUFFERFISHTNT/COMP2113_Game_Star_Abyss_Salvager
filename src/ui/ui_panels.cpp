@@ -706,6 +706,8 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
 }
 
 std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& state) {
+    const bool has_origin = std::find(state.player.relics.begin(), state.player.relics.end(), "origin") !=
+                            state.player.relics.end();
     std::vector<std::string> lines = {
         Tr(language, "Hull ", "船体 ") + std::to_string(state.player.hp) + "/" + std::to_string(state.player.maxHp),
         Tr(language, "Heat ", "热量 ") + std::to_string(state.player.heat) + "/" + std::to_string(state.player.maxHeat),
@@ -718,14 +720,21 @@ std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& 
     if (state.player.openingEnergyBonus > 0) lines.push_back(Tr(language, "Next battle +", "下场战斗 +") + std::to_string(state.player.openingEnergyBonus) + Tr(language, " opening energy.", " 初始能量。"));
     if (state.player.openingShieldBonus > 0) lines.push_back(Tr(language, "Next battle +", "下场战斗 +") + std::to_string(state.player.openingShieldBonus) + Tr(language, " opening shield.", " 初始护盾。"));
     const std::string form_name = state.player.form == 1 ? Tr(language, "Overload", "过载")
-                                  : state.player.form == 2 ? Tr(language, "Defense", "防御")
-                                                           : Tr(language, "Neutral", "中立");
+                                 : state.player.form == 2 ? Tr(language, "Defense", "防御")
+                                                          : Tr(language, "Neutral", "中立");
     lines.push_back(Tr(language, "Combat form: ", "战斗形态：") + form_name);
     lines.push_back(Tr(language, "Auxiliary ships: ", "附属舰数量：") + std::to_string(state.auxiliaryShips.size()));
+    if (has_origin) {
+        lines.push_back(Tr(language,
+                           "Origin: +2 energy each turn, deal +25% damage, take 25% less damage.",
+                           "起源：每回合 +2 能量，造成伤害 +25%，受到伤害 -25%。"));
+    }
     return lines;
 }
 
 std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const RunState& state) {
+    const bool has_origin = std::find(state.player.relics.begin(), state.player.relics.end(), "origin") !=
+                            state.player.relics.end();
     std::vector<std::string> lines = {
         Tr(language, "Energy ", "能量 ") + EnergyPips(state.player.energy, state.player.maxEnergy).substr(7),
         Tr(language, "Shield ", "护盾 ") + std::to_string(state.player.shield) + "   " + Tr(language, "Heat ", "热量 ") +
@@ -766,6 +775,11 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
     } else if (state.player.form == 2) {
         lines.push_back(Tr(language, "Defense release bonus is defined by cards when exiting the form",
                            "防御形态离开奖励由具体切换卡决定"));
+    }
+    if (has_origin) {
+        lines.push_back(Tr(language,
+                           "Origin: +2 energy each turn, deal +25% damage, take 25% less damage.",
+                           "起源：每回合 +2 能量，造成伤害 +25%，受到伤害 -25%。"));
     }
     if (!state.player.activeAbilities.empty()) {
         lines.push_back(Tr(language, "Active abilities:", "已启动能力："));

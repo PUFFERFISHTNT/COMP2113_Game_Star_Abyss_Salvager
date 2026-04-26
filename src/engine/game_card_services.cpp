@@ -249,7 +249,14 @@ std::vector<CardView> GameEngine::handCards() const {
     std::vector<CardView> result;
     for (const std::string& ref : state_.player.hand) {
         if (cardById(ref) != nullptr) {
-            result.push_back({canonicalCardRef(ref), resolvedCard(ref), cardUpgradeLevel(ref)});
+            CardDef card = resolvedCard(ref);
+            if (isTemporaryCopyRef(ref)) {
+                card.name = "[Copy] " + card.name;
+                if (!card.nameEn.empty()) {
+                    card.nameEn = "[Copy] " + card.nameEn;
+                }
+            }
+            result.push_back({ref, card, cardUpgradeLevel(ref)});
         }
     }
     return result;

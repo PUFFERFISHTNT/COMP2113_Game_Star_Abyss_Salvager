@@ -57,6 +57,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     }
 
     if (language == UiLanguage::English) {
+        if (StartsWith(text, "[复制品] ")) {
+            return "[Copy] " + TranslateGameText(language, text.substr(std::string("[复制品] ").size()));
+        }
         if (!text.empty() && text.back() == '+') {
             const size_t base_end = text.find_last_not_of('+');
             if (base_end != std::string::npos) {
@@ -76,6 +79,9 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
             }
         }
         return translated;
+    }
+    if (StartsWith(text, "[Copy] ")) {
+        return "[复制品] " + TranslateGameText(language, text.substr(7));
     }
 
     if (!text.empty() && text.back() == '+') {
@@ -276,6 +282,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Entropy Pulse", "熵脉冲"},
         {"Aegis Drum", "神盾鼓动"},
         {"Broadside", "侧舷齐射"},
+        {"Origin", "起源"},
         {"Missile Rain", "导弹雨"},
         {"Heat Surge", "热浪喷发"},
         {"Forge Cannon", "锻炉巨炮"},
@@ -686,13 +693,14 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Gain a rare relic, lose 8 HP.", "获得 1 件稀有遗物，失去 8 生命。"},
         {"+2 initial energy next battle, +5 heat.", "下一场战斗初始能量 +2，+5 热量。"},
         {"Gain 1 rare card.", "获得 1 张稀有卡牌。"},
-        {"+4 permanent opening shield.", "+4 永久初始护盾。"},
+        {"+4 permanent opening shield. Stacks with other opening shield effects.", "+4 永久初始护盾，可与其他开场护盾叠加。"},
         {"Reduce 10 heat, +10 HP.", "减少 10 热量，+10 生命。"},
         {"+8 heat.", "+8 热量。"},
         {"Costs 20 credits.", "花费 20 金币。"},
         {"Lose 9 HP.", "失去 9 生命。"},
         {"All cards permanently enhanced.", "所有卡牌永久增强。"},
-        {"Gain ultimate relic, lose 10 HP.", "获得终极遗物，失去 10 生命。"},
+        {"Gain Origin relic, lose 10 HP.", "获得遗物“起源”，失去 10 生命。"},
+        {"Gain +2 energy each turn. Deal +25% damage. Take 25% less damage.", "每回合获得 +2 能量。造成伤害 +25%。受到伤害 -25%。"},
     };
     for (const auto& item : kTranslations) {
         if (text == item.first) {
@@ -1356,14 +1364,14 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "Sneaked around the AI. -12 credits.") return "潜行绕过了 AI。-12 金币。";
     if (text == "Not enough credits to bypass.") return "金币不足，无法绕过。";
     if (text == "Listened to the truth. Gained a rare card.") return "聆听了真相。获得 1 张稀有卡牌。";
-    if (text == "Gained ship permissions. +4 permanent opening shield.") return "获取了飞船权限。+4 永久初始护盾。";
+    if (text == "Gained ship permissions. +4 permanent opening shield. Stacks with other opening shield effects.") return "获取了飞船权限。+4 永久初始护盾，可与其他开场护盾叠加。";
     if (text == "Drained core energy. -10 heat, +10 HP.") return "抽取了核心能量。-10 热量，+10 生命。";
     if (text == "Engines full. +8 heat.") return "引擎全力运转。+8 热量。";
     if (text == "Dumped supplies to brace. -20 credits.") return "丢弃物资加固。-20 金币。";
     if (text == "Not enough credits.") return "金币不足。";
     if (text == "Emergency dodge. -9 HP.") return "紧急闪避。-9 生命。";
     if (text == "Accepted the truth. All cards permanently enhanced.") return "接受了真相。所有卡牌永久增强。";
-    if (text == "Extracted the origin. Gained ultimate relic, -10 HP.") return "提取了起源。获得终极遗物，-10 生命。";
+    if (text == "Extracted the origin. Gained Origin relic, -10 HP.") return "提取了起源。获得遗物“起源”，-10 生命。";
     if (text == "The signal fades. Nothing to be done.") return "信号消散了。无能为力。";
     // Epilogues (Category A – Rescue & Exploration)
     if (text == "The distress signal fades into deep space. You don't know if you did the right thing.") return "求救信号渐渐消失在深空中。你不知道自己做的是否正确。";

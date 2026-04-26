@@ -1069,6 +1069,9 @@ void GameEngine::startPlayerTurn() {
     if (state_.firstTurnOfBattle && hasRelic("reactor_core")) {
         energy += 1;
     }
+    if (hasRelic("origin")) {
+        energy += 2;
+    }
     if (state_.firstTurnOfBattle && state_.player.openingEnergyBonus > 0) {
         energy += state_.player.openingEnergyBonus;
         log("Stored anomaly charge grants +" + std::to_string(state_.player.openingEnergyBonus) + " energy.");
@@ -1406,6 +1409,9 @@ void GameEngine::applyDamageToPlayer(int amount) {
     if (playerOverheatStage() >= 2 && remaining > 0) {
         remaining = (remaining * 5 + 3) / 4;
     }
+    if (hasRelic("origin") && remaining > 0) {
+        remaining = (remaining * 3) / 4;
+    }
     if (state_.player.shield > 0) {
         const int blocked = std::min(state_.player.shield, remaining);
         state_.player.shield -= blocked;
@@ -1423,6 +1429,9 @@ void GameEngine::applyDamageToPlayer(int amount) {
 void GameEngine::applyDamageToEnemy(int amount, bool ignoreShield, int hits) {
     for (int hit = 0; hit < hits; ++hit) {
         int remaining = amount;
+        if (hasRelic("origin") && remaining > 0) {
+            remaining = (remaining * 5 + 3) / 4;
+        }
         if (enemyOverheatStage() >= 2 && remaining > 0) {
             remaining = (remaining * 5 + 3) / 4;
         }
@@ -1614,7 +1623,8 @@ void GameEngine::summonAuxiliaryShips(const CardDef& card, const std::string& ba
 
     std::vector<AuxiliaryUnitRecipe> recipes;
     if (baseCardId == "df_16" || baseCardId == "df_28") {
-        std::vector<std::string> unit_ids(BasicAuxiliaryUnitIds().begin(), BasicAuxiliaryUnitIds().end());
+        const auto basic_unit_ids = BasicAuxiliaryUnitIds();
+        std::vector<std::string> unit_ids(basic_unit_ids.begin(), basic_unit_ids.end());
         ShuffleVector(unit_ids, rng_);
         const bool upgraded_tier = card.summonDroneAttack >= 4 || card.summonDroneShield >= 4;
         const int total = std::min<int>(static_cast<int>(unit_ids.size()), card.summonDroneCount + extraCopies);

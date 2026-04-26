@@ -113,6 +113,7 @@ void GameEngine::initializeData() {
         {"shield_matrix", "Shield Matrix", "Start each battle with 4 shield"},
         {"phase_resonator", "Phase Resonator", "The first time you change Form each battle, draw 1 card"},
         {"heat_regulator", "Heat Regulator", "Increase max heat by 2"},
+        {"origin", "Origin", "Gain +2 energy each turn. Deal +25% damage. Take 25% less damage."},
     };
 }
 
