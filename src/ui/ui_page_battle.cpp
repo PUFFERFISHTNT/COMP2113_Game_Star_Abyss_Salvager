@@ -41,6 +41,9 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
 std::string AuxiliaryShipSummary(UiLanguage language, const AuxiliaryShipState& ship) {
     std::string summary = Tr(language, "ATK ", "攻击 ") + std::to_string(ship.attack) + " / " +
                           Tr(language, "SHD ", "护盾 ") + std::to_string(ship.shield);
+    if (ship.heal > 0) {
+        summary += " / " + Tr(language, "REP ", "修复 ") + std::to_string(ship.heal);
+    }
     if (ship.remainingTurns > 0) {
         summary += "  " + Tr(language, "T ", "回合 ") + std::to_string(ship.remainingTurns);
     } else {
@@ -105,10 +108,11 @@ Element AuxiliaryShipPanel(UiLanguage language,
                            int selected_slot,
                            bool selection_pending) {
     Elements slots;
+    const int slot_count = std::max(4, 4 + state.player.auxSlotBonusThisBattle);
     if (slot_boxes != nullptr) {
-        slot_boxes->assign(4, {});
+        slot_boxes->assign(static_cast<size_t>(slot_count), {});
     }
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < slot_count; ++i) {
         const AuxiliaryShipState* ship =
             i < static_cast<int>(state.auxiliaryShips.size()) ? &state.auxiliaryShips[static_cast<size_t>(i)] : nullptr;
         const bool highlighted = selection_pending && selected_slot == i;
@@ -117,15 +121,16 @@ Element AuxiliaryShipPanel(UiLanguage language,
             slot = slot | reflect((*slot_boxes)[static_cast<size_t>(i)]);
         }
         slots.push_back(std::move(slot));
-        if (i < 3) {
+        if (i + 1 < slot_count) {
             slots.push_back(separator());
         }
     }
 
     return window(text(Tr(language, "Auxiliary Bay", "附属舰机库")) | color(kHull) | bold,
                   vbox({
-                      text(Tr(language, "Four support slots, newest summons replace the oldest when full.",
-                              "共 4 个支援位，满位时新召唤会替换最旧附属舰。")) |
+                      text(Tr(language, "Support slots: ", "支援位：") + std::to_string(slot_count) +
+                           Tr(language, ". Newest summons replace the oldest when full.",
+                              " 个。满位时新召唤会替换最旧附属舰。")) |
                           color(kDim),
                       separator(),
                       hbox(std::move(slots)),
@@ -150,8 +155,8 @@ Element StarAbyssApp::RenderBattle() const {
                 ? Tr(language_, "Wing Rotation: choose a target drone type with 1-4 or click below",
                      "机群轮转：按 1-4 或点击下方选择目标附属舰类型")
                 : aux_transform_pending
-                    ? Tr(language_, "Wing Rotation: choose an auxiliary ship with 1-4 or click a slot",
-                         "机群轮转：按 1-4 或点击槽位选择要转换的附属舰")
+                    ? Tr(language_, "Wing Rotation: choose an auxiliary ship with a number key or click a slot",
+                         "机群轮转：按数字键或点击槽位选择要转换的附属舰")
             : (Tr(language_, "Turn ", "回合 ") + std::to_string(std::max(1, state.battleTurn)) + "  |  " +
                Tr(language_, "Play cards, then press E to end turn", "出牌后按 E 结束回合"));
     Elements ship_lines = PlayerArt(state, ambientTick_);
@@ -354,8 +359,8 @@ Element StarAbyssApp::RenderBattle() const {
             : (aux_transform_pending
                    ? window(text(Tr(language_, "Wing Rotation", "机群轮转")) | color(kGold),
                             text(Tr(language_,
-                                    "Select an occupied auxiliary slot [1-4] to choose the ship that will be transformed.",
-                                    "选择一个已占用的附属舰槽位 [1-4]，决定要被转换的目标。")) |
+                                    "Select an occupied auxiliary slot by number or click to choose the ship that will be transformed.",
+                                    "按数字键或点击已占用的附属舰槽位，决定要被转换的目标。")) |
                                 color(Color::White)) |
                          bgcolor(kPanelAlt)
                    : text("")),

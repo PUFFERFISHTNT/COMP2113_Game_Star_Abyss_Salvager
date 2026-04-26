@@ -122,7 +122,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|22\n";
+    output << "VERSION|26\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -165,7 +165,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         output << "AUXUNIT|" << aux.unitId << "|" << aux.displayName << "|"
                << aux.attack << "|" << aux.shield << "|" << aux.remainingTurns << "|"
                << aux.endTurnDamage << "|" << aux.endTurnEnemyHeat << "|"
-               << aux.endTurnExtraOtherTriggers << "\n";
+               << aux.endTurnExtraOtherTriggers << "|" << aux.heal << "\n";
     }
 
     output << "RELICS|" << player.relics.size() << "\n";
@@ -232,14 +232,17 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << player.firstEnterOverloadDrawThisBattle << "|"
            << player.firstExitDefenseEnergyThisBattle << "|"
            << BoolToken(player.firstEnterOverloadDrawTriggeredThisBattle) << "|"
-           << BoolToken(player.firstExitDefenseEnergyTriggeredThisBattle) << "\n";
+           << BoolToken(player.firstExitDefenseEnergyTriggeredThisBattle) << "|"
+           << BoolToken(player.firstFormChangeRelicTriggeredThisBattle) << "\n";
     output << "COND4|" << player.auxEndTurnExtraTriggersThisTurn << "|"
            << player.auxEffectPercentBonusThisTurn << "|"
+           << player.auxSlotBonusThisBattle << "|"
            << player.overloadIncomingDamageReducePercentThisTurn << "|"
            << player.firstSummonExtraCopies << "|"
            << player.firstSummonExtraScope << "|"
            << BoolToken(player.firstSummonUsedThisBattle) << "|"
-           << BoolToken(player.firstSummonUsedThisTurn) << "\n";
+           << BoolToken(player.firstSummonUsedThisTurn) << "|"
+           << player.leaveDefenseShieldBonusThisTurn << "\n";
     output << "COND5|" << player.nextBattleFirstAttackMultiplier << "|"
            << player.nextBattleHeal << "|"
            << player.nextIncomingDamageFlatReductionThisTurn << "|"
@@ -438,6 +441,9 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             if (parts.size() >= 9) {
                 aux.endTurnExtraOtherTriggers = ToInt(parts[8], 0);
             }
+            if (parts.size() >= 10) {
+                aux.heal = ToInt(parts[9], 0);
+            }
             loaded.auxiliaryShips.push_back(aux);
         } else if (key == "RELIC" && parts.size() >= 2) {
             loaded.player.relics.push_back(parts[1]);
@@ -511,14 +517,29 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.player.firstExitDefenseEnergyThisBattle = ToInt(parts[5], 0);
             loaded.player.firstEnterOverloadDrawTriggeredThisBattle = parts[6] == "1";
             loaded.player.firstExitDefenseEnergyTriggeredThisBattle = parts[7] == "1";
+            if (parts.size() >= 9) {
+                loaded.player.firstFormChangeRelicTriggeredThisBattle = parts[8] == "1";
+            }
         } else if (key == "COND4" && parts.size() >= 8) {
             loaded.player.auxEndTurnExtraTriggersThisTurn = ToInt(parts[1], 0);
             loaded.player.auxEffectPercentBonusThisTurn = ToInt(parts[2], 0);
-            loaded.player.overloadIncomingDamageReducePercentThisTurn = ToInt(parts[3], 0);
-            loaded.player.firstSummonExtraCopies = ToInt(parts[4], 0);
-            loaded.player.firstSummonExtraScope = ToInt(parts[5], 0);
-            loaded.player.firstSummonUsedThisBattle = parts[6] == "1";
-            loaded.player.firstSummonUsedThisTurn = parts[7] == "1";
+            if (parts.size() >= 9) {
+                loaded.player.auxSlotBonusThisBattle = ToInt(parts[3], 0);
+                loaded.player.overloadIncomingDamageReducePercentThisTurn = ToInt(parts[4], 0);
+                loaded.player.firstSummonExtraCopies = ToInt(parts[5], 0);
+                loaded.player.firstSummonExtraScope = ToInt(parts[6], 0);
+                loaded.player.firstSummonUsedThisBattle = parts[7] == "1";
+                loaded.player.firstSummonUsedThisTurn = parts[8] == "1";
+                if (parts.size() >= 10) {
+                    loaded.player.leaveDefenseShieldBonusThisTurn = ToInt(parts[9], 0);
+                }
+            } else {
+                loaded.player.overloadIncomingDamageReducePercentThisTurn = ToInt(parts[3], 0);
+                loaded.player.firstSummonExtraCopies = ToInt(parts[4], 0);
+                loaded.player.firstSummonExtraScope = ToInt(parts[5], 0);
+                loaded.player.firstSummonUsedThisBattle = parts[6] == "1";
+                loaded.player.firstSummonUsedThisTurn = parts[7] == "1";
+            }
         } else if (key == "COND5" && parts.size() >= 11) {
             loaded.player.nextBattleFirstAttackMultiplier = ToInt(parts[1], 1);
             loaded.player.nextBattleHeal = ToInt(parts[2], 0);
@@ -667,10 +688,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.firstExitDefenseEnergyThisBattle = std::max(0, loaded.player.firstExitDefenseEnergyThisBattle);
     loaded.player.auxEndTurnExtraTriggersThisTurn = std::max(0, loaded.player.auxEndTurnExtraTriggersThisTurn);
     loaded.player.auxEffectPercentBonusThisTurn = std::max(0, loaded.player.auxEffectPercentBonusThisTurn);
+    loaded.player.auxSlotBonusThisBattle = std::max(0, loaded.player.auxSlotBonusThisBattle);
     loaded.player.overloadIncomingDamageReducePercentThisTurn =
         std::max(0, std::min(100, loaded.player.overloadIncomingDamageReducePercentThisTurn));
     loaded.player.firstSummonExtraCopies = std::max(0, loaded.player.firstSummonExtraCopies);
     loaded.player.firstSummonExtraScope = std::max(0, loaded.player.firstSummonExtraScope);
+    loaded.player.leaveDefenseShieldBonusThisTurn = std::max(0, loaded.player.leaveDefenseShieldBonusThisTurn);
     loaded.player.auxTransformRemainingSelections = std::max(0, loaded.player.auxTransformRemainingSelections);
     if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
         loaded.player.overheatRounds = 0;
@@ -702,6 +725,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     for (AuxiliaryShipState& aux : loaded.auxiliaryShips) {
         aux.attack = std::max(0, aux.attack);
         aux.shield = std::max(0, aux.shield);
+        aux.heal = std::max(0, aux.heal);
+        if (aux.unitId == "aux_repair" && aux.heal == 0 && aux.shield > 0) {
+            aux.heal = aux.shield;
+            aux.shield = 0;
+        }
         aux.endTurnDamage = std::max(0, aux.endTurnDamage);
         aux.endTurnEnemyHeat = std::max(0, aux.endTurnEnemyHeat);
         aux.endTurnExtraOtherTriggers = std::max(0, aux.endTurnExtraOtherTriggers);

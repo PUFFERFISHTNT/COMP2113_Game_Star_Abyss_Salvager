@@ -299,13 +299,15 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
     if (card.salvageBonus > 0) clauses.push_back(Tr(language, "If you win this battle, gain +", "若本场战斗获胜，额外获得 +") +
                                                  std::to_string(card.salvageBonus) + Tr(language, " credits", " 金币"));
     if (card.summonDroneCount > 0) {
+        const bool repair_drone = card.name.find("维修") != std::string::npos ||
+                                  card.nameEn.find("Repair") != std::string::npos;
         std::string clause = Tr(language, "Deploy ", "部署 ") + std::to_string(card.summonDroneCount) +
                              Tr(language, " auxiliary drone(s)", " 架附属舰");
         if (card.summonDroneAttack > 0 || card.summonDroneShield > 0) {
-            clause += Tr(language, " (", "（") +
-                      Tr(language, "ATK ", "攻击 ") + std::to_string(card.summonDroneAttack) + ", " +
-                      Tr(language, "SHD ", "护盾 ") + std::to_string(card.summonDroneShield) +
-                      Tr(language, " each)", "）");
+            clause += Tr(language, " (", "（") + Tr(language, "ATK ", "攻击 ") +
+                      std::to_string(card.summonDroneAttack) + ", ";
+            clause += repair_drone ? Tr(language, "REP ", "修复 ") : Tr(language, "SHD ", "护盾 ");
+            clause += std::to_string(card.summonDroneShield) + Tr(language, " each)", "）");
         }
         if (card.summonDroneDuration > 0) {
             clause += Tr(language, ", duration ", "，持续 ") + std::to_string(card.summonDroneDuration) +
@@ -329,6 +331,9 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
     if (card.auxEffectPercentBonus > 0) {
         clauses.push_back(Tr(language, "Auxiliary effect output +", "附属舰效果提升 +") +
                           std::to_string(card.auxEffectPercentBonus) + "%");
+    }
+    if (card.auxSlotBonus > 0) {
+        clauses.push_back(Tr(language, "Auxiliary slots +", "附属舰槽位 +") + std::to_string(card.auxSlotBonus));
     }
     if (card.auxDestroyCount > 0) {
         clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
@@ -607,8 +612,11 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     if (card.salvageBonus > 0) facts.push_back(Tr(language, "Battle credits +", "战斗金币 +") + std::to_string(card.salvageBonus));
     if (card.summonDroneCount > 0) facts.push_back(Tr(language, "Summon drones x", "部署附属舰 x") + std::to_string(card.summonDroneCount));
     if (card.summonDroneAttack != 0 || card.summonDroneShield != 0) {
-        facts.push_back(Tr(language, "Drone stats A/S ", "附属舰攻防 ") + std::to_string(card.summonDroneAttack) +
-                        "/" + std::to_string(card.summonDroneShield));
+        const bool repair_drone = card.name.find("维修") != std::string::npos ||
+                                  card.nameEn.find("Repair") != std::string::npos;
+        facts.push_back((repair_drone ? Tr(language, "Drone stats A/R ", "附属舰攻修 ")
+                                      : Tr(language, "Drone stats A/S ", "附属舰攻防 ")) +
+                        std::to_string(card.summonDroneAttack) + "/" + std::to_string(card.summonDroneShield));
     }
     if (card.summonDroneDuration > 0) facts.push_back(Tr(language, "Drone duration ", "附属舰持续 ") + std::to_string(card.summonDroneDuration));
     if (card.buffDroneAttack != 0 || card.buffDroneShield != 0) {
@@ -623,6 +631,9 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     }
     if (card.auxEffectPercentBonus > 0) {
         facts.push_back(Tr(language, "Aux effect +", "附属舰效果 +") + std::to_string(card.auxEffectPercentBonus) + "%");
+    }
+    if (card.auxSlotBonus > 0) {
+        facts.push_back(Tr(language, "Aux slots +", "附属舰槽位 +") + std::to_string(card.auxSlotBonus));
     }
     if (card.auxDestroyCount > 0) {
         facts.push_back(Tr(language, "Dismantle x", "拆解数量 x") + std::to_string(card.auxDestroyCount));

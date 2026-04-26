@@ -101,7 +101,7 @@ void GameEngine::initializeData() {
     ships_ = {
         {"vanguard", "Vanguard", 50, 3, 10, {"vg_02", "vg_04"}, {"reactor_core"}},
         {"drift_fox", "Drift Fox", 47, 3, 10, {"df_01", "df_05"}, {}},
-        {"iron_bastion", "Iron Bastion", 58, 3, 10, {"ib_01", "ib_02"}, {"shield_matrix"}},
+        {"iron_bastion", "Iron Bastion", 58, 3, 10, {"ib_01", "ib_02", "ib_32"}, {"shield_matrix", "phase_resonator"}},
     };
 
     relicPool_ = {
@@ -111,6 +111,7 @@ void GameEngine::initializeData() {
         {"emergency_battery", "Emergency Battery", "Survive one fatal hit with 1 HP once per run"},
         {"reinforced_hull", "Reinforced Hull", "Increase max HP by 8"},
         {"shield_matrix", "Shield Matrix", "Start each battle with 4 shield"},
+        {"phase_resonator", "Phase Resonator", "The first time you change Form each battle, draw 1 card"},
         {"heat_regulator", "Heat Regulator", "Increase max heat by 2"},
     };
 }

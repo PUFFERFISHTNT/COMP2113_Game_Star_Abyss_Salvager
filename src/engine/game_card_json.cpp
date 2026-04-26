@@ -481,6 +481,7 @@ bool ParseCardList(const JsonValue& root,
         card.auxImmediateTriggerTimes = GetIntField(object, "auxImmediateTriggerTimes", card.auxImmediateTriggerTimes);
         card.auxEndTurnExtraTriggerTimes = GetIntField(object, "auxEndTurnExtraTriggerTimes", card.auxEndTurnExtraTriggerTimes);
         card.auxEffectPercentBonus = GetIntField(object, "auxEffectPercentBonus", card.auxEffectPercentBonus);
+        card.auxSlotBonus = GetIntField(object, "auxSlotBonus", card.auxSlotBonus);
         card.auxDestroyCount = GetIntField(object, "auxDestroyCount", card.auxDestroyCount);
         card.auxDestroyRewardMultiplierPercent =
             GetIntField(object, "auxDestroyRewardMultiplierPercent", card.auxDestroyRewardMultiplierPercent);

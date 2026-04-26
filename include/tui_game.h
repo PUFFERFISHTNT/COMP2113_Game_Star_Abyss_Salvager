@@ -69,6 +69,7 @@ struct CardDef {
     int auxImmediateTriggerTimes = 0;
     int auxEndTurnExtraTriggerTimes = 0;
     int auxEffectPercentBonus = 0;
+    int auxSlotBonus = 0;
     int auxDestroyCount = 0;
     int auxDestroyRewardMultiplierPercent = 0;
     int firstSummonExtraCopies = 0;
@@ -190,6 +191,7 @@ struct PlayerState {
     int form = 0;
     int auxEndTurnExtraTriggersThisTurn = 0;
     int auxEffectPercentBonusThisTurn = 0;
+    int auxSlotBonusThisBattle = 0;
     int overloadIncomingDamageReducePercentThisTurn = 0;
     int firstSummonExtraCopies = 0;
     int firstSummonExtraScope = 0;
@@ -222,12 +224,14 @@ struct PlayerState {
     int exitDefenseEnergyThisBattle = 0;
     int firstEnterOverloadDrawThisBattle = 0;
     int firstExitDefenseEnergyThisBattle = 0;
+    int leaveDefenseShieldBonusThisTurn = 0;
     bool firstSummonUsedThisBattle = false;
     bool firstSummonUsedThisTurn = false;
     bool firstEnterHighHeatTriggeredThisBattle = false;
     bool firstEnterOverloadDrawTriggeredThisBattle = false;
     bool firstExitDefenseEnergyTriggeredThisBattle = false;
     bool firstSummonEnemyHeatTriggeredThisTurn = false;
+    bool firstFormChangeRelicTriggeredThisBattle = false;
     bool enteredOverloadThisTurn = false;
     bool exitedDefenseThisTurn = false;
     bool exitedFormThisTurn = false;
@@ -254,6 +258,7 @@ struct AuxiliaryShipState {
     std::string displayName;
     int attack = 0;
     int shield = 0;
+    int heal = 0;
     int remainingTurns = 0;
     int endTurnDamage = 0;
     int endTurnEnemyHeat = 0;
@@ -506,6 +511,7 @@ private:
     void triggerAuxiliaryShipsNow(int times);
     void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
     bool resolveBlackboxProtocol(size_t handIndex);
+    void resolveFirstFormChangeRelic();
     void beginAuxiliaryTransformSelection(const CardDef& card, int transformCount);
     bool resolveAuxiliaryTransformSelection(size_t index);
     bool resolveAuxiliaryTransformTargetSelection(size_t index);
@@ -544,6 +550,7 @@ private:
                         int duration);
 
     std::vector<std::string> randomCardChoices(size_t count);
+    std::vector<std::string> randomBattleCardChoices(size_t count, const std::string& nodeType);
     std::vector<std::string> randomMarketCardChoices(size_t count);
     std::string randomRelic();
     const EnemyTemplate& pickEnemy(const std::string& nodeType, const std::string& forcedEnemyId = "");
