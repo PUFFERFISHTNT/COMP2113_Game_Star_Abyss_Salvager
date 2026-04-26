@@ -145,12 +145,20 @@ void GameEngine::resolveEncounter(size_t index) {
 
         state_.player.scrap -= price;
         if (payload.rfind("card:", 0) == 0) {
-            queueOwnedCardToDiscard(payload.substr(5));
+            const std::string card_id = payload.substr(5);
+            queueOwnedCardToDiscard(card_id);
+            const auto offer_it = std::find(state_.marketOfferCardIds.begin(),
+                                            state_.marketOfferCardIds.end(),
+                                            card_id);
+            if (offer_it != state_.marketOfferCardIds.end()) {
+                state_.marketOfferCardIds.erase(offer_it);
+            }
             state_.statusLine = "Module purchased and queued into your discard pile.";
+            openMarketShop();
         } else {
             state_.statusLine = "The broker closes the channel.";
+            finishCurrentNode();
         }
-        finishCurrentNode();
         return;
     }
 
