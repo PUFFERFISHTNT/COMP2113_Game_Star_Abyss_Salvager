@@ -57,6 +57,7 @@ Element StarAbyssApp::RenderReward() const {
         const std::string description_text =
             card != nullptr ? CardDescriptionText(language_, *card) : TranslateGameText(language_, "Unavailable");
         const Color frame_color = CardFrameColor(card);
+        const int text_width = std::max(12, card_width - 4);
         Element card_panel = vbox({
                                  text(std::to_string(i + 1) + ". " +
                                       (card != nullptr ? (Tr(language_, "[Card Reward] ", "[卡牌奖励] ") + rewardLabels_[i]) : rewardLabels_[i])) |
@@ -70,8 +71,8 @@ Element StarAbyssApp::RenderReward() const {
                                           : Tr(language_, "No card offered in this slot.", "这个槽位没有可选卡牌。")) |
                                      color(card != nullptr ? kHull : kDim),
                                  separator(),
-                                 paragraph(description_text) | color(Color::White),
-                                 paragraph(fact_text) | color(kDim),
+                                 WrappedParagraph(description_text, text_width) | color(Color::White),
+                                 WrappedParagraph(fact_text, text_width) | color(kDim),
                              }) |
                              bgcolor(kPanel) |
                              borderStyled(ROUNDED, frame_color) |

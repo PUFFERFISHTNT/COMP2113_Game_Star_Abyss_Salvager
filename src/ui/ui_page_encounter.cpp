@@ -228,7 +228,7 @@ Element StarAbyssApp::RenderEncounter() const {
             if (base_card != nullptr) {
                 body.push_back(separator());
                 body.push_back(text(Tr(language_, "Target card: ", "目标卡牌：") + TranslateGameText(language_, card.name)) | color(kEnemy));
-                body.push_back(paragraph(CardDescriptionText(language_, card)) | color(kDim));
+                body.push_back(WrappedParagraph(CardDescriptionText(language_, card), 44) | color(kDim));
                 if (is_upgrade_screen) {
                     const std::string preview_ref = MakeCardRef(BaseCardRef(service_card_ref), CardRefUpgradeLevel(service_card_ref) + 1);
                     const CardDef preview = engine_.resolvedCard(preview_ref);
@@ -236,7 +236,7 @@ Element StarAbyssApp::RenderEncounter() const {
                     if (!deltas.empty()) {
                         body.push_back(separator());
                         body.push_back(text(Tr(language_, "Upgrade after:", "升级后效果：")) | color(kGold));
-                        body.push_back(paragraph(CardDescriptionText(language_, preview)) | color(Color::White));
+                        body.push_back(WrappedParagraph(CardDescriptionText(language_, preview), 44) | color(Color::White));
                         for (const std::string& line : deltas) {
                             body.push_back(text("+ " + line) | color(kGold));
                         }
@@ -383,7 +383,7 @@ Element StarAbyssApp::RenderEncounter() const {
         const std::string service_action_payload =
             state.encounter.encounterId == "market_upgrade" ? "service_back_market" : "service_skip_service";
         const size_t service_action_choice_index = FindServiceActionChoiceIndex(state, service_action_payload);
-        if (!options.empty() && service_action_choice_index < state.encounter.choices.size()) {
+        if (service_action_choice_index < state.encounter.choices.size()) {
             serviceActionVisible_ = true;
             serviceActionChoiceIndex_ = service_action_choice_index;
             const bool market_upgrade_screen = state.encounter.encounterId == "market_upgrade";

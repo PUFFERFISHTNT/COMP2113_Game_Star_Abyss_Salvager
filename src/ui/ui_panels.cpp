@@ -517,6 +517,7 @@ Element ServiceDeckCardPanel(UiLanguage language,
     std::vector<std::string> facts = CardFacts(language, card);
     facts.insert(facts.begin(), Tr(language, "Copies x", "持有数量 x") + std::to_string(std::max(1, entry.copies)));
     const std::string fact_text = CompactFactText(language, facts);
+    const int text_width = std::max(12, card_width - 4);
 
     const Color accent = focused_target ? Color::RGB(255, 245, 160)
                                         : (selectable ? (purge_mode ? kEnemy : kGold) : CardAccent(&card));
@@ -548,20 +549,21 @@ Element ServiceDeckCardPanel(UiLanguage language,
              Tr(language, "Type: ", "类型：") + TranslateGameText(language, card.type)) |
             color(meta_color),
         separator(),
-        paragraph(CardDescriptionText(language, card)) | color(Color::White),
-        paragraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
-                                    : fact_text) |
+        WrappedParagraph(CardDescriptionText(language, card), text_width) | color(Color::White),
+        WrappedParagraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
+                                           : fact_text,
+                         text_width) |
             color(selectable ? kDim : Color::RGB(117, 126, 142)),
     };
 
     if (upgrade_preview != nullptr) {
         body.push_back(separator());
         body.push_back(text(Tr(language, "Upgrade after:", "升级后效果：")) | color(Color::RGB(255, 210, 120)) | bold);
-        body.push_back(paragraph(CardDescriptionText(language, *upgrade_preview)) | color(Color::White));
+        body.push_back(WrappedParagraph(CardDescriptionText(language, *upgrade_preview), text_width) | color(Color::White));
         const std::string current_facts = CompactFactText(language, CardFacts(language, card));
         const std::string upgraded_facts = CompactFactText(language, CardFacts(language, *upgrade_preview));
         if (upgraded_facts != current_facts && !upgraded_facts.empty()) {
-            body.push_back(paragraph(upgraded_facts) | color(kGold));
+            body.push_back(WrappedParagraph(upgraded_facts, text_width) | color(kGold));
         }
     }
 

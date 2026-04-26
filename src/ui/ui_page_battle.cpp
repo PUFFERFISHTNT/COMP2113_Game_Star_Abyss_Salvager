@@ -176,6 +176,7 @@ Element StarAbyssApp::RenderBattle() const {
     const size_t visible_slots = std::max<size_t>(5, std::min(hand.size(), battleCardButtons_.size()));
     const int cards_per_row = BattleCardsPerRow(terminal_width, visible_slots);
     const int card_width = BattleCardWidth(terminal_width, cards_per_row);
+    const int card_text_width = std::max(12, card_width - 4);
     Elements card_rows;
     Elements current_row;
     for (size_t i = 0; i < visible_slots; ++i) {
@@ -202,8 +203,8 @@ Element StarAbyssApp::RenderBattle() const {
                                     color(card != nullptr ? (playable ? kHull : kDim) : kDim),
                             }),
                             separator(),
-                            paragraph(description_text) | color(card != nullptr ? Color::White : kDim),
-                            paragraph(fact_text) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
+                            WrappedParagraph(description_text, card_text_width) | color(card != nullptr ? Color::White : kDim),
+                            WrappedParagraph(fact_text, card_text_width) | color(card != nullptr ? kDim : Color::RGB(84, 93, 112)),
                         }) |
                         bgcolor(CardBackground(card, playable)) |
                         borderStyled(ROUNDED, frame_color) |
@@ -245,8 +246,10 @@ Element StarAbyssApp::RenderBattle() const {
                     text(Tr(language_, "Cost ", "费用 ") + std::to_string(card.cost) + "   " +
                          Tr(language_, "Type: ", "类型：") + TranslateGameText(language_, card.type)) |
                         color(kHull),
-                    paragraph(CardDescriptionText(language_, card)) | color(Color::White),
-                    paragraph(fact_text.empty() ? Tr(language_, "No additional card facts.", "没有额外卡牌信息。") : fact_text) | color(kDim),
+                    WrappedParagraph(CardDescriptionText(language_, card), std::max(16, terminal_width - 12)) | color(Color::White),
+                    WrappedParagraph(fact_text.empty() ? Tr(language_, "No additional card facts.", "没有额外卡牌信息。") : fact_text,
+                                     std::max(16, terminal_width - 12)) |
+                        color(kDim),
                 }) |
                 borderStyled(ROUNDED, CardFrameColor(&card)) |
                 bgcolor(CardBackground(&card, true)));

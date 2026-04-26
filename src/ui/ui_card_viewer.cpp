@@ -50,6 +50,7 @@ Element CardViewerEntryPanel(UiLanguage language,
     const Color background = obtained ? CardBackground(&card, true) : Color::RGB(10, 17, 31);
     const Color meta_color = obtained ? kHull : Color::RGB(120, 133, 154);
     const Color fact_color = obtained ? kDim : Color::RGB(117, 126, 142);
+    const int text_width = std::max(12, card_width - 4);
 
     return vbox({
                text(TranslateGameText(language, card.name) +
@@ -63,10 +64,11 @@ Element CardViewerEntryPanel(UiLanguage language,
                     Tr(language, "Type: ", "类型：") + TranslateGameText(language, card.type)) |
                    color(meta_color),
                separator(),
-               paragraph(CardDescriptionText(language, card)) |
+               WrappedParagraph(CardDescriptionText(language, card), text_width) |
                    color(obtained ? Color::White : Color::RGB(170, 178, 194)),
-               paragraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
-                                           : fact_text) |
+               WrappedParagraph(fact_text.empty() ? Tr(language, "No additional card facts.", "没有额外卡牌信息。")
+                                                  : fact_text,
+                                text_width) |
                    color(fact_color),
            }) |
            bgcolor(background) |
