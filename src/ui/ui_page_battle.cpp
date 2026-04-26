@@ -106,7 +106,7 @@ Element AuxiliaryShipPanel(UiLanguage language,
                            bool selection_pending) {
     Elements slots;
     if (slot_boxes != nullptr) {
-        slot_boxes->clear();
+        slot_boxes->assign(4, {});
     }
     for (int i = 0; i < 4; ++i) {
         const AuxiliaryShipState* ship =
@@ -114,8 +114,7 @@ Element AuxiliaryShipPanel(UiLanguage language,
         const bool highlighted = selection_pending && selected_slot == i;
         Element slot = AuxiliaryShipSlot(language, i, ship, highlighted) | flex;
         if (slot_boxes != nullptr) {
-            slot_boxes->push_back({});
-            slot = slot | reflect(slot_boxes->back());
+            slot = slot | reflect((*slot_boxes)[static_cast<size_t>(i)]);
         }
         slots.push_back(std::move(slot));
         if (i < 3) {
