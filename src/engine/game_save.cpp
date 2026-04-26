@@ -122,7 +122,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|21\n";
+    output << "VERSION|22\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -163,7 +163,9 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     output << "AUX|" << state_.auxiliaryShips.size() << "\n";
     for (const AuxiliaryShipState& aux : state_.auxiliaryShips) {
         output << "AUXUNIT|" << aux.unitId << "|" << aux.displayName << "|"
-               << aux.attack << "|" << aux.shield << "|" << aux.remainingTurns << "\n";
+               << aux.attack << "|" << aux.shield << "|" << aux.remainingTurns << "|"
+               << aux.endTurnDamage << "|" << aux.endTurnEnemyHeat << "|"
+               << aux.endTurnExtraOtherTriggers << "\n";
     }
 
     output << "RELICS|" << player.relics.size() << "\n";
@@ -238,6 +240,16 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << player.firstSummonExtraScope << "|"
            << BoolToken(player.firstSummonUsedThisBattle) << "|"
            << BoolToken(player.firstSummonUsedThisTurn) << "\n";
+    output << "COND5|" << player.nextBattleFirstAttackMultiplier << "|"
+           << player.nextBattleHeal << "|"
+           << player.nextIncomingDamageFlatReductionThisTurn << "|"
+           << player.nextAttackPreMultiplierBonusPercentThisTurn << "|"
+           << BoolToken(player.firstCardCostZeroPendingNextTurn) << "|"
+           << BoolToken(player.firstCardCostZeroThisTurn) << "|"
+           << BoolToken(player.auxTransformSelectionPending) << "|"
+           << BoolToken(player.auxTransformTargetChoicePending) << "|"
+           << player.auxTransformRemainingSelections << "|"
+           << player.auxTransformSelectedShipIndex << "\n";
 
     const EnemyState& enemy = state_.enemy;
     output << "ENEMY|" << enemy.enemyId << "|" << enemy.name << "|" << enemy.behavior << "|"
@@ -417,6 +429,15 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             aux.attack = ToInt(parts[3], 0);
             aux.shield = ToInt(parts[4], 0);
             aux.remainingTurns = ToInt(parts[5], -1);
+            if (parts.size() >= 7) {
+                aux.endTurnDamage = ToInt(parts[6], 0);
+            }
+            if (parts.size() >= 8) {
+                aux.endTurnEnemyHeat = ToInt(parts[7], 0);
+            }
+            if (parts.size() >= 9) {
+                aux.endTurnExtraOtherTriggers = ToInt(parts[8], 0);
+            }
             loaded.auxiliaryShips.push_back(aux);
         } else if (key == "RELIC" && parts.size() >= 2) {
             loaded.player.relics.push_back(parts[1]);
@@ -498,6 +519,17 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.player.firstSummonExtraScope = ToInt(parts[5], 0);
             loaded.player.firstSummonUsedThisBattle = parts[6] == "1";
             loaded.player.firstSummonUsedThisTurn = parts[7] == "1";
+        } else if (key == "COND5" && parts.size() >= 11) {
+            loaded.player.nextBattleFirstAttackMultiplier = ToInt(parts[1], 1);
+            loaded.player.nextBattleHeal = ToInt(parts[2], 0);
+            loaded.player.nextIncomingDamageFlatReductionThisTurn = ToInt(parts[3], 0);
+            loaded.player.nextAttackPreMultiplierBonusPercentThisTurn = ToInt(parts[4], 0);
+            loaded.player.firstCardCostZeroPendingNextTurn = parts[5] == "1";
+            loaded.player.firstCardCostZeroThisTurn = parts[6] == "1";
+            loaded.player.auxTransformSelectionPending = parts[7] == "1";
+            loaded.player.auxTransformTargetChoicePending = parts[8] == "1";
+            loaded.player.auxTransformRemainingSelections = ToInt(parts[9], 0);
+            loaded.player.auxTransformSelectedShipIndex = ToInt(parts[10], -1);
         } else if (key == "CARD" && activePile != nullptr) {
             const std::string card_ref = ValueAfterKey(line, "CARD|");
             if (!card_ref.empty()) {
@@ -592,6 +624,12 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.player.heat = std::max(0, std::min(loaded.player.heat, loaded.player.maxHeat));
     loaded.player.shield = std::max(0, loaded.player.shield);
     loaded.player.nextAttackMultiplier = std::max(1, loaded.player.nextAttackMultiplier);
+    loaded.player.nextBattleFirstAttackMultiplier = std::max(1, loaded.player.nextBattleFirstAttackMultiplier);
+    loaded.player.nextBattleHeal = std::max(0, loaded.player.nextBattleHeal);
+    loaded.player.nextIncomingDamageFlatReductionThisTurn =
+        std::max(0, loaded.player.nextIncomingDamageFlatReductionThisTurn);
+    loaded.player.nextAttackPreMultiplierBonusPercentThisTurn =
+        std::max(0, loaded.player.nextAttackPreMultiplierBonusPercentThisTurn);
     loaded.player.overheatRounds = std::max(0, std::min(loaded.player.overheatRounds, 3));
     loaded.player.form = std::max(0, std::min(2, loaded.player.form));
     loaded.player.blackboxCopyCount = std::max(0, loaded.player.blackboxCopyCount);
@@ -633,10 +671,20 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
         std::max(0, std::min(100, loaded.player.overloadIncomingDamageReducePercentThisTurn));
     loaded.player.firstSummonExtraCopies = std::max(0, loaded.player.firstSummonExtraCopies);
     loaded.player.firstSummonExtraScope = std::max(0, loaded.player.firstSummonExtraScope);
+    loaded.player.auxTransformRemainingSelections = std::max(0, loaded.player.auxTransformRemainingSelections);
     if (loaded.page != AppPage::Battle || loaded.player.heat < loaded.player.maxHeat) {
         loaded.player.overheatRounds = 0;
     } else if (loaded.player.overheatRounds == 0) {
         loaded.player.overheatRounds = 1;
+    }
+    if (loaded.page != AppPage::Battle) {
+        loaded.player.nextIncomingDamageFlatReductionThisTurn = 0;
+        loaded.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
+        loaded.player.firstCardCostZeroThisTurn = false;
+        loaded.player.auxTransformSelectionPending = false;
+        loaded.player.auxTransformTargetChoicePending = false;
+        loaded.player.auxTransformRemainingSelections = 0;
+        loaded.player.auxTransformSelectedShipIndex = -1;
     }
     loaded.enemy.hp = std::max(0, std::min(loaded.enemy.hp, loaded.enemy.maxHp));
     loaded.enemy.shield = std::max(0, loaded.enemy.shield);
@@ -654,6 +702,9 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     for (AuxiliaryShipState& aux : loaded.auxiliaryShips) {
         aux.attack = std::max(0, aux.attack);
         aux.shield = std::max(0, aux.shield);
+        aux.endTurnDamage = std::max(0, aux.endTurnDamage);
+        aux.endTurnEnemyHeat = std::max(0, aux.endTurnEnemyHeat);
+        aux.endTurnExtraOtherTriggers = std::max(0, aux.endTurnExtraOtherTriggers);
         if (aux.remainingTurns == 0) {
             aux.remainingTurns = -1;
         }
@@ -707,6 +758,19 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             *error = "Save file references an unknown blackbox imprint card.";
         }
         return false;
+    }
+    if (loaded.player.auxTransformSelectedShipIndex < -1 ||
+        loaded.player.auxTransformSelectedShipIndex >= static_cast<int>(loaded.auxiliaryShips.size())) {
+        loaded.player.auxTransformSelectedShipIndex = -1;
+    }
+    if (!loaded.player.auxTransformSelectionPending) {
+        loaded.player.auxTransformTargetChoicePending = false;
+        loaded.player.auxTransformRemainingSelections = 0;
+        loaded.player.auxTransformSelectedShipIndex = -1;
+    } else if (loaded.player.auxTransformRemainingSelections == 0) {
+        loaded.player.auxTransformSelectionPending = false;
+        loaded.player.auxTransformTargetChoicePending = false;
+        loaded.player.auxTransformSelectedShipIndex = -1;
     }
     if (!loaded.enemy.enemyId.empty() && enemyTemplateById(loaded.enemy.enemyId) == nullptr) {
         if (error != nullptr) {

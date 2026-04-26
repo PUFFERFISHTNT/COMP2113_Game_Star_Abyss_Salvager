@@ -178,9 +178,13 @@ struct PlayerState {
     int scrap = 0;
     int nextTurnEnergy = 0;
     int nextTurnDraw = 0;
+    int nextBattleFirstAttackMultiplier = 1;
+    int nextBattleHeal = 0;
     int openingEnergyBonus = 0;
     int openingShieldBonus = 0;
     int nextAttackMultiplier = 1;
+    int nextIncomingDamageFlatReductionThisTurn = 0;
+    int nextAttackPreMultiplierBonusPercentThisTurn = 0;
     int salvageBonus = 0;
     int attacksPlayedThisTurn = 0;
     int form = 0;
@@ -227,9 +231,15 @@ struct PlayerState {
     bool enteredOverloadThisTurn = false;
     bool exitedDefenseThisTurn = false;
     bool exitedFormThisTurn = false;
+    bool firstCardCostZeroPendingNextTurn = false;
+    bool firstCardCostZeroThisTurn = false;
     bool blackboxSelectionPending = false;
     int pendingBlackboxCopyCount = 0;
     std::string blackboxImprintRef;
+    bool auxTransformSelectionPending = false;
+    bool auxTransformTargetChoicePending = false;
+    int auxTransformRemainingSelections = 0;
+    int auxTransformSelectedShipIndex = -1;
     bool emergencyBatteryUsed = false;
     std::vector<std::string> relics;
     std::vector<std::string> drawPile;
@@ -245,6 +255,9 @@ struct AuxiliaryShipState {
     int attack = 0;
     int shield = 0;
     int remainingTurns = 0;
+    int endTurnDamage = 0;
+    int endTurnEnemyHeat = 0;
+    int endTurnExtraOtherTriggers = 0;
 };
 
 struct EnemyState {
@@ -339,11 +352,19 @@ public:
     std::vector<CardView> handCards() const;
     std::vector<CardView> drawPileCards() const;
     std::vector<CardView> discardPileCards() const;
+    std::vector<std::string> randomCardChoicesByRarity(size_t count, CardRarity rarity);
     std::vector<CardOwnershipEntry> ownedCards() const;
     std::vector<CardView> ownedCardInstances() const;
     std::vector<CardLibraryEntry> allCardLibraryEntries() const;
     size_t obtainedCardCount() const;
     size_t totalCardCount() const;
+    bool auxiliaryTransformSelectionPending() const;
+    bool auxiliaryTransformTargetChoicePending() const;
+    int auxiliaryTransformSelectedShipIndex() const;
+    int auxiliaryTransformRemainingSelections() const;
+    std::vector<std::string> auxiliaryTransformTargetUnitIds() const;
+    bool selectAuxiliaryTransformShip(size_t index);
+    bool selectAuxiliaryTransformTarget(size_t index);
 
     std::string difficultyName() const;
     std::string shipNameForId(const std::string& shipId) const;
@@ -480,11 +501,16 @@ private:
     int playerOverheatStage() const;
     void syncPlayerOverheatState();
     void advancePlayerOverheatRound();
-    void summonAuxiliaryShips(const CardDef& card);
+    void summonAuxiliaryShips(const CardDef& card, const std::string& baseCardId = "");
     void resolveAuxiliaryShipsEndTurn();
     void triggerAuxiliaryShipsNow(int times);
     void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
     bool resolveBlackboxProtocol(size_t handIndex);
+    void beginAuxiliaryTransformSelection(const CardDef& card, int transformCount);
+    bool resolveAuxiliaryTransformSelection(size_t index);
+    bool resolveAuxiliaryTransformTargetSelection(size_t index);
+    std::vector<std::string> currentAuxiliaryTransformTargetUnitIds() const;
+    void clearAuxiliaryTransformSelection();
     bool isTemporaryCopyRef(const std::string& cardRef) const;
     std::string makeTemporaryCopyRef(const std::string& cardRef) const;
     std::string unwrapTemporaryCopyRef(const std::string& cardRef) const;
