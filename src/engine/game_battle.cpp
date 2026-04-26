@@ -1,10 +1,14 @@
 #include "engine/game_battle.h"
 
 #include <algorithm>
+#include <array>
+#include <functional>
+
+extern int g_sa_permanent_shield;
 
 namespace {
 
-constexpr int kMaxAuxiliaryShips = 3;
+constexpr int kMaxAuxiliaryShips = 4;
 constexpr int kPlayerFormNeutral = 0;
 constexpr int kPlayerFormOverload = 1;
 constexpr int kPlayerFormDefense = 2;
@@ -16,6 +20,23 @@ constexpr const char* kAuxUnitInterceptor = "aux_interceptor";
 constexpr const char* kAuxUnitGuardian = "aux_guardian";
 constexpr const char* kAuxUnitRepair = "aux_repair";
 constexpr const char* kAuxUnitPulse = "aux_pulse";
+constexpr const char* kAuxUnitQueenWasp = "aux_queen_wasp";
+constexpr const char* kAuxUnitThermalEscort = "aux_thermal_escort";
+
+struct AuxiliaryUnitRecipe {
+    std::string unitId;
+    std::string displayName;
+    int attack = 0;
+    int shield = 0;
+    int endTurnDamage = 0;
+    int endTurnEnemyHeat = 0;
+    int endTurnExtraOtherTriggers = 0;
+};
+
+enum class AuxiliaryTriggerContext {
+    Immediate = 0,
+    EndTurn,
+};
 
 std::pair<std::string, std::string> AuxiliaryUnitProfileForCard(const CardDef& card) {
     // Keep summon cards data-driven while still providing stable type ids for UI.
@@ -35,6 +56,68 @@ std::pair<std::string, std::string> AuxiliaryUnitProfileForCard(const CardDef& c
         return {kAuxUnitInterceptor, "Interceptor Drone"};
     }
     return {"aux_drone", "Auxiliary Drone"};
+}
+
+std::array<std::string, 4> BasicAuxiliaryUnitIds() {
+    return {kAuxUnitInterceptor, kAuxUnitGuardian, kAuxUnitRepair, kAuxUnitPulse};
+}
+
+AuxiliaryUnitRecipe BasicAuxiliaryRecipeForId(const std::string& unit_id, bool upgraded_tier) {
+    if (unit_id == kAuxUnitGuardian) {
+        return {kAuxUnitGuardian, "Guardian Drone", 0, upgraded_tier ? 4 : 3, 0, 0, 0};
+    }
+    if (unit_id == kAuxUnitRepair) {
+        return {kAuxUnitRepair, "Repair Drone", 0, upgraded_tier ? 4 : 3, 0, 0, 0};
+    }
+    if (unit_id == kAuxUnitPulse) {
+        return {kAuxUnitPulse, "Pulse Drone", upgraded_tier ? 3 : 2, upgraded_tier ? 3 : 2, 0, 0, 0};
+    }
+    return {kAuxUnitInterceptor, "Interceptor Drone", upgraded_tier ? 4 : 3, 0, 0, 0, 0};
+}
+
+AuxiliaryUnitRecipe AuxiliaryRecipeForCard(const std::string& base_card_id, const CardDef& card) {
+    if (base_card_id == "df_27") {
+        return {kAuxUnitQueenWasp, "Queen Wasp Drone", std::max(0, card.summonDroneAttack),
+                std::max(0, card.summonDroneShield), std::max(0, card.damage), 0,
+                std::max(0, card.auxEndTurnExtraTriggerTimes)};
+    }
+    if (base_card_id == "dfh_08") {
+        return {kAuxUnitThermalEscort, "Thermal Escort Drone", std::max(0, card.summonDroneAttack),
+                std::max(0, card.summonDroneShield), 0, std::max(0, card.enemyHeat), 1};
+    }
+
+    const auto profile = AuxiliaryUnitProfileForCard(card);
+    return {profile.first, profile.second, std::max(0, card.summonDroneAttack), std::max(0, card.summonDroneShield), 0, 0, 0};
+}
+
+AuxiliaryShipState MakeAuxiliaryShipState(const AuxiliaryUnitRecipe& recipe, int remaining_turns) {
+    AuxiliaryShipState ship;
+    ship.unitId = recipe.unitId;
+    ship.displayName = recipe.displayName;
+    ship.attack = recipe.attack;
+    ship.shield = recipe.shield;
+    ship.remainingTurns = remaining_turns;
+    ship.endTurnDamage = recipe.endTurnDamage;
+    ship.endTurnEnemyHeat = recipe.endTurnEnemyHeat;
+    ship.endTurnExtraOtherTriggers = recipe.endTurnExtraOtherTriggers;
+    return ship;
+}
+
+bool IsUpgradedBasicAuxiliaryTier(const AuxiliaryShipState& ship) {
+    if (ship.unitId == kAuxUnitPulse) {
+        return ship.attack >= 3 || ship.shield >= 3;
+    }
+    if (ship.unitId == kAuxUnitGuardian || ship.unitId == kAuxUnitRepair) {
+        return ship.shield >= 4;
+    }
+    if (ship.unitId == kAuxUnitInterceptor) {
+        return ship.attack >= 4;
+    }
+    return ship.attack >= 4 || ship.shield >= 4 || ship.attack + ship.shield >= 6;
+}
+
+int EffectiveCardCost(const PlayerState& player, const CardDef& card) {
+    return player.firstCardCostZeroThisTurn ? 0 : std::max(0, card.cost);
 }
 
 template <typename T>
@@ -59,6 +142,9 @@ bool GameEngine::canPlayCard(size_t index) const {
     if (state_.player.blackboxSelectionPending) {
         return index < state_.player.hand.size();
     }
+    if (state_.player.auxTransformSelectionPending) {
+        return false;
+    }
     if (index >= state_.player.hand.size()) {
         return false;
     }
@@ -67,7 +153,7 @@ bool GameEngine::canPlayCard(size_t index) const {
     if (baseCard == nullptr) {
         return false;
     }
-    return resolvedCard(cardRef).cost <= state_.player.energy;
+    return EffectiveCardCost(state_.player, resolvedCard(cardRef)) <= state_.player.energy;
 }
 
 void GameEngine::playCard(size_t index) {
@@ -79,6 +165,12 @@ void GameEngine::playCard(size_t index) {
         if (state_.enemy.hp <= 0) {
             handleBattleVictory();
         }
+        return;
+    }
+    if (state_.player.auxTransformSelectionPending) {
+        state_.statusLine = state_.player.auxTransformTargetChoicePending
+            ? "Finish Wing Rotation by choosing a target drone type."
+            : "Finish Wing Rotation by choosing an auxiliary ship.";
         return;
     }
 
@@ -95,8 +187,12 @@ void GameEngine::playCard(size_t index) {
         return;
     }
     CardDef card = resolvedCard(resolvedRef);
-
-    state_.player.energy -= card.cost;
+    const int playCost = EffectiveCardCost(state_.player, card);
+    state_.player.energy -= playCost;
+    if (state_.player.firstCardCostZeroThisTurn) {
+        state_.player.firstCardCostZeroThisTurn = false;
+        log("Stored reverse-entropy window makes this card cost 0.");
+    }
     if (IsAbilityCard(card)) {
         // Ability cards leave the combat deck after being played and remain
         // visible as battle-long effects until the encounter ends.
@@ -125,6 +221,8 @@ void GameEngine::playCard(size_t index) {
     int shieldValue = card.shield;
     int energyValue = card.energy;
     int multiHitValue = std::max(1, card.multiHit);
+    int extraTwoDamageHits = 0;
+    const int clearedHeat = state_.player.heat;
     const int activeAuxCount = static_cast<int>(state_.auxiliaryShips.size());
     const int activeGuardianAuxCount = static_cast<int>(std::count_if(
         state_.auxiliaryShips.begin(), state_.auxiliaryShips.end(),
@@ -151,8 +249,8 @@ void GameEngine::playCard(size_t index) {
     if (baseCardId == "vg_07" && state_.player.heatGainedThisTurn > 0) {
         shieldValue += 3;
     }
-    if (baseCardId == "vg_08" && state_.player.heat == 0) {
-        card.heat += 1;
+    if (baseCardId == "vg_08" && state_.player.heat != 0) {
+        card.heat = 0;
     }
     if (baseCardId == "vg_14" && state_.player.heat > 0) {
         outgoingDamage += 4;
@@ -168,7 +266,7 @@ void GameEngine::playCard(size_t index) {
         }
     }
     if (baseCardId == "vg_13") {
-        state_.player.nextHeatGainReductionThisTurn += 2;
+        state_.player.nextHeatGainReductionThisTurn += std::max(0, card.heat);
         card.heat = 0;
     }
     if (baseCardId == "vg_15") {
@@ -191,7 +289,7 @@ void GameEngine::playCard(size_t index) {
         energyValue = 0;
     }
     if (baseCardId == "df_13" && hasPulseAux) {
-        drawCount += 1;
+        drawCount = 3;
     }
     if (baseCardId == "df_20" && activeGuardianAuxCount < 2) {
         drawCount = 0;
@@ -212,8 +310,15 @@ void GameEngine::playCard(size_t index) {
     if (baseCardId == "df_22" && activeAuxCount > 0) {
         outgoingDamage += activeAuxCount * 3;
     }
+    if (baseCardId == "df_27") {
+        outgoingDamage = 0;
+        card.auxEndTurnExtraTriggerTimes = 0;
+    }
+    if (baseCardId == "dfh_08") {
+        enemyHeatDelta = 0;
+    }
     if (baseCardId == "df_30" && activeAuxCount > 0) {
-        outgoingDamage += activeAuxCount * 2;
+        extraTwoDamageHits = activeAuxCount;
     }
     if (baseCardId == "ib_05" && inOverload) {
         outgoingDamage = 12;
@@ -237,8 +342,13 @@ void GameEngine::playCard(size_t index) {
             energyValue = 0;
         }
     }
-    if (baseCardId == "ib_13" && inOverload) {
-        card.attackMultiplier = 3;
+    if (baseCardId == "ib_13") {
+        card.attackMultiplier = 2;
+        if (inOverload) {
+            card.attackMultiplier = 1;
+            state_.player.nextAttackPreMultiplierBonusPercentThisTurn =
+                std::max(state_.player.nextAttackPreMultiplierBonusPercentThisTurn, 50);
+        }
     }
     if (baseCardId == "ib_15" && state_.player.form == kPlayerFormNeutral) {
         shieldValue = 0;
@@ -250,7 +360,7 @@ void GameEngine::playCard(size_t index) {
         drawCount = 0;
     }
     if (baseCardId == "ibh_03") {
-        enemyHeatDelta = state_.player.formChangesThisTurn > 0 ? 5 : 2;
+        enemyHeatDelta = state_.player.formChangesThisTurn > 0 ? card.enemyHeat : 2;
     }
     if (baseCardId == "vgh_02" && state_.player.heatGainedThisTurn == 0) {
         drawCount = 0;
@@ -260,7 +370,7 @@ void GameEngine::playCard(size_t index) {
     }
     if (baseCardId == "vgh_06") {
         enemyHeatDelta = 0;
-        state_.player.nextAttackEnemyHeatBonusThisTurn += 3;
+        state_.player.nextAttackEnemyHeatBonusThisTurn += std::max(0, card.enemyHeat);
     }
     if (baseCardId == "dfh_02") {
         state_.player.auxTriggerEnemyHeatBonusThisTurn += 1;
@@ -287,7 +397,7 @@ void GameEngine::playCard(size_t index) {
         outgoingDamage = 25;
     }
     if (baseCardId == "vg_18") {
-        state_.player.attackBonusPerHeatThisTurn = std::max(state_.player.attackBonusPerHeatThisTurn, 1);
+        state_.player.attackBonusPerHeatThisTurn = std::max(state_.player.attackBonusPerHeatThisTurn, card.damage);
         state_.player.attackBonusPerHeatCapThisTurn = std::max(state_.player.attackBonusPerHeatCapThisTurn, 6);
     }
     if (baseCardId == "vg_20" && state_.player.heatReducedThisTurn > 0) {
@@ -326,6 +436,10 @@ void GameEngine::playCard(size_t index) {
         drawCount = 0;
         state_.player.formChangeDrawThisTurn += std::max(0, card.draw);
     }
+    if (baseCardId == "ib_19") {
+        state_.player.nextIncomingDamageFlatReductionThisTurn =
+            std::max(state_.player.nextIncomingDamageFlatReductionThisTurn, 8);
+    }
     if (baseCardId == "ib_23") {
         if (state_.player.enteredOverloadThisTurn && state_.player.exitedDefenseThisTurn) {
             outgoingDamage = 26;
@@ -363,7 +477,7 @@ void GameEngine::playCard(size_t index) {
         energyValue = 0;
     }
     if (baseCardId == "vgh_07" && state_.player.enemyHeatRaisedThisTurn > 0) {
-        enemyHeatDelta += 4;
+        enemyHeatDelta += card.enemyHeat;
     }
     if (baseCardId == "vgh_08") {
         card.heat += 4;
@@ -373,14 +487,14 @@ void GameEngine::playCard(size_t index) {
         }
     }
     if (baseCardId == "vgh_09") {
-        enemyHeatDelta = enemyHighHeat ? 8 : 5;
+        enemyHeatDelta = enemyHighHeat ? 8 : card.enemyHeat;
     }
     if (baseCardId == "ibh_07") {
         if (inOverload) {
             shieldValue = 0;
-            enemyHeatDelta = 6;
+            enemyHeatDelta = card.enemyHeat;
         } else if (inDefense) {
-            shieldValue = 7;
+            shieldValue = card.shield;
             enemyHeatDelta = 4;
         } else {
             shieldValue = 0;
@@ -399,17 +513,19 @@ void GameEngine::playCard(size_t index) {
         drawCount = heatChunks * std::max(0, card.draw);
     }
     if (baseCardId == "vgh_10") {
-        enemyHeatDelta = std::min(std::max(0, state_.player.heat), std::max(0, card.enemyHeat));
+        enemyHeatDelta = std::min(std::max(0, clearedHeat), std::max(0, card.enemyHeat));
     }
     if (baseCardId == "cl_08") {
         drawCount = 0;
         state_.player.nextTurnDraw += std::max(0, card.draw);
         state_.player.nextTurnEnergy += std::max(0, card.nextTurnEnergy);
+        state_.player.firstCardCostZeroPendingNextTurn = true;
         card.nextTurnEnergy = 0;
     }
     if (baseCardId == "cl_06" && state_.player.attacksPlayedThisTurn == 0) {
         shieldValue += 7;
-        drawCount += 1;
+    } else if (baseCardId == "cl_06") {
+        drawCount = 0;
     }
     if (card.comboBonus > 0 && state_.player.attacksPlayedThisTurn > 0) {
         outgoingDamage += card.comboBonus;
@@ -427,9 +543,14 @@ void GameEngine::playCard(size_t index) {
         outgoingDamage += state_.player.shield;
         state_.player.shield = 0;
     }
-    if (outgoingDamage > 0 && state_.player.nextAttackMultiplier > 1) {
+    if (outgoingDamage > 0 &&
+        (state_.player.nextAttackMultiplier > 1 || state_.player.nextAttackPreMultiplierBonusPercentThisTurn > 0)) {
+        if (state_.player.nextAttackPreMultiplierBonusPercentThisTurn > 0) {
+            outgoingDamage += (outgoingDamage * state_.player.nextAttackPreMultiplierBonusPercentThisTurn) / 100;
+        }
         outgoingDamage *= state_.player.nextAttackMultiplier;
         state_.player.nextAttackMultiplier = 1;
+        state_.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
     }
     log("You route " + card.name + ".");
     if (temporaryCopy) {
@@ -468,6 +589,10 @@ void GameEngine::playCard(size_t index) {
         state_.player.heat = 0;
         syncPlayerOverheatState();
         log("All heat is vented from the reactor.");
+    }
+    if (baseCardId == "vg_29" && clearedHeat > 0) {
+        state_.player.shield += clearedHeat;
+        log("Zero-Bound Cooling converts " + std::to_string(clearedHeat) + " cleared heat into shield.");
     }
     if (card.heat > 0 && state_.player.nextHeatGainReductionThisTurn > 0) {
         card.heat = std::max(0, card.heat - state_.player.nextHeatGainReductionThisTurn);
@@ -566,6 +691,10 @@ void GameEngine::playCard(size_t index) {
     } else {
         startAnimation("support", card.name, std::max({card.heal, std::abs(card.heat), std::abs(enemyHeatDelta)}), true, 5);
     }
+    if (extraTwoDamageHits > 0 && state_.enemy.hp > 0) {
+        applyDamageToEnemy(2, false, extraTwoDamageHits);
+        log(card.name + " adds " + std::to_string(extraTwoDamageHits) + " extra echo hit(s) for 2 damage.");
+    }
 
     if (card.type == "Attack" || outgoingDamage > 0) {
         ++state_.player.attacksPlayedThisTurn;
@@ -591,7 +720,10 @@ void GameEngine::playCard(size_t index) {
         return;
     }
 
-    summonAuxiliaryShips(card);
+    summonAuxiliaryShips(card, baseCardId);
+    if (baseCardId == "df_28") {
+        triggerAuxiliaryShipsNow(1);
+    }
     if (card.auxImmediateTriggerTimes > 0) {
         triggerAuxiliaryShipsNow(card.auxImmediateTriggerTimes);
     }
@@ -673,6 +805,10 @@ void GameEngine::playCard(size_t index) {
             log("First summon this turn adds enemy heat by " + std::to_string(enemyHeatGain) + ".");
         }
     }
+    if (baseCardId == "df_15") {
+        beginAuxiliaryTransformSelection(card, 1 + cardUpgradeLevel(resolvedRef));
+        return;
+    }
 
     if (state_.enemy.hp <= 0) {
         handleBattleVictory();
@@ -693,6 +829,12 @@ void GameEngine::endTurn() {
     }
     if (state_.player.blackboxSelectionPending) {
         state_.statusLine = "Choose a Blackbox imprint target before ending the turn.";
+        return;
+    }
+    if (state_.player.auxTransformSelectionPending) {
+        state_.statusLine = state_.player.auxTransformTargetChoicePending
+            ? "Choose a target drone type before ending the turn."
+            : "Choose an auxiliary ship before ending the turn.";
         return;
     }
 
@@ -760,6 +902,8 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.firstTurnOfBattle = true;
     state_.player.overheatRounds = 0;
     state_.player.nextAttackMultiplier = 1;
+    state_.player.nextIncomingDamageFlatReductionThisTurn = 0;
+    state_.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
     state_.player.salvageBonus = 0;
     state_.player.attacksPlayedThisTurn = 0;
     state_.player.form = kPlayerFormNeutral;
@@ -798,6 +942,8 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.player.firstExitDefenseEnergyThisBattle = 0;
     state_.player.nextTurnDraw = 0;
     state_.player.blackboxCopyCount = 0;
+    state_.player.firstCardCostZeroPendingNextTurn = false;
+    state_.player.firstCardCostZeroThisTurn = false;
     state_.player.firstSummonUsedThisBattle = false;
     state_.player.firstSummonUsedThisTurn = false;
     state_.player.firstEnterHighHeatTriggeredThisBattle = false;
@@ -810,12 +956,23 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
+    clearAuxiliaryTransformSelection();
     state_.player.exilePile.clear();
     state_.player.activeAbilities.clear();
     state_.auxiliaryShips.clear();
     state_.page = AppPage::Battle;
     resumePage_ = AppPage::Battle;
     resetBattleDeck();
+    if (state_.player.nextBattleHeal > 0) {
+        state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + state_.player.nextBattleHeal);
+        log("Stored emergency recovery restores " + std::to_string(state_.player.nextBattleHeal) + " HP.");
+        state_.player.nextBattleHeal = 0;
+    }
+    if (state_.player.nextBattleFirstAttackMultiplier > 1) {
+        state_.player.nextAttackMultiplier = std::max(state_.player.nextAttackMultiplier, state_.player.nextBattleFirstAttackMultiplier);
+        log("Stored targeting surge primes your first attack.");
+        state_.player.nextBattleFirstAttackMultiplier = 1;
+    }
     syncPlayerOverheatState();
     chooseEnemyIntent();
     startPlayerTurn();
@@ -875,10 +1032,14 @@ void GameEngine::startPlayerTurn() {
     state_.player.nextTurnEnergy = 0;
     const int extraTurnDraw = std::max(0, state_.player.nextTurnDraw);
     state_.player.nextTurnDraw = 0;
+    state_.player.firstCardCostZeroThisTurn = state_.player.firstCardCostZeroPendingNextTurn;
+    state_.player.firstCardCostZeroPendingNextTurn = false;
     state_.player.attacksPlayedThisTurn = 0;
     state_.player.auxEndTurnExtraTriggersThisTurn = 0;
     state_.player.auxEffectPercentBonusThisTurn = 0;
     state_.player.overloadIncomingDamageReducePercentThisTurn = 0;
+    state_.player.nextIncomingDamageFlatReductionThisTurn = 0;
+    state_.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
     state_.player.firstSummonUsedThisTurn = false;
     state_.player.summonCardPlayedDrawThisTurnBuff = 0;
     state_.player.formChangesThisTurn = 0;
@@ -898,10 +1059,13 @@ void GameEngine::startPlayerTurn() {
     state_.player.exitedFormThisTurn = false;
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
+    clearAuxiliaryTransformSelection();
     addBlackboxTurnCopies();
     ++state_.battleTurn;
 
-    const int startShield = (hasRelic("shield_matrix") && state_.battleTurn == 1 ? 4 : 0) + state_.player.openingShieldBonus;
+    const int startShield = (hasRelic("shield_matrix") && state_.battleTurn == 1 ? 4 : 0) +
+                            state_.player.openingShieldBonus +
+                            (state_.battleTurn == 1 ? g_sa_permanent_shield : 0);
     if (startShield > 0) {
         state_.player.shield += startShield;
         log("Deflector envelope stabilizes for +" + std::to_string(startShield) + " shield.");
@@ -912,6 +1076,9 @@ void GameEngine::startPlayerTurn() {
     if (extraTurnDraw > 0) {
         drawCards(extraTurnDraw);
         log("Stored draw protocol draws " + std::to_string(extraTurnDraw) + " extra card(s).");
+    }
+    if (state_.player.firstCardCostZeroThisTurn) {
+        log("Reverse-Entropy Jump makes your first card this turn cost 0.");
     }
     state_.firstTurnOfBattle = false;
     log("Turn " + std::to_string(state_.battleTurn) + " begins with " + std::to_string(state_.player.energy) +
@@ -1040,6 +1207,8 @@ void GameEngine::handleBattleVictory() {
     state_.player.nextTurnEnergy = 0;
     state_.player.overheatRounds = 0;
     state_.player.form = kPlayerFormNeutral;
+    state_.player.nextIncomingDamageFlatReductionThisTurn = 0;
+    state_.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
     state_.player.auxEndTurnExtraTriggersThisTurn = 0;
     state_.player.auxEffectPercentBonusThisTurn = 0;
     state_.player.overloadIncomingDamageReducePercentThisTurn = 0;
@@ -1069,6 +1238,8 @@ void GameEngine::handleBattleVictory() {
     state_.player.overheatSelfDamageBlockThisTurn = 0;
     state_.player.auxOnRemoveDrawThisBattle = 0;
     state_.player.auxOnRemoveEnergyThisBattle = 0;
+    state_.player.firstCardCostZeroPendingNextTurn = false;
+    state_.player.firstCardCostZeroThisTurn = false;
     state_.player.firstSummonUsedThisBattle = false;
     state_.player.firstSummonUsedThisTurn = false;
     state_.player.firstEnterHighHeatTriggeredThisBattle = false;
@@ -1080,6 +1251,7 @@ void GameEngine::handleBattleVictory() {
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
+    clearAuxiliaryTransformSelection();
     for (const ActiveAbilityState& ability : state_.player.activeAbilities) {
         if (!ability.cardRef.empty()) {
             state_.player.drawPile.push_back(ability.cardRef);
@@ -1102,6 +1274,8 @@ void GameEngine::handleBattleVictory() {
 void GameEngine::handleDefeat() {
     state_.player.overheatRounds = 0;
     state_.player.form = kPlayerFormNeutral;
+    state_.player.nextIncomingDamageFlatReductionThisTurn = 0;
+    state_.player.nextAttackPreMultiplierBonusPercentThisTurn = 0;
     state_.player.auxEndTurnExtraTriggersThisTurn = 0;
     state_.player.auxEffectPercentBonusThisTurn = 0;
     state_.player.overloadIncomingDamageReducePercentThisTurn = 0;
@@ -1131,6 +1305,8 @@ void GameEngine::handleDefeat() {
     state_.player.overheatSelfDamageBlockThisTurn = 0;
     state_.player.auxOnRemoveDrawThisBattle = 0;
     state_.player.auxOnRemoveEnergyThisBattle = 0;
+    state_.player.firstCardCostZeroPendingNextTurn = false;
+    state_.player.firstCardCostZeroThisTurn = false;
     state_.player.firstSummonUsedThisBattle = false;
     state_.player.firstSummonUsedThisTurn = false;
     state_.player.firstEnterHighHeatTriggeredThisBattle = false;
@@ -1142,6 +1318,7 @@ void GameEngine::handleDefeat() {
     state_.player.blackboxSelectionPending = false;
     state_.player.pendingBlackboxCopyCount = 0;
     state_.player.blackboxImprintRef.clear();
+    clearAuxiliaryTransformSelection();
     for (const ActiveAbilityState& ability : state_.player.activeAbilities) {
         if (!ability.cardRef.empty()) {
             state_.player.drawPile.push_back(ability.cardRef);
@@ -1158,6 +1335,14 @@ void GameEngine::handleDefeat() {
 
 void GameEngine::applyDamageToPlayer(int amount) {
     int remaining = amount;
+    if (remaining > 0 && state_.player.nextIncomingDamageFlatReductionThisTurn > 0) {
+        const int prevented = std::min(remaining, state_.player.nextIncomingDamageFlatReductionThisTurn);
+        remaining -= prevented;
+        state_.player.nextIncomingDamageFlatReductionThisTurn = 0;
+        if (prevented > 0) {
+            log("Superconduct Focus prevents " + std::to_string(prevented) + " incoming damage.");
+        }
+    }
     // Overload form doubles incoming damage, which defines the form's drawback.
     if (state_.player.form == kPlayerFormOverload && remaining > 0) {
         const int dampen = std::max(0, std::min(100, state_.player.overloadIncomingDamageReducePercentThisTurn));
@@ -1352,7 +1537,7 @@ void GameEngine::advancePlayerOverheatRound() {
     }
 }
 
-void GameEngine::summonAuxiliaryShips(const CardDef& card) {
+void GameEngine::summonAuxiliaryShips(const CardDef& card, const std::string& baseCardId) {
     if (card.summonDroneCount <= 0) {
         return;
     }
@@ -1373,22 +1558,33 @@ void GameEngine::summonAuxiliaryShips(const CardDef& card) {
         }
     }
 
+    std::vector<AuxiliaryUnitRecipe> recipes;
+    if (baseCardId == "df_16" || baseCardId == "df_28") {
+        std::vector<std::string> unit_ids(BasicAuxiliaryUnitIds().begin(), BasicAuxiliaryUnitIds().end());
+        ShuffleVector(unit_ids, rng_);
+        const bool upgraded_tier = card.summonDroneAttack >= 4 || card.summonDroneShield >= 4;
+        const int total = std::min<int>(static_cast<int>(unit_ids.size()), card.summonDroneCount + extraCopies);
+        for (int i = 0; i < total; ++i) {
+            recipes.push_back(BasicAuxiliaryRecipeForId(unit_ids[static_cast<size_t>(i)], upgraded_tier));
+        }
+    } else {
+        const AuxiliaryUnitRecipe recipe = AuxiliaryRecipeForCard(baseCardId, card);
+        for (int i = 0; i < card.summonDroneCount + extraCopies; ++i) {
+            recipes.push_back(recipe);
+        }
+    }
+
     // Auxiliary ships are bounded by a hard slot cap so future summon cards can
     // use "replace oldest" behavior without extra UI.
-    for (int i = 0; i < card.summonDroneCount + extraCopies; ++i) {
+    for (const AuxiliaryUnitRecipe& recipe : recipes) {
         if (state_.auxiliaryShips.size() >= static_cast<size_t>(kMaxAuxiliaryShips)) {
             log("Auxiliary bay is full. Oldest support craft is dismissed.");
             onAuxiliaryShipRemoved(state_.auxiliaryShips.front(), "replaced");
             state_.auxiliaryShips.erase(state_.auxiliaryShips.begin());
         }
 
-        AuxiliaryShipState drone;
-        const auto profile = AuxiliaryUnitProfileForCard(card);
-        drone.unitId = profile.first;
-        drone.displayName = profile.second;
-        drone.attack = std::max(0, card.summonDroneAttack);
-        drone.shield = std::max(0, card.summonDroneShield);
-        drone.remainingTurns = card.summonDroneDuration > 0 ? card.summonDroneDuration : -1;
+        const int remaining_turns = card.summonDroneDuration > 0 ? card.summonDroneDuration : -1;
+        AuxiliaryShipState drone = MakeAuxiliaryShipState(recipe, remaining_turns);
         state_.auxiliaryShips.push_back(drone);
         log(drone.displayName + " deployed.");
     }
@@ -1401,24 +1597,54 @@ void GameEngine::resolveAuxiliaryShipsEndTurn() {
 
     const int triggerTimes = std::max(1, 1 + state_.player.auxEndTurnExtraTriggersThisTurn);
     const int bonusPercent = std::max(0, state_.player.auxEffectPercentBonusThisTurn);
-    for (AuxiliaryShipState& ship : state_.auxiliaryShips) {
-        for (int trigger = 0; trigger < triggerTimes; ++trigger) {
-            const int attack = (ship.attack * (100 + bonusPercent) + 99) / 100;
-            const int shield = (ship.shield * (100 + bonusPercent) + 99) / 100;
-            if (attack > 0) {
-                applyDamageToEnemy(attack, false, 1);
-                log(ship.displayName + " fires for " + std::to_string(attack) + ".");
-                if (state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
-                    changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
-                }
-            }
-            if (shield > 0) {
-                state_.player.shield += shield;
-                log(ship.displayName + " reinforces shield by " + std::to_string(shield) + ".");
+    std::function<void(size_t, bool)> resolve_trigger = [&](size_t ship_index, bool allow_aura) {
+        if (ship_index >= state_.auxiliaryShips.size()) {
+            return;
+        }
+        const AuxiliaryShipState ship = state_.auxiliaryShips[ship_index];
+        const int attack = (ship.attack * (100 + bonusPercent) + 99) / 100;
+        const int shield = (ship.shield * (100 + bonusPercent) + 99) / 100;
+        const int bonus_damage = (ship.endTurnDamage * (100 + bonusPercent) + 99) / 100;
+        const int bonus_heat = (ship.endTurnEnemyHeat * (100 + bonusPercent) + 99) / 100;
+        if (attack > 0) {
+            applyDamageToEnemy(attack, false, 1);
+            log(ship.displayName + " fires for " + std::to_string(attack) + ".");
+            if (state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
+                changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
             }
         }
-        if (ship.remainingTurns > 0) {
-            --ship.remainingTurns;
+        if (shield > 0) {
+            state_.player.shield += shield;
+            log(ship.displayName + " reinforces shield by " + std::to_string(shield) + ".");
+        }
+        if (bonus_damage > 0) {
+            applyDamageToEnemy(bonus_damage, false, 1);
+            log(ship.displayName + " unleashes a special strike for " + std::to_string(bonus_damage) + ".");
+        }
+        if (bonus_heat > 0) {
+            changeEnemyHeat(bonus_heat);
+            log(ship.displayName + " spikes enemy heat by " + std::to_string(bonus_heat) + ".");
+        }
+        if (allow_aura && ship.endTurnExtraOtherTriggers > 0) {
+            for (int aura = 0; aura < ship.endTurnExtraOtherTriggers; ++aura) {
+                for (size_t other_index = 0; other_index < state_.auxiliaryShips.size(); ++other_index) {
+                    if (other_index == ship_index) {
+                        continue;
+                    }
+                    resolve_trigger(other_index, false);
+                }
+            }
+        }
+    };
+
+    const size_t ship_count = state_.auxiliaryShips.size();
+    for (size_t ship_index = 0; ship_index < ship_count; ++ship_index) {
+        for (int trigger = 0; trigger < triggerTimes; ++trigger) {
+            resolve_trigger(ship_index, true);
+        }
+        if (ship_index < state_.auxiliaryShips.size() &&
+            state_.auxiliaryShips[ship_index].remainingTurns > 0) {
+            --state_.auxiliaryShips[ship_index].remainingTurns;
         }
     }
 
@@ -1507,6 +1733,132 @@ bool GameEngine::resolveBlackboxProtocol(size_t handIndex) {
     state_.statusLine = "Blackbox imprint set to " + displayCardName(imprintRef) + ".";
     log("Blackbox Protocol exiles " + displayCardName(imprintRef) + " as the imprint.");
     return true;
+}
+
+void GameEngine::clearAuxiliaryTransformSelection() {
+    state_.player.auxTransformSelectionPending = false;
+    state_.player.auxTransformTargetChoicePending = false;
+    state_.player.auxTransformRemainingSelections = 0;
+    state_.player.auxTransformSelectedShipIndex = -1;
+}
+
+std::vector<std::string> GameEngine::currentAuxiliaryTransformTargetUnitIds() const {
+    if (!state_.player.auxTransformSelectionPending || !state_.player.auxTransformTargetChoicePending) {
+        return {};
+    }
+    const int ship_index = state_.player.auxTransformSelectedShipIndex;
+    if (ship_index < 0 || static_cast<size_t>(ship_index) >= state_.auxiliaryShips.size()) {
+        return {};
+    }
+
+    std::vector<std::string> targets;
+    const std::string current_unit_id = state_.auxiliaryShips[static_cast<size_t>(ship_index)].unitId;
+    for (const std::string& unit_id : BasicAuxiliaryUnitIds()) {
+        if (unit_id != current_unit_id) {
+            targets.push_back(unit_id);
+        }
+    }
+    return targets;
+}
+
+void GameEngine::beginAuxiliaryTransformSelection(const CardDef&, int transformCount) {
+    const int available_ships = static_cast<int>(state_.auxiliaryShips.size());
+    const int selections = std::min(std::max(1, transformCount), available_ships);
+    if (selections <= 0) {
+        clearAuxiliaryTransformSelection();
+        state_.statusLine = "Wing Rotation resolves, but you have no auxiliary ship to transform.";
+        log("Wing Rotation finds no auxiliary ship to transform.");
+        return;
+    }
+
+    state_.player.auxTransformSelectionPending = true;
+    state_.player.auxTransformTargetChoicePending = false;
+    state_.player.auxTransformRemainingSelections = selections;
+    state_.player.auxTransformSelectedShipIndex = -1;
+    state_.statusLine = "Wing Rotation armed. Choose an auxiliary ship to transform.";
+    log("Wing Rotation awaits auxiliary ship selection.");
+}
+
+bool GameEngine::resolveAuxiliaryTransformSelection(size_t index) {
+    if (!state_.player.auxTransformSelectionPending || state_.player.auxTransformTargetChoicePending) {
+        return false;
+    }
+    if (index >= state_.auxiliaryShips.size()) {
+        return false;
+    }
+    state_.player.auxTransformSelectedShipIndex = static_cast<int>(index);
+    state_.player.auxTransformTargetChoicePending = true;
+    state_.statusLine = "Choose a different basic auxiliary type for Wing Rotation.";
+    log("Wing Rotation target ship locked.");
+    return true;
+}
+
+bool GameEngine::resolveAuxiliaryTransformTargetSelection(size_t index) {
+    if (!state_.player.auxTransformSelectionPending || !state_.player.auxTransformTargetChoicePending) {
+        return false;
+    }
+    const int ship_index = state_.player.auxTransformSelectedShipIndex;
+    if (ship_index < 0 || static_cast<size_t>(ship_index) >= state_.auxiliaryShips.size()) {
+        clearAuxiliaryTransformSelection();
+        return false;
+    }
+
+    const std::vector<std::string> targets = currentAuxiliaryTransformTargetUnitIds();
+    if (index >= targets.size()) {
+        return false;
+    }
+
+    AuxiliaryShipState& ship = state_.auxiliaryShips[static_cast<size_t>(ship_index)];
+    const bool upgraded_tier = IsUpgradedBasicAuxiliaryTier(ship);
+    const int remaining_turns = ship.remainingTurns;
+    const AuxiliaryUnitRecipe recipe = BasicAuxiliaryRecipeForId(targets[index], upgraded_tier);
+    ship = MakeAuxiliaryShipState(recipe, remaining_turns);
+    log("Wing Rotation transforms support craft into " + ship.displayName + ".");
+
+    --state_.player.auxTransformRemainingSelections;
+    if (state_.player.auxTransformRemainingSelections > 0 && !state_.auxiliaryShips.empty()) {
+        state_.player.auxTransformTargetChoicePending = false;
+        state_.player.auxTransformSelectedShipIndex = -1;
+        state_.statusLine = "Wing Rotation can transform one more auxiliary ship.";
+        return true;
+    }
+
+    clearAuxiliaryTransformSelection();
+    state_.statusLine = "Wing Rotation completes its reconfiguration.";
+    if (state_.enemy.hp <= 0) {
+        handleBattleVictory();
+    } else if (state_.player.hp <= 0) {
+        handleDefeat();
+    }
+    return true;
+}
+
+bool GameEngine::auxiliaryTransformSelectionPending() const {
+    return state_.player.auxTransformSelectionPending;
+}
+
+bool GameEngine::auxiliaryTransformTargetChoicePending() const {
+    return state_.player.auxTransformSelectionPending && state_.player.auxTransformTargetChoicePending;
+}
+
+int GameEngine::auxiliaryTransformSelectedShipIndex() const {
+    return state_.player.auxTransformSelectedShipIndex;
+}
+
+int GameEngine::auxiliaryTransformRemainingSelections() const {
+    return state_.player.auxTransformRemainingSelections;
+}
+
+std::vector<std::string> GameEngine::auxiliaryTransformTargetUnitIds() const {
+    return currentAuxiliaryTransformTargetUnitIds();
+}
+
+bool GameEngine::selectAuxiliaryTransformShip(size_t index) {
+    return resolveAuxiliaryTransformSelection(index);
+}
+
+bool GameEngine::selectAuxiliaryTransformTarget(size_t index) {
+    return resolveAuxiliaryTransformTargetSelection(index);
 }
 
 bool GameEngine::isTemporaryCopyRef(const std::string& cardRef) const {

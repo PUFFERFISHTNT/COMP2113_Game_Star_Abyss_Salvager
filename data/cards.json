@@ -163,7 +163,7 @@
         "cost": 1,
         "damage": 7,
         "heat": 2,
-        "multiHit": 3
+        "multiHit": 2
       }
     },
     {
@@ -429,7 +429,7 @@
       "upgrade": {
         "name": "高温标定+++",
         "name_en": "High-Temp Calibration+++",
-        "description": "本回合每有 `2` 点热量，你的攻击额外造成 `1` 伤害，上限 `6`。",
+        "description": "本回合每有 `1` 点热量，你的攻击额外造成 `2` 伤害，上限 `6`。",
         "description_en": "This turn, your Attacks deal +2 damage per Heat (up to +6).",
         "cost": 1,
         "damage": 2
@@ -472,7 +472,7 @@
         "description_en": "Deal 10 damage twice. If you reduced Heat this turn, hit once more.",
         "cost": 2,
         "damage": 10,
-        "multiHit": 3
+        "multiHit": 2
       }
     },
     {
@@ -964,7 +964,7 @@
         "description": "将 `2` 个附属舰变为你选择的另一种基础附属舰。抽 `1` 张牌。",
         "description_en": "Transform 2 Auxiliary Ship into another basic type of your choice. Draw 1 card.",
         "cost": 0,
-        "draw": 2
+        "draw": 1
       }
     },
     {
@@ -1495,7 +1495,7 @@
         "cost": 1,
         "damage": 6,
         "draw": 2,
-        "multiHit": 3
+        "multiHit": 2
       }
     },
     {
@@ -1928,6 +1928,7 @@
       "description": "降低你 `2` 点热量，使敌人获得 `4` 点热量。",
       "rarity": "common",
       "cost": 1,
+      "heat": -2,
       "enemyHeat": 4,
       "name_en": "Counterflow Heating",
       "description_en": "Lose 2 Heat. Apply 4 Heat to the enemy.",
@@ -1937,6 +1938,7 @@
         "description": "降低你 `2` 点热量，使敌人获得 `6` 点热量。",
         "description_en": "Lose 2 Heat. Apply 6 Heat to the enemy.",
         "cost": 1,
+        "heat": -2,
         "enemyHeat": 6
       }
     },
@@ -2651,7 +2653,7 @@
         "description_en": "Deal 7 damage three times. For each Auxiliary Ship you control, add one more hit of 2 damage.",
         "cost": 2,
         "damage": 7,
-        "multiHit": 4
+        "multiHit": 3
       }
     },
     {
