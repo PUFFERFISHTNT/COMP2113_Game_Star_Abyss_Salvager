@@ -61,23 +61,36 @@ void GameEngine::resolveEncounter(size_t index) {
             resolveUpgradeSelection(index);
             return;
         }
-        if (index == 0) {
+        const std::string payload = index < state_.encounter.payloadIds.size() ? state_.encounter.payloadIds[index] : "";
+        if (payload == "leave" || index >= state_.encounter.choices.size()) {
+            state_.statusLine = "You undock from the repair station.";
+            finishCurrentNode();
+            return;
+        }
+        if (payload == "repair_patch" || (payload.empty() && index == 0)) {
             state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 10);
+            state_.repairStationPatchUsed = true;
             state_.statusLine = "Repair crews patched the hull for 10 HP.";
-        } else if (index == 1) {
+        } else if (payload == "repair_vent" || (payload.empty() && index == 1)) {
             changeHeat(-6);
             state_.player.openingShieldBonus += 4;
+            state_.repairStationVentUsed = true;
             state_.statusLine = "The reactor vents cleanly. Your next battle starts with +4 shield.";
-        } else if (index == 2) {
+        } else if (payload == "repair_plating" || (payload.empty() && index == 2)) {
             state_.player.maxHp += 4;
             state_.player.hp += 4;
+            state_.repairStationPlatingUsed = true;
             state_.statusLine = "New plating installed. Max HP increased by 4.";
-        } else {
+        } else if (payload == "repair_upgrade" || (payload.empty() && index == 3)) {
             enterRepairUpgrade(0);
             state_.statusLine = "The station opens a retrofit console. Choose one card to upgrade for free.";
             return;
+        } else {
+            state_.statusLine = "You undock from the repair station.";
+            finishCurrentNode();
+            return;
         }
-        finishCurrentNode();
+        openRepairStation();
         return;
     }
 

@@ -122,7 +122,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
         return false;
     }
 
-    output << "VERSION|26\n";
+    output << "VERSION|27\n";
     output << "PAGE|" << PageToString(state_.page) << "\n";
     output << "DIFFICULTY|" << state_.difficulty << "\n";
     output << "SECTOR|" << state_.sector << "\n";
@@ -131,6 +131,10 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     output << "BATTLETURN|" << state_.battleTurn << "\n";
     output << "MARKETUPGRADES|" << state_.marketUpgradeCount << "\n";
     output << "MARKETPURGEUSED|" << BoolToken(state_.marketPurgeUsed) << "\n";
+    output << "REPAIRSTATION|" << BoolToken(state_.repairStationPatchUsed) << "|"
+           << BoolToken(state_.repairStationVentUsed) << "|"
+           << BoolToken(state_.repairStationPlatingUsed) << "|"
+           << BoolToken(state_.repairStationUpgradeUsed) << "\n";
     output << "FIRSTTURN|" << BoolToken(state_.firstTurnOfBattle) << "\n";
     output << "PENDINGSECTOR|" << BoolToken(state_.pendingSectorAdvance) << "\n";
     output << "PENDINGVICTORY|" << BoolToken(state_.pendingVictory) << "\n";
@@ -371,6 +375,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             loaded.marketUpgradeCount = ToInt(parts[1], 0);
         } else if (key == "MARKETPURGEUSED" && parts.size() >= 2) {
             loaded.marketPurgeUsed = parts[1] == "1";
+        } else if (key == "REPAIRSTATION" && parts.size() >= 5) {
+            loaded.repairStationPatchUsed = parts[1] == "1";
+            loaded.repairStationVentUsed = parts[2] == "1";
+            loaded.repairStationPlatingUsed = parts[3] == "1";
+            loaded.repairStationUpgradeUsed = parts[4] == "1";
         } else if (key == "FIRSTTURN" && parts.size() >= 2) {
             loaded.firstTurnOfBattle = parts[1] == "1";
         } else if (key == "PENDINGSECTOR" && parts.size() >= 2) {

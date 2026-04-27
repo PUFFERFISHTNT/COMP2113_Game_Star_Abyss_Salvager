@@ -1465,6 +1465,11 @@ void GameEngine::handleBattleVictory() {
     }
     if (state_.activeNodeType == "boss") {
         scrapReward += 16;
+        const int healAmount = std::min(20, state_.player.maxHp - state_.player.hp);
+        if (healAmount > 0) {
+            state_.player.hp += healAmount;
+            log("Boss victory repairs your hull for " + std::to_string(healAmount) + " HP.");
+        }
     }
     if (hasRelic("salvage_scanner")) {
         scrapReward += 6;

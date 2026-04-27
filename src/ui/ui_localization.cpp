@@ -331,10 +331,12 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Patch Hull (+10 HP)", "修复船体（+10 生命）"},
         {"Vent Reactor (-6 Heat, +4 Shield)", "排空反应堆（-6 热量，+4 初始护盾）"},
         {"Install Plating (+4 Max HP)", "安装装甲（+4 最大生命）"},
+        {"Leave station", "离开维修站"},
         {"Reliable, clean repairs for a bruised ship.", "为受损飞船提供稳定而干净的修复。"},
         {"Stabilize the core and harden your next engagement.", "稳定核心，让下一场战斗更稳健。"},
         {"Trade time for permanent hull reinforcement.", "花时间换取永久性的船体强化。"},
         {"Use the station fabricators to upgrade one card for free.", "使用维修站的制造设备，免费升级 1 种卡牌。"},
+        {"Finish repairs and continue the route.", "结束维修并继续航线。"},
         {"Strip Scrap", "拆解废料"},
         {"Recover Module Rack", "回收模块架"},
         {"Leave It", "不去碰它"},
@@ -352,6 +354,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Cut the transmission and keep moving.", "切断传输，继续前进。"},
         {"Black Market Upgrade", "黑市升级终端"},
         {"Repair Station Retrofit", "维修站改装终端"},
+        {"Back to station", "返回维修站"},
+        {"Return to the repair station services.", "返回维修站服务列表。"},
         {"Select one card to erase from your deck. The black market visit ends immediately after the purge.", "选择 1 张卡牌从卡组中彻底抹除。执行移除后，本次黑市访问会立刻结束。"},
         {"More purge targets", "更多可移除目标"},
         {"More upgrade targets", "更多可升级目标"},
@@ -1257,6 +1261,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (text == "The reactor vents cleanly. Your next battle starts with +4 shield.") return "反应堆顺利排气。下一场战斗开局 +4 护盾。";
     if (text == "New plating installed. Max HP increased by 4.") return "新装甲板安装完毕。最大生命增加 4。";
     if (text == "The station opens a retrofit console. Choose one card to upgrade for free.") return "站点打开了改装控制台。选择 1 张卡牌免费升级。";
+    if (text == "You undock from the repair station.") return "你离开了维修站。";
     // Salvage
     if (text == "A surviving module rack can be integrated into your deck.") return "一个幸存的模块架可以整合进你的卡组。";
     if (text == "You leave the unstable hulk drifting in the dark.") return "你将不稳定的残骸留在黑暗中漂流。";

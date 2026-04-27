@@ -387,17 +387,22 @@ Element StarAbyssApp::RenderEncounter() const {
             serviceActionVisible_ = true;
             serviceActionChoiceIndex_ = service_action_choice_index;
             const bool market_upgrade_screen = state.encounter.encounterId == "market_upgrade";
+            const bool repair_upgrade_screen = state.encounter.encounterId == "repair_upgrade";
             const std::string action_keys = market_upgrade_screen
                                                 ? Tr(language_, "[Esc] [B] [0]", "[Esc] [B] [0]")
                                                 : Tr(language_, "[Esc] [0]", "[Esc] [0]");
-            const std::string action_title = market_upgrade_screen
-                                                 ? Tr(language_, "Click to Return", "点击返回")
-                                                 : Tr(language_, "Click to Skip", "点击跳过");
+            const std::string action_title =
+                (market_upgrade_screen || repair_upgrade_screen) ? Tr(language_, "Click to Return", "点击返回")
+                                                                 : Tr(language_, "Click to Skip", "点击跳过");
             const std::string action_hint =
                 market_upgrade_screen
                     ? Tr(language_,
                          "If you cannot afford an upgrade, click this panel or press one of the keys above.",
                          "如果金币不足无法升级，可点击此面板，或按上方任一按键返回。")
+                : repair_upgrade_screen
+                    ? Tr(language_,
+                         "Click this panel or press one of the keys above to return to the repair station.",
+                         "可点击此面板，或按上方任一按键返回维修站。")
                     : Tr(language_,
                          "Click this panel or press one of the keys above to leave this service immediately.",
                          "可点击此面板，或按上方任一按键立即离开当前服务。");

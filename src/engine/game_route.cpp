@@ -307,18 +307,11 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
 
     // --- Repair ---
     if (node.typeId == "repair") {
-        state_.encounter.choices = {
-            "Patch Hull (+10 HP)",
-            "Vent Reactor (-6 Heat, +4 Shield)",
-            "Install Plating (+4 Max HP)",
-            "Upgrade 1 card",
-        };
-        state_.encounter.details = {
-            "Reliable, clean repairs for a bruised ship.",
-            "Stabilize the core and harden your next engagement.",
-            "Trade time for permanent hull reinforcement.",
-            "Use the station fabricators to upgrade one card for free.",
-        };
+        state_.repairStationPatchUsed = false;
+        state_.repairStationVentUsed = false;
+        state_.repairStationPlatingUsed = false;
+        state_.repairStationUpgradeUsed = false;
+        openRepairStation();
         return;
     }
 

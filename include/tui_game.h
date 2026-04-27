@@ -306,6 +306,10 @@ struct RunState {
     int battleTurn = 0;
     int marketUpgradeCount = 0;
     bool marketPurgeUsed = false;
+    bool repairStationPatchUsed = false;
+    bool repairStationVentUsed = false;
+    bool repairStationPlatingUsed = false;
+    bool repairStationUpgradeUsed = false;
     bool firstTurnOfBattle = true;
     bool pendingSectorAdvance = false;
     bool pendingVictory = false;
@@ -592,6 +596,7 @@ private:
 
     void fillHelpInfo();
     void fillSummary(bool victory);
+    void openRepairStation();
     void openMarketShop();
     void clearMarketState();
     bool resolvePurgeSelection(size_t index);

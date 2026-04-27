@@ -682,6 +682,38 @@ bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
     return true;
 }
 
+void GameEngine::openRepairStation() {
+    state_.encounter = {};
+    state_.encounter.typeId = "repair";
+    state_.encounter.title = "Repair Station";
+    state_.encounter.description = "A maintenance dock answers your ping.";
+    state_.page = AppPage::Encounter;
+    resumePage_ = AppPage::Encounter;
+
+    const auto add_option = [&](const std::string& choice,
+                                const std::string& detail,
+                                const std::string& payload) {
+        state_.encounter.choices.push_back(choice);
+        state_.encounter.details.push_back(detail);
+        state_.encounter.payloadIds.push_back(payload);
+        state_.encounter.payloadValues.push_back(0);
+    };
+
+    if (!state_.repairStationPatchUsed) {
+        add_option("Patch Hull (+10 HP)", "Reliable, clean repairs for a bruised ship.", "repair_patch");
+    }
+    if (!state_.repairStationVentUsed) {
+        add_option("Vent Reactor (-6 Heat, +4 Shield)", "Stabilize the core and harden your next engagement.", "repair_vent");
+    }
+    if (!state_.repairStationPlatingUsed) {
+        add_option("Install Plating (+4 Max HP)", "Trade time for permanent hull reinforcement.", "repair_plating");
+    }
+    if (!state_.repairStationUpgradeUsed) {
+        add_option("Upgrade 1 card", "Use the station fabricators to upgrade one card for free.", "repair_upgrade");
+    }
+    add_option("Leave station", "Finish repairs and continue the route.", "leave");
+}
+
 void GameEngine::openMarketShop() {
     if (state_.marketOfferCardIds.empty()) {
         state_.marketOfferCardIds = randomMarketCardChoices(3);
@@ -835,8 +867,8 @@ void GameEngine::enterRepairUpgrade(size_t offset) {
         state_.encounter.payloadIds.push_back(candidate);
         state_.encounter.payloadValues.push_back(0);
     }
-    state_.encounter.choices.push_back("Skip reward");
-    state_.encounter.details.push_back("Leave the retrofit console unused and continue.");
+    state_.encounter.choices.push_back("Back to station");
+    state_.encounter.details.push_back("Return to the repair station services.");
     state_.encounter.payloadIds.push_back(kPayloadSkipService);
     state_.encounter.payloadValues.push_back(0);
 }
@@ -1018,7 +1050,7 @@ bool GameEngine::resolveUpgradeSelection(size_t index) {
             openMarketShop();
         } else if (repairContext) {
             state_.statusLine = "You leave the retrofit console unused.";
-            finishCurrentNode();
+            openRepairStation();
         } else {
             state_.statusLine = "You leave the tuning lattice unused.";
             finishCurrentNode();
@@ -1040,6 +1072,9 @@ bool GameEngine::resolveUpgradeSelection(size_t index) {
 
     if (marketContext) {
         openMarketShop();
+    } else if (repairContext) {
+        state_.repairStationUpgradeUsed = true;
+        openRepairStation();
     } else {
         finishCurrentNode();
     }
