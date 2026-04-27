@@ -473,8 +473,7 @@ void GameEngine::playCard(size_t index) {
         outgoingDamage = 25;
     }
     if (baseCardId == "vg_18") {
-        state_.player.attackBonusPerHeatThisTurn = std::max(state_.player.attackBonusPerHeatThisTurn, card.damage);
-        state_.player.attackBonusPerHeatCapThisTurn = std::max(state_.player.attackBonusPerHeatCapThisTurn, 6);
+        outgoingDamage = std::max(0, state_.player.heat);
     }
     if (baseCardId == "vg_20" && state_.player.heatReducedThisTurn > 0) {
         multiHitValue += 1;
