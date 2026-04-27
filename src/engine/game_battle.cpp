@@ -191,7 +191,14 @@ int EnemyHpScalePercent(int difficulty) {
 }
 
 bool DifficultyUsesAggressiveEnemySelection(int difficulty) {
-    return difficulty >= 1;
+    return difficulty >= 2;
+}
+
+int DifficultyAggressiveEnemySelectionPercent(int difficulty) {
+    if (difficulty >= 2) {
+        return 50;
+    }
+    return 0;
 }
 
 bool DifficultyUsesDualEliteEnemyIntents(const RunState& state) {
@@ -1229,6 +1236,7 @@ void GameEngine::chooseEnemyIntent() {
 
     const int effect_scale = EnemyEffectScalePercent(state_.difficulty);
     const bool aggressive_selection = DifficultyUsesAggressiveEnemySelection(state_.difficulty);
+    const int aggressive_selection_percent = DifficultyAggressiveEnemySelectionPercent(state_.difficulty);
     std::vector<int> attack_indices;
     attack_indices.reserve(enemy->pattern.size());
     for (size_t i = 0; i < enemy->pattern.size(); ++i) {
@@ -1250,9 +1258,9 @@ void GameEngine::chooseEnemyIntent() {
         std::uniform_int_distribution<int> aggression_roll(1, 100);
         const bool should_force_attack =
             enemy->behavior == "chaotic"
-                ? aggression_roll(rng_) <= 80
+                ? aggression_roll(rng_) <= aggressive_selection_percent
                 : (enemy->pattern[static_cast<size_t>(index)].kind != "attack" &&
-                   aggression_roll(rng_) <= 75);
+                   aggression_roll(rng_) <= aggressive_selection_percent);
         if (!should_force_attack) {
             return index;
         }
@@ -1300,9 +1308,9 @@ void GameEngine::chooseEnemyIntent() {
         std::uniform_int_distribution<int> aggression_roll(1, 100);
         const bool should_force_attack =
             enemy->behavior == "chaotic"
-                ? aggression_roll(rng_) <= 80
+                ? aggression_roll(rng_) <= aggressive_selection_percent
                 : (enemy->pattern[static_cast<size_t>(index)].kind != "attack" &&
-                   aggression_roll(rng_) <= 75);
+                   aggression_roll(rng_) <= aggressive_selection_percent);
         if (!should_force_attack) {
             return index;
         }

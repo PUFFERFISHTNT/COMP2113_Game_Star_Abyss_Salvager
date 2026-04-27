@@ -15,19 +15,19 @@ std::string DifficultyDescription(UiLanguage language, int difficulty_index) {
     case 0:
         return Tr(language,
                   "Easy: Current baseline difficulty with the existing forgiving balance.",
-                  "简单：保持当前版本的默认平衡，整体最宽松。");
+                  u8"简单：保持当前版本的默认平衡，整体最宽松。");
     case 1:
         return Tr(language,
-                  "Normal: Enemies are more attack-oriented. Elite and boss enemies have a 30% chance each round to prepare and resolve a second intent.",
-                  "普通：敌人更偏向攻击。精英和 Boss 每回合有 30% 概率额外准备并结算一个第二意图。");
+                  "Normal: Baseline enemy behavior. Elite and boss enemies have a 30% chance each round to prepare and resolve a second intent.",
+                  u8"普通：敌人保持基础攻击倾向。精英和 Boss 每回合有 30% 概率额外准备并结算一个第二意图。");
     case 2:
         return Tr(language,
-                  "Hard: Based on Normal. Enemy HP, max heat, and intent values are increased by 30%. Elite and boss enemies have a 40% chance each round to prepare and resolve a second intent.",
-                  "困难：基于普通。敌人的生命、最大热量与意图数值提高 30%。精英和 Boss 每回合有 40% 概率额外准备并结算一个第二意图。");
+                  "Hard: Enemy HP, max heat, and intent values are increased by 30%. Enemy attack bias is enabled: non-chaotic and chaotic enemies each have a 50% attack-push chance. Elite and boss enemies have a 40% chance each round to prepare and resolve a second intent.",
+                  u8"困难：敌人的生命、最大热量与意图数值提高 30%。启用攻击欲望提升：非 chaotic 和 chaotic 敌人都会以 50% 概率偏向攻击。精英和 Boss 每回合有 40% 概率额外准备并结算一个第二意图。");
     default:
         return Tr(language,
-                  "Hell: Enemy numbers match Hard, but all enemy intents are hidden as Unknown. Elite and boss enemies have a 50% chance each round to prepare and resolve a second intent.",
-                  "地狱：敌人数值与困难相同，但所有敌方意图都会显示为“未知”。精英和 Boss 每回合有 50% 概率额外准备并结算一个第二意图。");
+                  "Hell: Enemy numbers match Hard, and enemy attack bias remains enabled at 50%. All enemy intents are hidden as Unknown. Elite and boss enemies have a 50% chance each round to prepare and resolve a second intent.",
+                  u8"地狱：敌人数值与困难相同，攻击欲望提升同样保持 50%。所有敌方意图都会显示为“未知”。精英和 Boss 每回合有 50% 概率额外准备并结算一个第二意图。");
     }
 }
 
