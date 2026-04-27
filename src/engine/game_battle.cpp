@@ -157,9 +157,6 @@ int ScalePositivePercent(int value, int percent) {
 }
 
 int EnemyEffectScalePercent(int difficulty) {
-    if (difficulty >= 3) {
-        return 169;
-    }
     if (difficulty >= 2) {
         return 130;
     }
@@ -180,6 +177,19 @@ bool DifficultyUsesAggressiveEnemySelection(int difficulty) {
 bool DifficultyUsesDualEliteEnemyIntents(const RunState& state) {
     return state.difficulty >= 1 &&
            (state.activeNodeType == "elite" || state.activeNodeType == "boss");
+}
+
+int DifficultyDualEliteIntentPercent(int difficulty) {
+    if (difficulty >= 3) {
+        return 50;
+    }
+    if (difficulty >= 2) {
+        return 40;
+    }
+    if (difficulty >= 1) {
+        return 30;
+    }
+    return 0;
 }
 
 }  // namespace
@@ -1243,6 +1253,11 @@ void GameEngine::chooseEnemyIntent() {
                  &state_.enemy.intentValue);
 
     if (!DifficultyUsesDualEliteEnemyIntents(state_) || enemy->pattern.size() <= 1) {
+        return;
+    }
+
+    std::uniform_int_distribution<int> second_intent_roll(1, 100);
+    if (second_intent_roll(rng_) > DifficultyDualEliteIntentPercent(state_.difficulty)) {
         return;
     }
 
