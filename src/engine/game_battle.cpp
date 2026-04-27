@@ -11,7 +11,6 @@ namespace {
 constexpr int kPlayerFormNeutral = 0;
 constexpr int kPlayerFormOverload = 1;
 constexpr int kPlayerFormDefense = 2;
-constexpr int kHighHeatThreshold = 6;
 constexpr int kFirstSummonScopeBattleOnce = 1;
 constexpr int kFirstSummonScopePerTurn = 2;
 constexpr const char* kTemporaryCopyPrefix = "tmp|";
@@ -38,6 +37,10 @@ enum class AuxiliaryTriggerContext {
     Immediate = 0,
     EndTurn,
 };
+
+bool IsHighHeat(int heat, int max_heat) {
+    return std::max(0, heat) * 2 > std::max(1, max_heat);
+}
 
 int MaxAuxiliaryShipSlots(const PlayerState& player) {
     (void)player;
@@ -267,8 +270,8 @@ void GameEngine::playCard(size_t index) {
     }
     state_.player.hand.erase(state_.player.hand.begin() + static_cast<long long>(index));
 
-    const bool playerHighHeat = state_.player.heat >= kHighHeatThreshold;
-    const bool enemyHighHeat = state_.enemy.heat >= kHighHeatThreshold;
+    const bool playerHighHeat = IsHighHeat(state_.player.heat, state_.player.maxHeat);
+    const bool enemyHighHeat = IsHighHeat(state_.enemy.heat, state_.enemy.maxHeat);
     const bool inDefense = state_.player.form == kPlayerFormDefense;
     const bool inOverload = state_.player.form == kPlayerFormOverload;
     const bool playedSummonCard = card.summonDroneCount > 0;
@@ -439,7 +442,7 @@ void GameEngine::playCard(size_t index) {
         drawCount = 0;
     }
     if (baseCardId == "vgh_03") {
-        enemyHeatDelta = playerHighHeat ? 5 : 3;
+        enemyHeatDelta = playerHighHeat ? card.enemyHeat : 3;
     }
     if (baseCardId == "vgh_06") {
         enemyHeatDelta = 0;
@@ -1681,7 +1684,7 @@ void GameEngine::reshuffleDiscardIntoDraw() {
 }
 
 void GameEngine::changeHeat(int delta) {
-    const bool wasOverheated = playerIsOverheated();
+    const bool wasHighHeat = IsHighHeat(state_.player.heat, state_.player.maxHeat);
     const int beforeHeat = state_.player.heat;
     state_.player.heat += delta;
     if (state_.player.heat < 0) {
@@ -1715,8 +1718,8 @@ void GameEngine::changeHeat(int delta) {
         }
     }
     if (state_.page == AppPage::Battle) {
-        const bool nowOverheated = playerIsOverheated();
-        if (!wasOverheated && nowOverheated) {
+        const bool nowHighHeat = IsHighHeat(state_.player.heat, state_.player.maxHeat);
+        if (!wasHighHeat && nowHighHeat) {
             // Entry-triggered heat effects are intentionally centralized here so
             // every heat source (card, enemy intent, relic) behaves consistently.
             if (!state_.player.firstEnterHighHeatTriggeredThisBattle &&
