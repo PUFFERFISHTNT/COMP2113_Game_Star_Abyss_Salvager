@@ -191,6 +191,8 @@ void StarAbyssApp::LoadLanguagePreference() {
 
     std::ifstream input(kLanguagePreferencePath);
     if (!input) {
+        language_ = UiLanguage::English;
+        SaveLanguagePreference();
         return;
     }
 
@@ -200,6 +202,9 @@ void StarAbyssApp::LoadLanguagePreference() {
         language_ = UiLanguage::Chinese;
     } else if (token == "en" || token == "EN" || token == "english" || token == "English") {
         language_ = UiLanguage::English;
+    } else {
+        language_ = UiLanguage::English;
+        SaveLanguagePreference();
     }
 }
 
