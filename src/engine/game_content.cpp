@@ -377,6 +377,9 @@ void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     player.energy = player.maxEnergy;
     player.drawPile.clear();
     for (const CardDef& card : cardPool_) {
+        if (ship.id == "vanguard" && card.id == "basic_cooling") {
+            continue;
+        }
         for (int copy = 0; copy < card.starterCopies; ++copy) {
             player.drawPile.push_back(card.id);
             recordObtainedCard(card.id);
