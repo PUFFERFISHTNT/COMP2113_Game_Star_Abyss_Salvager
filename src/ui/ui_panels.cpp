@@ -161,8 +161,18 @@ std::string IntentSummary(UiLanguage language, const RunState& state, bool secon
         }
         return std::max(1, std::min(3, state.enemy.overheatRounds));
     };
-    const auto effective_enemy_attack = [&state, &enemy_overheat_stage, raw_value]() {
+    const auto charge_bonus_for_intent = [&state, secondary, &raw_kind]() {
+        if (raw_kind != "attack") {
+            return 0;
+        }
+        if (!secondary) {
+            return std::max(0, state.enemy.nextAttackBonusDamage);
+        }
+        return state.enemy.intentKind == "attack" ? 0 : std::max(0, state.enemy.nextAttackBonusDamage);
+    };
+    const auto effective_enemy_attack = [&state, &enemy_overheat_stage, raw_value, &charge_bonus_for_intent]() {
         int value = raw_value;
+        value += charge_bonus_for_intent();
         if (state.enemy.weakenTurns > 0) {
             value = std::max(0, value - 2);
         }
@@ -196,8 +206,8 @@ std::string IntentSummary(UiLanguage language, const RunState& state, bool secon
                Tr(language, " energy", " 能量");
     }
     if (raw_kind == "charge") {
-        return label + " - " + Tr(language, "Charge and gain ", "蓄力并获得 ") + std::to_string(raw_value) +
-               Tr(language, " shield", " 点护盾");
+        return label + " - " + Tr(language, "Charge next attack +", "为下次攻击蓄力 +") + std::to_string(raw_value) +
+               Tr(language, " damage", " 点伤害");
     }
     if (raw_kind == "cool") {
         return label + " - " + Tr(language, "Reduce own heat ", "自身热量 -") + std::to_string(raw_value);
@@ -844,6 +854,9 @@ std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunS
     }
     if (state.enemy.coolingCooldownTurns > 0) {
         lines.push_back(Tr(language, "Cooling cooldown: ", "冷却冷却中：") + std::to_string(state.enemy.coolingCooldownTurns));
+    }
+    if (state.enemy.nextAttackBonusDamage > 0) {
+        lines.push_back(Tr(language, "Charged attack bonus: +", "蓄力增伤：+") + std::to_string(state.enemy.nextAttackBonusDamage));
     }
     if (state.enemy.weakenTurns > 0) lines.push_back(Tr(language, "Weakened attacks remaining: ", "剩余削弱攻击次数：") + std::to_string(state.enemy.weakenTurns));
     if (state.enemy.shieldLockTurns > 0) lines.push_back(Tr(language, "Shield jam remaining: ", "剩余护盾封锁回合：") + std::to_string(state.enemy.shieldLockTurns));

@@ -986,6 +986,7 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.enemy.patternIndex = 0;
     state_.enemy.weakenTurns = 0;
     state_.enemy.shieldLockTurns = 0;
+    state_.enemy.nextAttackBonusDamage = 0;
     state_.battleLog.clear();
     state_.battleTurn = 0;
     state_.firstTurnOfBattle = true;
@@ -1335,8 +1336,11 @@ void GameEngine::resolveEnemyIntent() {
         }
     }
 
-    const auto effective_attack_damage = [&](int intent_value) {
+    const auto effective_attack_damage = [&](int intent_value, int charge_bonus) {
         int damage = intent_value;
+        if (charge_bonus > 0) {
+            damage += charge_bonus;
+        }
         if (state_.enemy.weakenTurns > 0) {
             damage = std::max(0, damage - 2);
         }
@@ -1355,10 +1359,12 @@ void GameEngine::resolveEnemyIntent() {
         log(state_.enemy.name + " executes " + label + ".");
 
         if (kind == "attack") {
-            const int damage = effective_attack_damage(value);
+            const int charge_bonus = std::max(0, state_.enemy.nextAttackBonusDamage);
+            const int damage = effective_attack_damage(value, charge_bonus);
             if (state_.enemy.weakenTurns > 0 && value > 0) {
                 --state_.enemy.weakenTurns;
             }
+            state_.enemy.nextAttackBonusDamage = 0;
             applyDamageToPlayer(damage);
             startAnimation("enemy_attack", label, damage, false, 7);
             log("You absorb " + std::to_string(damage) + " damage.");
@@ -1379,9 +1385,9 @@ void GameEngine::resolveEnemyIntent() {
             startAnimation("support", label, value, false, 5);
             log("The EMP will cut " + std::to_string(value) + " energy from your next turn.");
         } else if (kind == "charge") {
-            state_.enemy.shield += value;
+            state_.enemy.nextAttackBonusDamage += std::max(0, value);
             startAnimation("support", label, value, false, 5);
-            log(state_.enemy.name + " charges for a heavier strike.");
+            log(state_.enemy.name + " charges the next attack for +" + std::to_string(std::max(0, value)) + " damage.");
         } else if (kind == "cool") {
             changeEnemyHeat(-value);
             state_.enemy.coolingCooldownTurns = 2;

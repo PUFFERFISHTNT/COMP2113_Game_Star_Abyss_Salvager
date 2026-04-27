@@ -1244,9 +1244,11 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (StartsWith(text, "The jump tears plating free but hands you a fresh tactical line.")) return "跃迁撕裂了部分装甲，但也为你提供了一手新牌。";
     if (StartsWith(text, "Emergency Battery triggers and keeps the ship alive at 1 HP.")) return "紧急电池触发，飞船以 1 点生命幸存。";
     if (StartsWith(text, "Discard pile reshuffled into the draw pile.")) return "弃牌堆已洗回抽牌堆。";
-    if (EndsWith(text, " charges for a heavier strike.")) {
-        const std::string name = text.substr(0, text.size() - 29);
-        return TranslateGameText(language, name) + " 正在蓄力，为更沉重的一击做准备。";
+    if (text.find(" charges the next attack for +") != std::string::npos && EndsWith(text, " damage.")) {
+        const size_t marker = text.find(" charges the next attack for +");
+        const std::string name = text.substr(0, marker);
+        const std::string value = text.substr(marker + 30, text.size() - marker - 38);
+        return TranslateGameText(language, name) + " 为下一次攻击蓄力 +" + value + " 点伤害。";
     }
 
     // ---- New event system: status lines ----

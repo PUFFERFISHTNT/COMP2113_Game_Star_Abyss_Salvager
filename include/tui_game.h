@@ -293,6 +293,7 @@ struct EnemyState {
     int patternIndex = 0;
     int weakenTurns = 0;
     int shieldLockTurns = 0;
+    int nextAttackBonusDamage = 0;
 };
 
 struct RunState {

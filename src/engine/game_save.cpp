@@ -262,7 +262,8 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << enemy.heat << "|" << enemy.maxHeat << "|" << enemy.overheatRounds << "|"
            << enemy.coolingCooldownTurns << "|"
            << enemy.secondaryIntentKind << "|" << enemy.secondaryIntentLabel << "|"
-           << enemy.secondaryIntentValue << "\n";
+           << enemy.secondaryIntentValue << "|"
+           << enemy.nextAttackBonusDamage << "\n";
 
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
@@ -590,6 +591,9 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
                 loaded.enemy.secondaryIntentLabel = parts[18];
                 loaded.enemy.secondaryIntentValue = ToInt(parts[19], 0);
             }
+            if (parts.size() >= 21) {
+                loaded.enemy.nextAttackBonusDamage = ToInt(parts[20], 0);
+            }
         } else if (key == "NODE" && parts.size() >= 5) {
             NodeOption option;
             option.typeId = parts[1];
@@ -734,6 +738,7 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.enemy.coolingCooldownTurns = std::max(0, loaded.enemy.coolingCooldownTurns);
     loaded.enemy.weakenTurns = std::max(0, loaded.enemy.weakenTurns);
     loaded.enemy.shieldLockTurns = std::max(0, loaded.enemy.shieldLockTurns);
+    loaded.enemy.nextAttackBonusDamage = std::max(0, loaded.enemy.nextAttackBonusDamage);
     for (AuxiliaryShipState& aux : loaded.auxiliaryShips) {
         aux.attack = std::max(0, aux.attack);
         aux.shield = std::max(0, aux.shield);
