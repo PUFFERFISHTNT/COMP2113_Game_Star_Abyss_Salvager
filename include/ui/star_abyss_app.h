@@ -121,7 +121,7 @@ private:
     std::vector<std::string> difficultyEntries_ = {"Easy", "Normal", "Hard", "Hell"};
     std::vector<std::string> shipEntries_ = {"Vanguard", "Drift Fox", "Iron Bastion"};
 
-    std::array<std::string, 7> menuLabels_{};
+    std::array<std::string, 8> menuLabels_{};
     std::string menuDevLabel_ = "Developer Mode";
     std::array<std::string, kMapSlots> mapLabels_{};
     std::array<std::string, kEncounterSlots> encounterLabels_{};
@@ -156,7 +156,7 @@ private:
     std::string mapOwnedCardsLabel_ = "Owned Cards";
     std::string cardViewerCloseLabel_ = "Close";
 
-    std::array<ftxui::Component, 7> menuButtons_{};
+    std::array<ftxui::Component, 8> menuButtons_{};
     ftxui::Component menuDevButton_;
     std::array<ftxui::Component, kMapSlots> mapButtons_{};
     std::array<ftxui::Component, kEncounterSlots> encounterButtons_{};

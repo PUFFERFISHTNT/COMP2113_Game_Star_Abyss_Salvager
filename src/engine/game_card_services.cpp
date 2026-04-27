@@ -390,6 +390,10 @@ size_t GameEngine::totalCardCount() const {
     return cardPool_.size();
 }
 
+size_t GameEngine::completedAchievementCount() const {
+    return completedEventAchievements_.size();
+}
+
 bool GameEngine::upgradeCard(const std::string& cardRef,
                              CardUpgradeSource source,
                              std::string* error) {

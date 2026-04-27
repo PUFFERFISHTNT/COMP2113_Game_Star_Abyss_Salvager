@@ -128,6 +128,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Salvager Zero", "零号打捞者"},
         {"Hostile Contact", "敌方接触目标"},
         {"Anomalous War Signature", "异常战争信号"},
+        {"Completed Events", "已完成事件"},
+        {"No completed events recorded yet.", "当前还没有已完成事件。"},
         {"Laser Burst", "激光爆裂"},
         {"Raise Shield", "升起护盾"},
         {"Coolant Flush", "冷却液冲洗"},

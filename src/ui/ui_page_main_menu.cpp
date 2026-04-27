@@ -48,10 +48,11 @@ Element StarAbyssApp::RenderMainMenu() const {
                    menuButtons_[2]->Render(),
                    menuButtons_[3]->Render(),
                    menuButtons_[4]->Render(),
-                   menuLibraryButton_->Render(),
                    menuButtons_[5]->Render(),
-                   menuDevButton_->Render(),
+                   menuLibraryButton_->Render(),
                    menuButtons_[6]->Render(),
+                   menuDevButton_->Render(),
+                   menuButtons_[7]->Render(),
                })) |
             bgcolor(kPanel),
         text(Tr(language_, "Current language: English", "当前语言：中文")) | color(kHull) | center,

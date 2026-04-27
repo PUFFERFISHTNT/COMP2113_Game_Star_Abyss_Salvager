@@ -333,6 +333,7 @@ public:
     void showMainMenu();
     void resumeRun();
     void showHelp();
+    void showAchievements();
     void showLeaderboard(const std::string& path);
     void showInfo(const std::string& title,
                   const std::vector<std::string>& lines,
@@ -367,6 +368,7 @@ public:
     std::vector<CardLibraryEntry> allCardLibraryEntries() const;
     size_t obtainedCardCount() const;
     size_t totalCardCount() const;
+    size_t completedAchievementCount() const;
     bool auxiliaryTransformSelectionPending() const;
     bool auxiliaryTransformTargetChoicePending() const;
     int auxiliaryTransformSelectedShipIndex() const;
@@ -468,6 +470,7 @@ private:
     std::vector<CardDef> cardPool_;
     std::vector<CardDef> configuredUpgradePool_;
     std::vector<std::string> obtainedCardIds_;
+    std::vector<std::pair<std::string, std::string>> completedEventAchievements_;
     bool dev_session_active_ = false;
     bool dev_obtained_snapshot_valid_ = false;
     std::vector<std::string> dev_obtained_snapshot_;
@@ -548,6 +551,10 @@ private:
     void queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs);
     void loadObtainedCardRegistry();
     bool saveObtainedCardRegistry(std::string* error = nullptr) const;
+    bool hasCompletedEventAchievement(const std::string& encounterId) const;
+    void recordCompletedEventAchievement(const std::string& encounterId, const std::string& title);
+    void loadCompletedEventAchievementRegistry();
+    bool saveCompletedEventAchievementRegistry(std::string* error = nullptr) const;
     void startAnimation(const std::string& kind,
                         const std::string& label,
                         int magnitude,

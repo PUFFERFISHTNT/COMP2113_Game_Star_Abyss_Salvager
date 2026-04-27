@@ -9,6 +9,7 @@
 namespace {
 
 constexpr const char* kObtainedCardsRegistryPath = "save/obtained_cards.txt";
+constexpr const char* kCompletedEventsRegistryPath = "save/completed_events.txt";
 
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
@@ -211,6 +212,81 @@ bool GameEngine::saveObtainedCardRegistry(std::string* error) const {
     }
     for (const std::string& cardId : obtainedCardIds_) {
         output << cardId << "\n";
+    }
+    if (error != nullptr) {
+        *error = "";
+    }
+    return true;
+}
+
+bool GameEngine::hasCompletedEventAchievement(const std::string& encounterId) const {
+    return std::any_of(completedEventAchievements_.begin(),
+                       completedEventAchievements_.end(),
+                       [&](const std::pair<std::string, std::string>& entry) {
+                           return entry.first == encounterId;
+                       });
+}
+
+void GameEngine::recordCompletedEventAchievement(const std::string& encounterId, const std::string& title) {
+    if (dev_session_active_ || encounterId.empty() || title.empty() || hasCompletedEventAchievement(encounterId)) {
+        return;
+    }
+    completedEventAchievements_.push_back({encounterId, title});
+    std::sort(completedEventAchievements_.begin(),
+              completedEventAchievements_.end(),
+              [](const std::pair<std::string, std::string>& lhs, const std::pair<std::string, std::string>& rhs) {
+                  if (lhs.second != rhs.second) {
+                      return lhs.second < rhs.second;
+                  }
+                  return lhs.first < rhs.first;
+              });
+    saveCompletedEventAchievementRegistry(nullptr);
+}
+
+void GameEngine::loadCompletedEventAchievementRegistry() {
+    completedEventAchievements_.clear();
+    std::ifstream input(kCompletedEventsRegistryPath);
+    if (!input) {
+        return;
+    }
+
+    std::string line;
+    while (std::getline(input, line)) {
+        const size_t separator = line.find('|');
+        if (separator == std::string::npos) {
+            continue;
+        }
+        const std::string encounterId = TrimAscii(line.substr(0, separator));
+        const std::string title = TrimAscii(line.substr(separator + 1));
+        if (encounterId.empty() || title.empty() || hasCompletedEventAchievement(encounterId)) {
+            continue;
+        }
+        completedEventAchievements_.push_back({encounterId, title});
+    }
+    std::sort(completedEventAchievements_.begin(),
+              completedEventAchievements_.end(),
+              [](const std::pair<std::string, std::string>& lhs, const std::pair<std::string, std::string>& rhs) {
+                  if (lhs.second != rhs.second) {
+                      return lhs.second < rhs.second;
+                  }
+                  return lhs.first < rhs.first;
+              });
+}
+
+bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::create_directories("save", ec);
+
+    std::ofstream output(kCompletedEventsRegistryPath, std::ios::trunc);
+    if (!output) {
+        if (error != nullptr) {
+            *error = "Unable to write completed event registry.";
+        }
+        return false;
+    }
+    for (const auto& entry : completedEventAchievements_) {
+        output << entry.first << "|" << entry.second << "\n";
     }
     if (error != nullptr) {
         *error = "";

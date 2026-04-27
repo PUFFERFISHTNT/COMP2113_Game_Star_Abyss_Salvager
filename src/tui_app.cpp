@@ -37,15 +37,20 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     }, AccentButton(kHull));
     menuButtons_[4] = Button(&menuLabels_[4], [&] {
         infoReturnsToRun_ = false;
+        engine_.showAchievements();
+        SyncUi();
+    }, AccentButton(kGold));
+    menuButtons_[5] = Button(&menuLabels_[5], [&] {
+        infoReturnsToRun_ = false;
         engine_.showHelp();
         SyncUi();
     }, AccentButton(kHull));
-    menuButtons_[5] = Button(&menuLabels_[5], [&] {
+    menuButtons_[6] = Button(&menuLabels_[6], [&] {
         language_ = language_ == UiLanguage::English ? UiLanguage::Chinese : UiLanguage::English;
         SaveLanguagePreference();
         SyncUi();
     }, AccentButton(kGold));
-    menuButtons_[6] = Button(&menuLabels_[6], [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
+    menuButtons_[7] = Button(&menuLabels_[7], [&] { screen_.ExitLoopClosure()(); }, AccentButton(kEnemy));
     menuDevButton_ = Button(&menuDevLabel_, [&] {
         if (!devModeUi_) {
             SyncUi();
@@ -114,7 +119,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     closeDialogButton_ = Button(&closeDialogLabel_, [&] { CloseSaveDialog(); SyncUi(); }, AccentButton(kEnemy));
     cardViewerCloseButton_ = Button(&cardViewerCloseLabel_, [&] { CloseCardViewer(); SyncUi(); }, AccentButton(kEnemy));
 
-    mainMenuPage_ = Renderer(Container::Vertical({menuButtons_[0], menuButtons_[1], menuButtons_[2], menuButtons_[3], menuButtons_[4], menuLibraryButton_, menuButtons_[5], menuDevButton_, menuButtons_[6]}),
+    mainMenuPage_ = Renderer(Container::Vertical({menuButtons_[0], menuButtons_[1], menuButtons_[2], menuButtons_[3], menuButtons_[4], menuButtons_[5], menuLibraryButton_, menuButtons_[6], menuDevButton_, menuButtons_[7]}),
                              [&] { return RenderMainMenu(); });
     setupPage_ = Renderer(Container::Vertical({difficultyToggle_, shipToggle_, startRunButton_, setupBackButton_}), [&] { return RenderSetup(); });
     mapPage_ = Renderer(Container::Vertical({mapButtons_[0], mapButtons_[1], mapButtons_[2], mapOwnedCardsButton_, mapSaveButton_, mapMenuButton_}), [&] { return RenderMap(); });

@@ -24,6 +24,20 @@ void GameEngine::showHelp() {
     state_.page = AppPage::Info;
 }
 
+void GameEngine::showAchievements() {
+    state_.info = {};
+    state_.info.title = "Completed Events";
+    state_.info.footer = "Press Esc or click Back to return.";
+    if (completedEventAchievements_.empty()) {
+        state_.info.lines.push_back("No completed events recorded yet.");
+    } else {
+        for (const auto& entry : completedEventAchievements_) {
+            state_.info.lines.push_back(entry.second);
+        }
+    }
+    state_.page = AppPage::Info;
+}
+
 void GameEngine::showInfo(const std::string& title,
                           const std::vector<std::string>& lines,
                           const std::string& footer) {

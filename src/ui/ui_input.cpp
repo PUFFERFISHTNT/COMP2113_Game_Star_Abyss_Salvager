@@ -446,11 +446,14 @@ bool StarAbyssApp::HandleEvent(Event event) {
                     engine_.showLeaderboard("data/leaderboard.txt");
                 } else if (index == 4) {
                     infoReturnsToRun_ = false;
-                    engine_.showHelp();
+                    engine_.showAchievements();
                 } else if (index == 5) {
+                    infoReturnsToRun_ = false;
+                    engine_.showHelp();
+                } else if (index == 6) {
                     language_ = language_ == UiLanguage::English ? UiLanguage::Chinese : UiLanguage::English;
                     SaveLanguagePreference();
-                } else if (index == 6) screen_.ExitLoopClosure()();
+                } else if (index == 7) screen_.ExitLoopClosure()();
                 break;
             case AppPage::Map:
                 if (static_cast<size_t>(index) < engine_.state().routeOptions.size() && static_cast<size_t>(index) < mapButtons_.size()) {

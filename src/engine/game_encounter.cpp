@@ -175,6 +175,9 @@ void GameEngine::resolveEncounter(size_t index) {
         }
 
         const std::string eid = state_.encounter.encounterId;
+        const auto complete_event = [&]() {
+            recordCompletedEventAchievement(eid, state_.encounter.title);
+        };
 
         // ====== Category A: Rescue & Exploration ======
 
@@ -192,6 +195,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "You leave the signal fading behind you.";
             }
             SetEpilogue_A(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -202,15 +206,18 @@ void GameEngine::resolveEncounter(size_t index) {
                 const std::string relicId = randomRelic();
                 if (!relicId.empty()) grantRelic(relicId);
                 state_.statusLine = "Lost 5 HP exploring, but found a rare relic aboard the ghost ship.";
+                complete_event();
                 finishCurrentNode();
             } else if (index == 1) {
                 state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 8);
                 changeHeat(2);
                 state_.statusLine = "The ghost ship responds with supplies. +8 HP, +2 heat.";
+                complete_event();
                 finishCurrentNode();
             } else {
                 // Forced normal battle
                 state_.activeNodeType = "battle";
+                complete_event();
                 startBattle("battle");
                 state_.statusLine = "The ghost ship's defenses activate! Battle!";
             }
@@ -232,6 +239,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.scrap += 8;
                 state_.statusLine = "Recorded the spectrum. +8 credits.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -246,6 +254,7 @@ void GameEngine::resolveEncounter(size_t index) {
             } else if (index == 1) {
                 if (state_.player.scrap < 10) {
                     state_.statusLine = "Not enough credits. The space fold collapses.";
+                    complete_event();
                     finishCurrentNode();
                     return;
                 }
@@ -257,6 +266,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.nextBattleFirstAttackMultiplier = 2;
                 state_.statusLine = "Steered clear. Next battle's first attack enhanced.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -282,6 +292,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 g_sa_no_boss = true;
                 state_.statusLine = "Blocked the beacon. Escape route initiated. No more boss encounters.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -292,10 +303,12 @@ void GameEngine::resolveEncounter(size_t index) {
                                                 ? state_.encounter.payloadIds[index]
                                                 : "";
                 state_.activeNodeType = "boss";
+                complete_event();
                 startBattle("boss", payload);
                 state_.statusLine = "Signal lock confirmed. Story boss battle engaged.";
             } else {
                 state_.statusLine = "You break lock and leave the anomalous signature behind.";
+                complete_event();
                 finishCurrentNode();
             }
             return;
@@ -321,6 +334,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Alarm silenced. Heat will build faster next segment.";
             }
             SetEpilogue_C(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -348,6 +362,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Left the breach open. Lost 8 HP from atmosphere venting.";
             }
             SetEpilogue_C(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -405,6 +420,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 }
             }
             SetEpilogue_C(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -424,6 +440,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Left the cache alone. No risk, no reward.";
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -454,6 +471,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Declined the trader's offer.";
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -463,6 +481,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 if (state_.player.scrap >= 12) {
                     state_.player.scrap -= 12;
                     state_.statusLine = "Paid the ransom. -12 credits.";
+                    complete_event();
                     finishCurrentNode();
                 } else {
                     state_.statusLine = "Not enough credits to pay the ransom.";
@@ -471,11 +490,13 @@ void GameEngine::resolveEncounter(size_t index) {
             } else if (index == 1) {
                 // Forced elite battle
                 state_.activeNodeType = "elite";
+                complete_event();
                 startBattle("elite");
                 state_.statusLine = "You fight back against the pirates! Elite battle!";
             } else {
                 changeHeat(6);
                 state_.statusLine = "Escaped at full speed. +6 heat.";
+                complete_event();
                 finishCurrentNode();
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
@@ -507,6 +528,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.statusLine = "Scavenged supplies. +18 credits, gained a card, -8 HP.";
             }
             SetEpilogue_D(g_sa_event_epilogue, rng_);
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -519,6 +541,7 @@ void GameEngine::resolveEncounter(size_t index) {
             state_.statusLine = "The Abyss awaits. Chart your first jump.";
             state_.page = AppPage::Map;
             resumePage_ = AppPage::Map;
+            complete_event();
             return;
         }
 
@@ -527,6 +550,7 @@ void GameEngine::resolveEncounter(size_t index) {
         if (eid == "escape_prologue") {
             g_sa_escape_intro_pending = false;
             state_.statusLine = "Engines engaged. The escape corridor opens ahead.";
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -538,6 +562,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 if (state_.player.scrap >= 12) {
                     state_.player.scrap -= 12;
                     state_.statusLine = "Paid the transit fee. -12 credits.";
+                    complete_event();
                     finishCurrentNode();
                 } else {
                     state_.statusLine = "Not enough credits for the transit fee.";
@@ -546,9 +571,11 @@ void GameEngine::resolveEncounter(size_t index) {
             } else if (index == 1) {
                 changeHeat(4);
                 state_.statusLine = "Powered down and drifted through. +4 heat.";
+                complete_event();
                 finishCurrentNode();
             } else {
                 state_.activeNodeType = "battle";
+                complete_event();
                 startBattle("battle");
                 state_.statusLine = "Forced through the checkpoint! Battle!";
             }
@@ -566,6 +593,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.scrap += 14;
                 state_.statusLine = "Scavenged supplies. +14 credits.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -589,6 +617,7 @@ void GameEngine::resolveEncounter(size_t index) {
                     return;
                 }
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -598,6 +627,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 if (state_.player.scrap >= 15) {
                     state_.player.scrap -= 15;
                     state_.statusLine = "Paid off the pirates. -15 credits.";
+                    complete_event();
                     finishCurrentNode();
                 } else {
                     state_.statusLine = "Not enough credits to pay off the pirates.";
@@ -613,9 +643,11 @@ void GameEngine::resolveEncounter(size_t index) {
                     purgeCardFromDeck(allCards[pick(rng_)]);
                 }
                 state_.statusLine = "Jettisoned cargo. Lost 1 random card.";
+                complete_event();
                 finishCurrentNode();
             } else {
                 state_.activeNodeType = "elite";
+                complete_event();
                 startBattle("elite");
                 state_.statusLine = "Counter-attacking the pirates! Elite battle!";
             }
@@ -633,6 +665,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.nextBattleHeal += 3;
                 state_.statusLine = "Took the emergency chip. +3 HP recovery next battle.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -657,6 +690,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 applyDamageToPlayer(5);
                 state_.statusLine = "Abandoned the jump. Gained a card, -5 HP.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -677,6 +711,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 applyDamageToPlayer(5);
                 state_.statusLine = "Found a gap. Lost 5 HP squeezing through.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -713,6 +748,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 applyDamageToPlayer(4);
                 state_.statusLine = "Removed junk cards. -4 HP.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -736,6 +772,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 }
                 state_.statusLine = "Saved the log. Gained a rare card.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -759,6 +796,7 @@ void GameEngine::resolveEncounter(size_t index) {
                     return;
                 }
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -778,6 +816,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + 10);
                 state_.statusLine = "Drained core energy. -10 heat, +10 HP.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -798,6 +837,7 @@ void GameEngine::resolveEncounter(size_t index) {
                 applyDamageToPlayer(9);
                 state_.statusLine = "Emergency dodge. -9 HP.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
@@ -821,12 +861,14 @@ void GameEngine::resolveEncounter(size_t index) {
                 grantRelic("origin");
                 state_.statusLine = "Extracted the origin. Gained Origin relic, -10 HP.";
             }
+            complete_event();
             finishCurrentNode();
             return;
         }
 
         // Fallback: unknown event
         state_.statusLine = "The signal fades. Nothing to be done.";
+        complete_event();
         finishCurrentNode();
     }
 }
