@@ -26,8 +26,8 @@ std::string DifficultyDescription(UiLanguage language, int difficulty_index) {
                   u8"困难：敌人的生命、最大热量与意图数值提高 30%。攻击欲望提升。精英和 Boss 每回合有 40% 概率额外准备并结算一个第二意图。");
     default:
         return Tr(language,
-                  "Hell: Enemy numbers match Hard. Enemy attack bias is increased. All enemy intents are hidden as Unknown. Elite and boss enemies have a 50% chance each round to prepare and resolve a second intent.",
-                  u8"地狱：敌人数值与困难相同。攻击欲望提升。所有敌方意图都会显示为“未知”。精英和 Boss 每回合有 50% 概率额外准备并结算一个第二意图。");
+                  "Hell: Enemy numbers match Hard. Enemy attack bias matches Hard. All enemy intents are hidden as Unknown. Elite and boss enemies have a 50% chance each round to prepare and resolve a second intent.",
+                  u8"地狱：敌人数值与困难相同。攻击欲望与困难保持相同。所有敌方意图都会显示为“未知”。精英和 Boss 每回合有 50% 概率额外准备并结算一个第二意图。");
     }
 }
 
