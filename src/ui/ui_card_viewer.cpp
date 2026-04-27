@@ -77,6 +77,33 @@ Element CardViewerEntryPanel(UiLanguage language,
            size(HEIGHT, GREATER_THAN, 10);
 }
 
+Element AchievementEntryPanel(UiLanguage language,
+                              const AchievementEntry& entry,
+                              const std::string& category_label,
+                              int card_width) {
+    const Color title_color = entry.obtained ? kGold : Color::RGB(145, 153, 171);
+    const Color frame_color = entry.obtained ? Color::RGB(242, 190, 77) : Color::RGB(89, 98, 116);
+    const Color background = entry.obtained ? Color::RGB(30, 24, 10) : Color::RGB(10, 17, 31);
+    const Color meta_color = entry.obtained ? kHull : Color::RGB(120, 133, 154);
+    const int text_width = std::max(12, card_width - 4);
+
+    return vbox({
+               text(TranslateGameText(language, entry.title)) | color(title_color) | bold,
+               text(entry.obtained ? Tr(language, "Status: Obtained", "状态：已获得")
+                                   : Tr(language, "Status: Not yet obtained", "状态：尚未获得")) |
+                   color(entry.obtained ? kGold : kDim),
+               separator(),
+               text(category_label) | color(meta_color),
+               separator(),
+               WrappedParagraph(TranslateGameText(language, entry.description), text_width) |
+                   color(entry.obtained ? Color::White : Color::RGB(170, 178, 194)),
+           }) |
+           bgcolor(background) |
+           borderStyled(ROUNDED, frame_color) |
+           size(WIDTH, EQUAL, card_width) |
+           size(HEIGHT, GREATER_THAN, 8);
+}
+
 }  // namespace
 
 Element StarAbyssApp::RenderCardViewer() const {
@@ -124,7 +151,7 @@ Element StarAbyssApp::RenderCardViewer() const {
                 }
             }
         }
-    } else {
+    } else if (cardViewerMode_ == CardViewerMode::CardLibrary) {
         std::vector<CardLibraryEntry> library_cards = engine_.allCardLibraryEntries();
         std::sort(library_cards.begin(), library_cards.end(), [&](const CardLibraryEntry& lhs, const CardLibraryEntry& rhs) {
             const std::string left_name = TranslateGameText(language_, lhs.card.def.name);
@@ -154,6 +181,72 @@ Element StarAbyssApp::RenderCardViewer() const {
                 }
             }
         }
+    } else {
+        std::vector<AchievementEntry> event_achievements = engine_.allEventAchievementEntries();
+        std::vector<AchievementEntry> enemy_achievements = engine_.allEnemyAchievementEntries();
+        std::sort(event_achievements.begin(), event_achievements.end(), [&](const AchievementEntry& lhs, const AchievementEntry& rhs) {
+            const std::string left_name = TranslateGameText(language_, lhs.title);
+            const std::string right_name = TranslateGameText(language_, rhs.title);
+            if (left_name != right_name) {
+                return left_name < right_name;
+            }
+            return lhs.id < rhs.id;
+        });
+        std::sort(enemy_achievements.begin(), enemy_achievements.end(), [&](const AchievementEntry& lhs, const AchievementEntry& rhs) {
+            const std::string left_name = TranslateGameText(language_, lhs.title);
+            const std::string right_name = TranslateGameText(language_, rhs.title);
+            if (left_name != right_name) {
+                return left_name < right_name;
+            }
+            return lhs.id < rhs.id;
+        });
+
+        const size_t visible_cards = std::max(event_achievements.size(), enemy_achievements.size());
+        const int cards_per_row = CardViewerCardsPerRow(dialog_width, visible_cards);
+        const int card_width = CardViewerCardWidth(dialog_width, cards_per_row);
+        title = Tr(language_, "Achievements", "成就");
+        summary = Tr(language_, "Event achievements: ", "事件成就：") +
+                  std::to_string(engine_.completedEventAchievementCount()) + "/" +
+                  std::to_string(engine_.totalEventAchievementCount()) + "   " +
+                  Tr(language_, "Enemy encounters: ", "敌人成就：") +
+                  std::to_string(engine_.seenEnemyCount()) + "/" +
+                  std::to_string(engine_.totalEnemyCount());
+
+        const auto build_section = [&](const std::vector<AchievementEntry>& entries,
+                                       const std::string& heading,
+                                       const std::string& category_label) {
+            Elements rows;
+            Elements row;
+            for (const AchievementEntry& entry : entries) {
+                row.push_back(AchievementEntryPanel(language_, entry, category_label, card_width));
+                if (static_cast<int>(row.size()) == cards_per_row) {
+                    rows.push_back(hbox(std::move(row)));
+                    row = {};
+                }
+            }
+            if (!row.empty()) {
+                rows.push_back(hbox(std::move(row)));
+            }
+            card_rows.push_back(text(heading) | color(kGold) | bold);
+            if (rows.empty()) {
+                card_rows.push_back(text(Tr(language_, "No entries available.", "当前没有可显示条目。")) | color(kDim));
+                return;
+            }
+            for (size_t i = 0; i < rows.size(); ++i) {
+                if (i > 0) {
+                    card_rows.push_back(separator());
+                }
+                card_rows.push_back(std::move(rows[i]));
+            }
+        };
+
+        build_section(event_achievements,
+                      Tr(language_, "Event Achievements", "事件成就"),
+                      Tr(language_, "Category: Event", "类别：事件"));
+        card_rows.push_back(separatorDouble());
+        build_section(enemy_achievements,
+                      Tr(language_, "Enemy Achievements", "敌人成就"),
+                      Tr(language_, "Category: Enemy", "类别：敌人"));
     }
 
     if (!current_row.empty()) {
@@ -172,7 +265,9 @@ Element StarAbyssApp::RenderCardViewer() const {
         text(summary) | color(Color::White),
         text(cardViewerMode_ == CardViewerMode::OwnedCards
                  ? Tr(language_, "Press D or click Close to return to the run.", "按 D 或点击关闭以返回当前航程。")
-                 : Tr(language_, "Press C or click Close to return to the main menu.", "按 C 或点击关闭以返回主菜单。")) |
+                 : (cardViewerMode_ == CardViewerMode::CardLibrary
+                        ? Tr(language_, "Press C or click Close to return to the main menu.", "按 C 或点击关闭以返回主菜单。")
+                        : Tr(language_, "Press A or click Close to return to the main menu.", "按 A 或点击关闭以返回主菜单。"))) |
             color(kGold),
         separator(),
         vbox(std::move(body_cards)),

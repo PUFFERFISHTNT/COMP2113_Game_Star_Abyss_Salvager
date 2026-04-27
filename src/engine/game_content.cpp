@@ -10,6 +10,7 @@ namespace {
 
 constexpr const char* kObtainedCardsRegistryPath = "save/obtained_cards.txt";
 constexpr const char* kCompletedEventsRegistryPath = "save/completed_events.txt";
+constexpr const char* kSeenEnemiesRegistryPath = "save/seen_enemies.txt";
 
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
@@ -287,6 +288,62 @@ bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const
     }
     for (const auto& entry : completedEventAchievements_) {
         output << entry.first << "|" << entry.second << "\n";
+    }
+    if (error != nullptr) {
+        *error = "";
+    }
+    return true;
+}
+
+bool GameEngine::hasSeenEnemy(const std::string& enemyId) const {
+    return HasString(seenEnemyIds_, enemyId);
+}
+
+void GameEngine::recordSeenEnemy(const std::string& enemyId) {
+    if (dev_session_active_ || enemyId.empty() || enemyTemplateById(enemyId) == nullptr || hasSeenEnemy(enemyId)) {
+        return;
+    }
+    seenEnemyIds_.push_back(enemyId);
+    std::sort(seenEnemyIds_.begin(), seenEnemyIds_.end());
+    const auto unique_end = std::unique(seenEnemyIds_.begin(), seenEnemyIds_.end());
+    seenEnemyIds_.erase(unique_end, seenEnemyIds_.end());
+    saveSeenEnemyRegistry(nullptr);
+}
+
+void GameEngine::loadSeenEnemyRegistry() {
+    seenEnemyIds_.clear();
+    std::ifstream input(kSeenEnemiesRegistryPath);
+    if (!input) {
+        return;
+    }
+
+    std::string line;
+    while (std::getline(input, line)) {
+        const std::string enemyId = TrimAscii(line);
+        if (enemyId.empty() || enemyTemplateById(enemyId) == nullptr || hasSeenEnemy(enemyId)) {
+            continue;
+        }
+        seenEnemyIds_.push_back(enemyId);
+    }
+    std::sort(seenEnemyIds_.begin(), seenEnemyIds_.end());
+    const auto unique_end = std::unique(seenEnemyIds_.begin(), seenEnemyIds_.end());
+    seenEnemyIds_.erase(unique_end, seenEnemyIds_.end());
+}
+
+bool GameEngine::saveSeenEnemyRegistry(std::string* error) const {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::create_directories("save", ec);
+
+    std::ofstream output(kSeenEnemiesRegistryPath, std::ios::trunc);
+    if (!output) {
+        if (error != nullptr) {
+            *error = "Unable to write seen enemy registry.";
+        }
+        return false;
+    }
+    for (const std::string& enemyId : seenEnemyIds_) {
+        output << enemyId << "\n";
     }
     if (error != nullptr) {
         *error = "";

@@ -30,6 +30,7 @@ private:
         None = 0,
         OwnedCards,
         CardLibrary,
+        Achievements,
     };
 
     enum class BattlePileInspector {

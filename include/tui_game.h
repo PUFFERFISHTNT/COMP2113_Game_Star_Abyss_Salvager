@@ -116,6 +116,13 @@ struct CardLibraryEntry {
     bool obtained = false;
 };
 
+struct AchievementEntry {
+    std::string id;
+    std::string title;
+    std::string description;
+    bool obtained = false;
+};
+
 struct NodeOption {
     std::string typeId;
     std::string name;
@@ -366,8 +373,14 @@ public:
     std::vector<CardOwnershipEntry> ownedCards() const;
     std::vector<CardView> ownedCardInstances() const;
     std::vector<CardLibraryEntry> allCardLibraryEntries() const;
+    std::vector<AchievementEntry> allEventAchievementEntries() const;
+    std::vector<AchievementEntry> allEnemyAchievementEntries() const;
     size_t obtainedCardCount() const;
     size_t totalCardCount() const;
+    size_t completedEventAchievementCount() const;
+    size_t totalEventAchievementCount() const;
+    size_t seenEnemyCount() const;
+    size_t totalEnemyCount() const;
     size_t completedAchievementCount() const;
     bool auxiliaryTransformSelectionPending() const;
     bool auxiliaryTransformTargetChoicePending() const;
@@ -471,6 +484,7 @@ private:
     std::vector<CardDef> configuredUpgradePool_;
     std::vector<std::string> obtainedCardIds_;
     std::vector<std::pair<std::string, std::string>> completedEventAchievements_;
+    std::vector<std::string> seenEnemyIds_;
     bool dev_session_active_ = false;
     bool dev_obtained_snapshot_valid_ = false;
     std::vector<std::string> dev_obtained_snapshot_;
@@ -555,6 +569,10 @@ private:
     void recordCompletedEventAchievement(const std::string& encounterId, const std::string& title);
     void loadCompletedEventAchievementRegistry();
     bool saveCompletedEventAchievementRegistry(std::string* error = nullptr) const;
+    bool hasSeenEnemy(const std::string& enemyId) const;
+    void recordSeenEnemy(const std::string& enemyId);
+    void loadSeenEnemyRegistry();
+    bool saveSeenEnemyRegistry(std::string* error = nullptr) const;
     void startAnimation(const std::string& kind,
                         const std::string& label,
                         int magnitude,

@@ -1,6 +1,7 @@
 #include "engine/game_info.h"
 
 #include <fstream>
+#include <vector>
 
 namespace {
 
@@ -15,6 +16,40 @@ std::string DifficultyLabel(int difficulty) {
         return "Hell";
     }
     return "Normal";
+}
+
+const std::vector<std::pair<std::string, std::string>>& EventAchievementCatalog() {
+    static const std::vector<std::pair<std::string, std::string>> catalog = {
+        {"game_intro", "Star Abyss Salvager"},
+        {"event_a1", "Distress Beacon"},
+        {"event_a2", "Ghost Ship"},
+        {"event_b1", "Strange Signal"},
+        {"event_b2", "Space Fold"},
+        {"event_b3", "Ark Beacon"},
+        {"event_c1", "Reactor Leak"},
+        {"event_c2", "Hull Breach"},
+        {"event_c3", "Deck Chaos"},
+        {"event_d1", "Smuggler Cache"},
+        {"event_d2", "Wandering Trader"},
+        {"event_d3", "Pirate Ambush"},
+        {"event_d4", "Cryo Pod"},
+        {"event_story_boss", "Anomalous War Signature"},
+        {"escape_prologue", "Escape Decision"},
+        {"escape_1", "Federal Patrol Outpost"},
+        {"escape_2", "Abandoned Smuggling Port"},
+        {"escape_3", "Deep Space Radiation Belt"},
+        {"escape_4", "Pirate Pursuit Ship"},
+        {"escape_5", "Drifting Escape Pod"},
+        {"escape_6", "Unstable Jump Point"},
+        {"escape_7", "Star Abyss Edge Barrier"},
+        {"escape_8", "Temporary Safe Station"},
+        {"truth_1", "Creation Memory Fragment"},
+        {"truth_2", "Rogue Guardian AI"},
+        {"truth_3", "First Captain's Consciousness"},
+        {"truth_4", "Spatial Collapse Point"},
+        {"truth_5", "Star Abyss Birth Truth"},
+    };
+    return catalog;
 }
 
 }  // namespace
@@ -36,6 +71,37 @@ void GameEngine::showAchievements() {
         }
     }
     state_.page = AppPage::Info;
+}
+
+std::vector<AchievementEntry> GameEngine::allEventAchievementEntries() const {
+    std::vector<AchievementEntry> result;
+    const auto& catalog = EventAchievementCatalog();
+    result.reserve(catalog.size());
+    for (const auto& entry : catalog) {
+        result.push_back({entry.first,
+                          entry.second,
+                          "Complete this event at least once.",
+                          hasCompletedEventAchievement(entry.first)});
+    }
+    return result;
+}
+
+std::vector<AchievementEntry> GameEngine::allEnemyAchievementEntries() const {
+    std::vector<AchievementEntry> result;
+    result.reserve(enemyPool_.size());
+    for (const EnemyTemplate& enemy : enemyPool_) {
+        result.push_back({enemy.id,
+                          enemy.name,
+                          "Encounter this enemy in battle at least once.",
+                          hasSeenEnemy(enemy.id)});
+    }
+    std::sort(result.begin(), result.end(), [](const AchievementEntry& lhs, const AchievementEntry& rhs) {
+        if (lhs.title != rhs.title) {
+            return lhs.title < rhs.title;
+        }
+        return lhs.id < rhs.id;
+    });
+    return result;
 }
 
 void GameEngine::showInfo(const std::string& title,
@@ -86,6 +152,22 @@ std::string GameEngine::relicNameForId(const std::string& relicId) const {
 std::string GameEngine::relicDescriptionForId(const std::string& relicId) const {
     const RelicDef* relic = relicById(relicId);
     return relic != nullptr ? relic->description : "";
+}
+
+size_t GameEngine::completedEventAchievementCount() const {
+    return completedEventAchievements_.size();
+}
+
+size_t GameEngine::totalEventAchievementCount() const {
+    return EventAchievementCatalog().size();
+}
+
+size_t GameEngine::seenEnemyCount() const {
+    return seenEnemyIds_.size();
+}
+
+size_t GameEngine::totalEnemyCount() const {
+    return enemyPool_.size();
 }
 
 void GameEngine::fillHelpInfo() {

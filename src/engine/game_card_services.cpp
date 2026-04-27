@@ -391,7 +391,7 @@ size_t GameEngine::totalCardCount() const {
 }
 
 size_t GameEngine::completedAchievementCount() const {
-    return completedEventAchievements_.size();
+    return completedEventAchievementCount() + seenEnemyCount();
 }
 
 bool GameEngine::upgradeCard(const std::string& cardRef,

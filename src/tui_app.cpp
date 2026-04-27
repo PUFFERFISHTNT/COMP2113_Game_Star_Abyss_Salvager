@@ -35,11 +35,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
         engine_.showLeaderboard("data/leaderboard.txt");
         SyncUi();
     }, AccentButton(kHull));
-    menuButtons_[4] = Button(&menuLabels_[4], [&] {
-        infoReturnsToRun_ = false;
-        engine_.showAchievements();
-        SyncUi();
-    }, AccentButton(kGold));
+    menuButtons_[4] = Button(&menuLabels_[4], [&] { OpenCardViewer(CardViewerMode::Achievements); SyncUi(); }, AccentButton(kGold));
     menuButtons_[5] = Button(&menuLabels_[5], [&] {
         infoReturnsToRun_ = false;
         engine_.showHelp();

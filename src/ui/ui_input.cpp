@@ -346,7 +346,10 @@ bool StarAbyssApp::HandleEvent(Event event) {
         const bool close_library = event == Event::Character('c') &&
                                    cardViewerMode_ == CardViewerMode::CardLibrary &&
                                    page == AppPage::MainMenu;
-        if (event == Event::Escape || close_owned_cards || close_library) {
+        const bool close_achievements = event == Event::Character('a') &&
+                                        cardViewerMode_ == CardViewerMode::Achievements &&
+                                        page == AppPage::MainMenu;
+        if (event == Event::Escape || close_owned_cards || close_library || close_achievements) {
             CloseCardViewer();
             SyncUi();
             return true;
@@ -392,6 +395,11 @@ bool StarAbyssApp::HandleEvent(Event event) {
     }
     if (event == Event::Character('c') && engine_.state().page == AppPage::MainMenu) {
         OpenCardViewer(CardViewerMode::CardLibrary);
+        SyncUi();
+        return true;
+    }
+    if (event == Event::Character('a') && engine_.state().page == AppPage::MainMenu) {
+        OpenCardViewer(CardViewerMode::Achievements);
         SyncUi();
         return true;
     }
@@ -445,8 +453,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
                     infoReturnsToRun_ = false;
                     engine_.showLeaderboard("data/leaderboard.txt");
                 } else if (index == 4) {
-                    infoReturnsToRun_ = false;
-                    engine_.showAchievements();
+                    OpenCardViewer(CardViewerMode::Achievements);
                 } else if (index == 5) {
                     infoReturnsToRun_ = false;
                     engine_.showHelp();
@@ -500,7 +507,7 @@ void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
     const bool owned_cards_page = page == AppPage::Map || page == AppPage::Encounter ||
                                   page == AppPage::Battle || page == AppPage::Reward;
     if ((mode == CardViewerMode::OwnedCards && !owned_cards_page) ||
-        (mode == CardViewerMode::CardLibrary && page != AppPage::MainMenu)) {
+        ((mode == CardViewerMode::CardLibrary || mode == CardViewerMode::Achievements) && page != AppPage::MainMenu)) {
         return;
     }
     cardViewerMode_ = mode;

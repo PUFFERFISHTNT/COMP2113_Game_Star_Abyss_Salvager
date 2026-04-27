@@ -62,7 +62,8 @@ void StarAbyssApp::SyncUi() {
     menuLabels_[6] = Tr(language_, "Language: English", "语言：中文");
     menuLabels_[7] = Tr(language_, "Exit", "退出");
     menuDevLabel_ = Tr(language_, "Developer Mode", "开发者选项");
-    menuLabels_[4] += " (" + std::to_string(engine_.completedAchievementCount()) + ")";
+    menuLabels_[4] += " (" + std::to_string(engine_.completedAchievementCount()) + "/" +
+                      std::to_string(engine_.totalEventAchievementCount() + engine_.totalEnemyCount()) + ")";
 
     for (std::string& label : mapLabels_) label = TranslateGameText(language_, "Unavailable");
     for (std::string& label : encounterLabels_) label = TranslateGameText(language_, "Unavailable");
@@ -107,7 +108,8 @@ void StarAbyssApp::SyncUi() {
     const bool owned_cards_page = state.page == AppPage::Map || state.page == AppPage::Encounter ||
                                   state.page == AppPage::Battle || state.page == AppPage::Reward;
     if ((cardViewerMode_ == CardViewerMode::OwnedCards && !owned_cards_page) ||
-        (cardViewerMode_ == CardViewerMode::CardLibrary && state.page != AppPage::MainMenu)) {
+        ((cardViewerMode_ == CardViewerMode::CardLibrary || cardViewerMode_ == CardViewerMode::Achievements) &&
+         state.page != AppPage::MainMenu)) {
         CloseCardViewer();
     }
     const std::vector<CardView> rewards = engine_.rewardCards();

@@ -16,6 +16,7 @@ GameEngine::GameEngine() : rng_(std::random_device{}()) {
     initializeData();
     loadObtainedCardRegistry();
     loadCompletedEventAchievementRegistry();
+    loadSeenEnemyRegistry();
     resetRunState();
     fillHelpInfo();
 }

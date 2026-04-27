@@ -130,6 +130,8 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Anomalous War Signature", "异常战争信号"},
         {"Completed Events", "已完成事件"},
         {"No completed events recorded yet.", "当前还没有已完成事件。"},
+        {"Complete this event at least once.", "至少完成一次该事件。"},
+        {"Encounter this enemy in battle at least once.", "至少在战斗中遇到一次该敌人。"},
         {"Laser Burst", "激光爆裂"},
         {"Raise Shield", "升起护盾"},
         {"Coolant Flush", "冷却液冲洗"},

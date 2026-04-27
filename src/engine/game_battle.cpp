@@ -968,6 +968,7 @@ void GameEngine::endTurn() {
 
 void GameEngine::startBattle(const std::string& nodeType, const std::string& forcedEnemyId) {
     const EnemyTemplate& enemy = pickEnemy(nodeType, forcedEnemyId);
+    recordSeenEnemy(enemy.id);
     state_.enemy.enemyId = enemy.id;
     state_.enemy.name = enemy.name;
     state_.enemy.behavior = enemy.behavior;
