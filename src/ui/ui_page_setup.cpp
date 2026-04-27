@@ -33,16 +33,16 @@ std::string ShipDescription(UiLanguage language, int ship_index) {
     switch (ship_index) {
     case 0:
         return Tr(language,
-                  "Vanguard: Balanced reactor fighter. Strong heat-based offense with steady cooling tools and direct pressure.",
-                  "先锋号：均衡型反应堆战舰。擅长围绕热量展开进攻，兼具稳定散热和直接输出。");
+                  "Vanguard: A reactor assault hull defined by direct-fire weapons, sharp heat spikes, and built-in cooling hardware. Its signature is straightforward pressure, fast thermal buildup, and stable vent control.",
+                  "先锋号：反应堆突击舰体，以直射火力、快速升温和内置散热模块为主要特征。它的标志是正面压制、热量峰值明显，以及稳定的控温能力。");
     case 1:
         return Tr(language,
-                  "Drift Fox: Auxiliary-ship specialist. Builds tempo through drones, trigger chaining, and flexible support patterns.",
-                  "漂移狐：附属舰专精。依靠无人机、连锁触发和灵活支援逐步滚起节奏。");
+                  "Drift Fox: A light command carrier built around multiple auxiliary bays, rapid launch systems, and synchronized drone relays. Its defining traits are layered support craft, trigger-linked formations, and strong battlefield utility.",
+                  "漂移狐：轻型指挥母舰，核心特征是多附属舰机库、快速投放系统和同步无人机链路。它的辨识度在于层叠式支援编队、联动触发结构，以及很强的战场功能性。");
     default:
         return Tr(language,
-                  "Iron Bastion: Durable form-shifting hull. Excels at stance switching, defensive conversion, and heavy late bursts.",
-                  "钢铁堡垒：高耐久形态切换舰体。擅长姿态转换、防御转化，以及后段重击爆发。");
+                  "Iron Bastion: A heavy fortress hull with two combat forms. Defense Form has no universal damage bonus, but it serves as the stable armored state that enables many shield, draw, energy, and exit-defense effects; Overload Form is the redline state that doubles outgoing damage and also doubles incoming damage. Its defining traits are extreme durability, deliberate form switching, and dangerous overload output.",
+                  "钢铁堡垒：重型堡垒舰体，拥有两种战斗形态。防御形态没有通用伤害加成，但它是稳定的装甲姿态，会承载大量护盾、抽牌、回能和脱离防御效果；过载形态则是红线输出姿态，会让你的造成伤害翻倍，同时受到伤害也翻倍。它的核心特征是高耐久、明确的形态切换结构，以及高风险高输出的过载状态。");
     }
 }
 
