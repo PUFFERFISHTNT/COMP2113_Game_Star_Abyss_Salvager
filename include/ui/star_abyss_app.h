@@ -118,7 +118,7 @@ private:
     std::vector<std::string> saveSlotNames_;
     std::vector<std::string> savePaths_;
 
-    std::vector<std::string> difficultyEntries_ = {"Easy", "Normal", "Hard"};
+    std::vector<std::string> difficultyEntries_ = {"Easy", "Normal", "Hard", "Hell"};
     std::vector<std::string> shipEntries_ = {"Vanguard", "Drift Fox", "Iron Bastion"};
 
     std::array<std::string, 7> menuLabels_{};

@@ -20,6 +20,7 @@ void StarAbyssApp::SyncUi() {
     difficultyEntries_[0] = Tr(language_, "Easy", "简单");
     difficultyEntries_[1] = Tr(language_, "Normal", "普通");
     difficultyEntries_[2] = Tr(language_, "Hard", "困难");
+    difficultyEntries_[3] = Tr(language_, "Hell", "地狱");
     shipEntries_[0] = TranslateGameText(language_, "Vanguard");
     shipEntries_[1] = TranslateGameText(language_, "Drift Fox");
     shipEntries_[2] = TranslateGameText(language_, "Iron Bastion");

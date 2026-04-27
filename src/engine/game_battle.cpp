@@ -149,6 +149,39 @@ bool IsAbilityCard(const CardDef& card) {
     return card.type == "Ability";
 }
 
+int ScalePositivePercent(int value, int percent) {
+    if (value <= 0 || percent <= 100) {
+        return value;
+    }
+    return (value * percent + 99) / 100;
+}
+
+int EnemyEffectScalePercent(int difficulty) {
+    if (difficulty >= 3) {
+        return 169;
+    }
+    if (difficulty >= 2) {
+        return 130;
+    }
+    return 100;
+}
+
+int EnemyHpScalePercent(int difficulty) {
+    if (difficulty <= 0) {
+        return 90;
+    }
+    return EnemyEffectScalePercent(difficulty);
+}
+
+bool DifficultyUsesAggressiveEnemySelection(int difficulty) {
+    return difficulty >= 1;
+}
+
+bool DifficultyUsesDualEliteEnemyIntents(const RunState& state) {
+    return state.difficulty >= 1 &&
+           (state.activeNodeType == "elite" || state.activeNodeType == "boss");
+}
+
 }  // namespace
 
 bool GameEngine::canPlayCard(size_t index) const {
@@ -929,18 +962,17 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     state_.enemy.name = enemy.name;
     state_.enemy.behavior = enemy.behavior;
     int enemyHp = enemy.baseHp + (state_.sector - 1) * (enemy.boss ? 8 : (enemy.elite ? 5 : 3));
-    if (state_.difficulty <= 0) {
-        enemyHp = std::max(1, (enemyHp * 90 + 99) / 100);
-    } else if (state_.difficulty >= 2) {
-        enemyHp = std::max(1, (enemyHp * 115 + 99) / 100);
-    }
+    enemyHp = std::max(1, (enemyHp * EnemyHpScalePercent(state_.difficulty) + 99) / 100);
     state_.enemy.maxHp = enemyHp;
     state_.enemy.hp = state_.enemy.maxHp;
     state_.enemy.shield = 0;
     state_.enemy.heat = 0;
-    state_.enemy.maxHeat = enemy.maxHeat;
+    state_.enemy.maxHeat = std::max(1, ScalePositivePercent(enemy.maxHeat, EnemyEffectScalePercent(state_.difficulty)));
     state_.enemy.overheatRounds = 0;
     state_.enemy.coolingCooldownTurns = 0;
+    state_.enemy.secondaryIntentKind.clear();
+    state_.enemy.secondaryIntentLabel.clear();
+    state_.enemy.secondaryIntentValue = 0;
     state_.enemy.patternIndex = 0;
     state_.enemy.weakenTurns = 0;
     state_.enemy.shieldLockTurns = 0;
@@ -1141,31 +1173,84 @@ void GameEngine::startPlayerTurn() {
 }
 
 void GameEngine::chooseEnemyIntent() {
+    state_.enemy.secondaryIntentKind.clear();
+    state_.enemy.secondaryIntentLabel.clear();
+    state_.enemy.secondaryIntentValue = 0;
+
     const EnemyTemplate* enemy = enemyTemplateById(state_.enemy.enemyId);
     if (enemy == nullptr || enemy->pattern.empty()) {
         state_.enemy.intentKind = "attack";
         state_.enemy.intentLabel = "Attack";
-        state_.enemy.intentValue = 6;
+        state_.enemy.intentValue = ScalePositivePercent(6, EnemyEffectScalePercent(state_.difficulty));
         return;
     }
 
     if (enemyShouldUseCooling()) {
         state_.enemy.intentKind = "cool";
         state_.enemy.intentLabel = "Emergency Cooling";
-        state_.enemy.intentValue = enemyCoolingAmount();
+        state_.enemy.intentValue =
+            ScalePositivePercent(enemyCoolingAmount(), EnemyEffectScalePercent(state_.difficulty));
         return;
     }
 
-    int index = state_.enemy.patternIndex % static_cast<int>(enemy->pattern.size());
-    if (enemy->behavior == "chaotic") {
-        std::uniform_int_distribution<int> randomIndex(0, static_cast<int>(enemy->pattern.size()) - 1);
-        index = randomIndex(rng_);
+    const int effect_scale = EnemyEffectScalePercent(state_.difficulty);
+    const bool aggressive_selection = DifficultyUsesAggressiveEnemySelection(state_.difficulty);
+    std::vector<int> attack_indices;
+    attack_indices.reserve(enemy->pattern.size());
+    for (size_t i = 0; i < enemy->pattern.size(); ++i) {
+        if (enemy->pattern[i].kind == "attack") {
+            attack_indices.push_back(static_cast<int>(i));
+        }
     }
 
-    const IntentDef& intent = enemy->pattern[static_cast<size_t>(index)];
-    state_.enemy.intentKind = intent.kind;
-    state_.enemy.intentLabel = intent.label;
-    state_.enemy.intentValue = intent.value;
+    const auto select_index = [&](int offset) {
+        int index = (state_.enemy.patternIndex + offset) % static_cast<int>(enemy->pattern.size());
+        if (enemy->behavior == "chaotic") {
+            std::uniform_int_distribution<int> random_index(0, static_cast<int>(enemy->pattern.size()) - 1);
+            index = random_index(rng_);
+        }
+        if (!aggressive_selection || attack_indices.empty()) {
+            return index;
+        }
+
+        std::uniform_int_distribution<int> aggression_roll(1, 100);
+        const bool should_force_attack =
+            enemy->behavior == "chaotic"
+                ? aggression_roll(rng_) <= 80
+                : (enemy->pattern[static_cast<size_t>(index)].kind != "attack" &&
+                   aggression_roll(rng_) <= 75);
+        if (!should_force_attack) {
+            return index;
+        }
+
+        std::uniform_int_distribution<int> attack_pick(0, static_cast<int>(attack_indices.size()) - 1);
+        return attack_indices[static_cast<size_t>(attack_pick(rng_))];
+    };
+
+    const auto apply_intent = [&](const IntentDef& intent,
+                                  std::string* kind,
+                                  std::string* label,
+                                  int* value) {
+        *kind = intent.kind;
+        *label = intent.label;
+        *value = ScalePositivePercent(intent.value, effect_scale);
+    };
+
+    const int primary_index = select_index(0);
+    apply_intent(enemy->pattern[static_cast<size_t>(primary_index)],
+                 &state_.enemy.intentKind,
+                 &state_.enemy.intentLabel,
+                 &state_.enemy.intentValue);
+
+    if (!DifficultyUsesDualEliteEnemyIntents(state_) || enemy->pattern.size() <= 1) {
+        return;
+    }
+
+    const int secondary_index = select_index(1);
+    apply_intent(enemy->pattern[static_cast<size_t>(secondary_index)],
+                 &state_.enemy.secondaryIntentKind,
+                 &state_.enemy.secondaryIntentLabel,
+                 &state_.enemy.secondaryIntentValue);
 }
 
 void GameEngine::resolveEnemyIntent() {
@@ -1182,49 +1267,84 @@ void GameEngine::resolveEnemyIntent() {
         }
     }
 
-    log(state_.enemy.name + " executes " + state_.enemy.intentLabel + ".");
-
-    if (state_.enemy.intentKind == "attack") {
-        const int damage = effectiveEnemyAttackDamage();
-        if (state_.enemy.weakenTurns > 0 && state_.enemy.intentValue > 0) {
-            --state_.enemy.weakenTurns;
+    const auto effective_attack_damage = [&](int intent_value) {
+        int damage = intent_value;
+        if (state_.enemy.weakenTurns > 0) {
+            damage = std::max(0, damage - 2);
         }
-        applyDamageToPlayer(damage);
-        startAnimation("enemy_attack", state_.enemy.intentLabel, damage, false, 7);
-        log("You absorb " + std::to_string(damage) + " damage.");
-    } else if (state_.enemy.intentKind == "shield") {
+        if (enemyOverheatStage() >= 1) {
+            damage = (damage * 3) / 4;
+        }
+        return std::max(0, damage);
+    };
+    const auto execute_intent = [&](const std::string& kind,
+                                    const std::string& label,
+                                    int value) {
+        if (kind.empty()) {
+            return;
+        }
+
+        log(state_.enemy.name + " executes " + label + ".");
+
+        if (kind == "attack") {
+            const int damage = effective_attack_damage(value);
+            if (state_.enemy.weakenTurns > 0 && value > 0) {
+                --state_.enemy.weakenTurns;
+            }
+            applyDamageToPlayer(damage);
+            startAnimation("enemy_attack", label, damage, false, 7);
+            log("You absorb " + std::to_string(damage) + " damage.");
+        } else if (kind == "shield") {
+            if (state_.enemy.shieldLockTurns > 0) {
+                log("Shield jam active. Enemy plating fails to form.");
+            } else {
+                state_.enemy.shield += value;
+                startAnimation("shield", label, value, false, 5);
+                log(state_.enemy.name + " gains " + std::to_string(value) + " shield.");
+            }
+        } else if (kind == "heat") {
+            changeHeat(value);
+            startAnimation("heat", label, value, false, 6);
+            log("Your reactor spikes by " + std::to_string(value) + " heat.");
+        } else if (kind == "emp") {
+            state_.player.nextTurnEnergy -= value;
+            startAnimation("support", label, value, false, 5);
+            log("The EMP will cut " + std::to_string(value) + " energy from your next turn.");
+        } else if (kind == "charge") {
+            state_.enemy.shield += value;
+            startAnimation("support", label, value, false, 5);
+            log(state_.enemy.name + " charges for a heavier strike.");
+        } else if (kind == "cool") {
+            changeEnemyHeat(-value);
+            state_.enemy.coolingCooldownTurns = 2;
+            startAnimation("support", label, value, false, 5);
+            log(state_.enemy.name + " vents reactor heat by " + std::to_string(value) + ".");
+        }
+
+        if (kind != "cool" && state_.enemy.coolingCooldownTurns > 0) {
+            --state_.enemy.coolingCooldownTurns;
+        }
         if (state_.enemy.shieldLockTurns > 0) {
-            log("Shield jam active. Enemy plating fails to form.");
-        } else {
-            state_.enemy.shield += state_.enemy.intentValue;
-            startAnimation("shield", state_.enemy.intentLabel, state_.enemy.intentValue, false, 5);
-            log(state_.enemy.name + " gains " + std::to_string(state_.enemy.intentValue) + " shield.");
+            --state_.enemy.shieldLockTurns;
         }
-    } else if (state_.enemy.intentKind == "heat") {
-        changeHeat(state_.enemy.intentValue);
-        startAnimation("heat", state_.enemy.intentLabel, state_.enemy.intentValue, false, 6);
-        log("Your reactor spikes by " + std::to_string(state_.enemy.intentValue) + " heat.");
-    } else if (state_.enemy.intentKind == "emp") {
-        state_.player.nextTurnEnergy -= state_.enemy.intentValue;
-        startAnimation("support", state_.enemy.intentLabel, state_.enemy.intentValue, false, 5);
-        log("The EMP will cut " + std::to_string(state_.enemy.intentValue) + " energy from your next turn.");
-    } else if (state_.enemy.intentKind == "charge") {
-        state_.enemy.shield += state_.enemy.intentValue;
-        startAnimation("support", state_.enemy.intentLabel, state_.enemy.intentValue, false, 5);
-        log(state_.enemy.name + " charges for a heavier strike.");
-    } else if (state_.enemy.intentKind == "cool") {
-        triggerEnemyCooling();
-    }
+        if (kind != "cool") {
+            ++state_.enemy.patternIndex;
+        }
+    };
 
-    if (state_.enemy.intentKind != "cool" && state_.enemy.coolingCooldownTurns > 0) {
-        --state_.enemy.coolingCooldownTurns;
+    execute_intent(state_.enemy.intentKind, state_.enemy.intentLabel, state_.enemy.intentValue);
+    if (state_.player.hp <= 0 || state_.enemy.hp <= 0) {
+        state_.enemy.secondaryIntentKind.clear();
+        state_.enemy.secondaryIntentLabel.clear();
+        state_.enemy.secondaryIntentValue = 0;
+        return;
     }
-    if (state_.enemy.shieldLockTurns > 0) {
-        --state_.enemy.shieldLockTurns;
-    }
-    if (state_.enemy.intentKind != "cool") {
-        ++state_.enemy.patternIndex;
-    }
+    execute_intent(state_.enemy.secondaryIntentKind,
+                   state_.enemy.secondaryIntentLabel,
+                   state_.enemy.secondaryIntentValue);
+    state_.enemy.secondaryIntentKind.clear();
+    state_.enemy.secondaryIntentLabel.clear();
+    state_.enemy.secondaryIntentValue = 0;
 }
 
 void GameEngine::handleBattleVictory() {

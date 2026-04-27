@@ -11,6 +11,9 @@ std::string DifficultyLabel(int difficulty) {
     if (difficulty == 2) {
         return "Hard";
     }
+    if (difficulty >= 3) {
+        return "Hell";
+    }
     return "Normal";
 }
 

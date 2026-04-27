@@ -260,7 +260,9 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
            << enemy.intentKind << "|" << enemy.intentLabel << "|" << enemy.intentValue << "|"
            << enemy.patternIndex << "|" << enemy.weakenTurns << "|" << enemy.shieldLockTurns << "|"
            << enemy.heat << "|" << enemy.maxHeat << "|" << enemy.overheatRounds << "|"
-           << enemy.coolingCooldownTurns << "\n";
+           << enemy.coolingCooldownTurns << "|"
+           << enemy.secondaryIntentKind << "|" << enemy.secondaryIntentLabel << "|"
+           << enemy.secondaryIntentValue << "\n";
 
     output << "ROUTE|" << state_.routeOptions.size() << "\n";
     for (const NodeOption& option : state_.routeOptions) {
@@ -583,6 +585,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
             if (parts.size() >= 17) {
                 loaded.enemy.coolingCooldownTurns = ToInt(parts[16], 0);
             }
+            if (parts.size() >= 20) {
+                loaded.enemy.secondaryIntentKind = parts[17];
+                loaded.enemy.secondaryIntentLabel = parts[18];
+                loaded.enemy.secondaryIntentValue = ToInt(parts[19], 0);
+            }
         } else if (key == "NODE" && parts.size() >= 5) {
             NodeOption option;
             option.typeId = parts[1];
@@ -714,6 +721,11 @@ bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     loaded.enemy.maxHeat = std::max(1, loaded.enemy.maxHeat);
     loaded.enemy.heat = std::max(0, std::min(loaded.enemy.heat, loaded.enemy.maxHeat));
     loaded.enemy.overheatRounds = std::max(0, std::min(loaded.enemy.overheatRounds, 3));
+    loaded.enemy.secondaryIntentValue = std::max(0, loaded.enemy.secondaryIntentValue);
+    if (loaded.enemy.secondaryIntentKind.empty()) {
+        loaded.enemy.secondaryIntentLabel.clear();
+        loaded.enemy.secondaryIntentValue = 0;
+    }
     if (loaded.enemy.heat < loaded.enemy.maxHeat) {
         loaded.enemy.overheatRounds = 0;
     } else if (loaded.enemy.overheatRounds == 0) {

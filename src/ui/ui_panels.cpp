@@ -146,16 +146,23 @@ std::vector<std::string> WrapGlyphLines(const std::string& input, int width_hint
     return wrapped;
 }
 
-std::string IntentSummary(UiLanguage language, const RunState& state) {
-    const std::string label = TranslateGameText(language, state.enemy.intentLabel);
+std::string IntentSummary(UiLanguage language, const RunState& state, bool secondary = false) {
+    if (state.difficulty >= 3) {
+        return Tr(language, "Unknown", "未知");
+    }
+
+    const std::string& raw_kind = secondary ? state.enemy.secondaryIntentKind : state.enemy.intentKind;
+    const std::string& raw_label = secondary ? state.enemy.secondaryIntentLabel : state.enemy.intentLabel;
+    const int raw_value = secondary ? state.enemy.secondaryIntentValue : state.enemy.intentValue;
+    const std::string label = TranslateGameText(language, raw_label);
     const auto enemy_overheat_stage = [&state]() {
         if (state.enemy.heat < state.enemy.maxHeat) {
             return 0;
         }
         return std::max(1, std::min(3, state.enemy.overheatRounds));
     };
-    const auto effective_enemy_attack = [&state, &enemy_overheat_stage]() {
-        int value = state.enemy.intentValue;
+    const auto effective_enemy_attack = [&state, &enemy_overheat_stage, raw_value]() {
+        int value = raw_value;
         if (state.enemy.weakenTurns > 0) {
             value = std::max(0, value - 2);
         }
@@ -164,7 +171,7 @@ std::string IntentSummary(UiLanguage language, const RunState& state) {
         }
         return std::max(0, value);
     };
-    if (state.enemy.intentKind == "attack") {
+    if (raw_kind == "attack") {
         const int value = effective_enemy_attack();
         std::string suffix;
         if (state.enemy.weakenTurns > 0) {
@@ -175,25 +182,25 @@ std::string IntentSummary(UiLanguage language, const RunState& state) {
         }
         return label + " - " + Tr(language, "Attack ", "攻击 ") + std::to_string(value) + suffix;
     }
-    if (state.enemy.intentKind == "shield") {
+    if (raw_kind == "shield") {
         if (state.enemy.shieldLockTurns > 0) {
             return label + " - " + Tr(language, "Shield blocked by jammer", "护盾已被干扰封锁");
         }
-        return label + " - " + Tr(language, "Gain ", "获得 ") + std::to_string(state.enemy.intentValue) + Tr(language, " shield", " 点护盾");
+        return label + " - " + Tr(language, "Gain ", "获得 ") + std::to_string(raw_value) + Tr(language, " shield", " 点护盾");
     }
-    if (state.enemy.intentKind == "heat") {
-        return label + " - " + Tr(language, "Inflict ", "施加 ") + std::to_string(state.enemy.intentValue) + Tr(language, " heat", " 点热量");
+    if (raw_kind == "heat") {
+        return label + " - " + Tr(language, "Inflict ", "施加 ") + std::to_string(raw_value) + Tr(language, " heat", " 点热量");
     }
-    if (state.enemy.intentKind == "emp") {
-        return label + " - " + Tr(language, "Next turn -", "下回合 -") + std::to_string(state.enemy.intentValue) +
+    if (raw_kind == "emp") {
+        return label + " - " + Tr(language, "Next turn -", "下回合 -") + std::to_string(raw_value) +
                Tr(language, " energy", " 能量");
     }
-    if (state.enemy.intentKind == "charge") {
-        return label + " - " + Tr(language, "Charge and gain ", "蓄力并获得 ") + std::to_string(state.enemy.intentValue) +
+    if (raw_kind == "charge") {
+        return label + " - " + Tr(language, "Charge and gain ", "蓄力并获得 ") + std::to_string(raw_value) +
                Tr(language, " shield", " 点护盾");
     }
-    if (state.enemy.intentKind == "cool") {
-        return label + " - " + Tr(language, "Reduce own heat ", "自身热量 -") + std::to_string(state.enemy.intentValue);
+    if (raw_kind == "cool") {
+        return label + " - " + Tr(language, "Reduce own heat ", "自身热量 -") + std::to_string(raw_value);
     }
     return label;
 }
@@ -818,11 +825,13 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
 }
 
 std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunState& state) {
-    std::vector<std::string> lines = {
-        Tr(language, "Intent: ", "意图：") + IntentSummary(language, state),
-        Tr(language, "Shield ", "护盾 ") + std::to_string(state.enemy.shield) + "   " +
-            Tr(language, "Heat ", "热量 ") + std::to_string(state.enemy.heat) + "/" + std::to_string(state.enemy.maxHeat),
-    };
+    std::vector<std::string> lines;
+    lines.push_back(Tr(language, "Intent: ", "意图：") + IntentSummary(language, state));
+    if (!state.enemy.secondaryIntentKind.empty()) {
+        lines.push_back(Tr(language, "Second intent: ", "第二意图：") + IntentSummary(language, state, true));
+    }
+    lines.push_back(Tr(language, "Shield ", "护盾 ") + std::to_string(state.enemy.shield) + "   " +
+                    Tr(language, "Heat ", "热量 ") + std::to_string(state.enemy.heat) + "/" + std::to_string(state.enemy.maxHeat));
     if (state.enemy.heat >= state.enemy.maxHeat) {
         const int stage = std::max(1, std::min(3, state.enemy.overheatRounds));
         if (stage == 1) {

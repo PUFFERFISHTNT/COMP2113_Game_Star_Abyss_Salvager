@@ -280,6 +280,9 @@ struct EnemyState {
     std::string intentKind;
     std::string intentLabel;
     int intentValue = 0;
+    std::string secondaryIntentKind;
+    std::string secondaryIntentLabel;
+    int secondaryIntentValue = 0;
     int patternIndex = 0;
     int weakenTurns = 0;
     int shieldLockTurns = 0;

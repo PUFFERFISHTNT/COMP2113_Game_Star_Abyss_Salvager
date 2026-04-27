@@ -762,7 +762,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
       on_close_(std::move(on_close)) {
 
     // -------- Static catalogue & cached pools --------
-    difficulty_entries_ = {"Easy", "Normal", "Hard"};
+    difficulty_entries_ = {"Easy", "Normal", "Hard", "Hell"};
     auto ships = engine_.dev_listShipsWithNames();
     for (const auto& [id, name] : ships) {
         ship_ids_.push_back(id);
@@ -1195,6 +1195,7 @@ void DevModeUi::rebuildLabels() {
     difficulty_entries_[0] = Tr(language_, "Easy", "简单");
     difficulty_entries_[1] = Tr(language_, "Normal", "普通");
     difficulty_entries_[2] = Tr(language_, "Hard", "困难");
+    difficulty_entries_[3] = Tr(language_, "Hell", "地狱");
 
     auto ships = engine_.dev_listShipsWithNames();
     for (size_t i = 0; i < ships.size() && i < ship_entries_.size(); ++i) {

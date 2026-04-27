@@ -229,9 +229,6 @@ void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     if (difficulty == 0) {
         player.maxHp += 6;
         player.maxHeat += 2;
-    } else if (difficulty == 2) {
-        player.maxHp = std::max(24, player.maxHp - 5);
-        player.maxHeat = std::max(7, player.maxHeat - 1);
     }
 
     player.hp = player.maxHp;

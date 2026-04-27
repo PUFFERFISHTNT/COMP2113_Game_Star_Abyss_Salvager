@@ -138,9 +138,11 @@ FTXUI_COMPONENT_SOURCES := \
 
 ALL_SOURCES := $(APP_SOURCES) $(FTXUI_SCREEN_SOURCES) $(FTXUI_DOM_SOURCES) $(FTXUI_COMPONENT_SOURCES)
 OBJECTS := $(patsubst %.cpp,$(OBJDIR)/%.o,$(ALL_SOURCES))
+DEPFILES := $(OBJECTS:.o=.d)
 
 APP_CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -finput-charset=UTF-8 -fexec-charset=UTF-8 $(WINDOWS_DEFINES) -Iinclude -isystem vendor/FTXUI/include
 FTXUI_CXXFLAGS := -std=c++17 -finput-charset=UTF-8 -fexec-charset=UTF-8 $(WINDOWS_DEFINES) -isystem vendor/FTXUI/include -Ivendor/FTXUI/src
+DEPFLAGS := -MMD -MP
 LDFLAGS :=
 LDLIBS := -pthread
 
@@ -159,11 +161,11 @@ $(TARGET): $(OBJECTS)
 
 $(OBJDIR)/src/%.o: src/%.cpp
 	$(MKDIR_P)
-	$(CXX) $(APP_CXXFLAGS) -c $< -o $@
+	$(CXX) $(APP_CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
 $(OBJDIR)/vendor/FTXUI/src/%.o: vendor/FTXUI/src/%.cpp
 	$(MKDIR_P)
-	$(CXX) $(FTXUI_CXXFLAGS) -c $< -o $@
+	$(CXX) $(FTXUI_CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
 run: $(TARGET)
 	$(RUN_TARGET)
@@ -171,3 +173,5 @@ run: $(TARGET)
 clean:
 	$(CLEAN_OBJDIR)
 	$(CLEAN_TARGET)
+
+-include $(DEPFILES)
