@@ -350,9 +350,14 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
                           std::to_string(card.auxEffectPercentBonus) + "%");
     }
     if (card.auxDestroyCount > 0) {
-        clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
-                          Tr(language, " auxiliary ships for immediate rewards x", " 个附属舰并按即时收益倍率 x") +
-                          std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+        if (card.auxDestroyRewardMultiplierPercent > 0) {
+            clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
+                              Tr(language, " auxiliary ships for immediate rewards x", " 个附属舰并按即时收益倍率 x") +
+                              std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+        } else {
+            clauses.push_back(Tr(language, "Dismantle ", "拆解 ") + std::to_string(card.auxDestroyCount) +
+                              Tr(language, " auxiliary ships", " 个附属舰"));
+        }
     }
     if (card.firstSummonExtraCopies > 0 && card.firstSummonExtraScope > 0) {
         const std::string scope = card.firstSummonExtraScope >= 2 ? Tr(language, "each turn", "每回合")
@@ -669,7 +674,10 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     }
     if (card.auxDestroyCount > 0) {
         facts.push_back(Tr(language, "Dismantle x", "拆解数量 x") + std::to_string(card.auxDestroyCount));
-        facts.push_back(Tr(language, "Destroy reward ", "拆解收益倍率 ") + std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+        if (card.auxDestroyRewardMultiplierPercent > 0) {
+            facts.push_back(Tr(language, "Destroy reward ", "拆解收益倍率 ") +
+                            std::to_string(card.auxDestroyRewardMultiplierPercent) + "%");
+        }
     }
     if (card.firstSummonExtraCopies > 0 && card.firstSummonExtraScope > 0) {
         const std::string scope = card.firstSummonExtraScope >= 2 ? Tr(language, "turn", "回合")

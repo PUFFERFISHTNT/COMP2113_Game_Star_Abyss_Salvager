@@ -1998,6 +1998,7 @@ void GameEngine::resolveAuxiliaryShipDestroyRewards(const CardDef& card) {
     }
 
     const int multiplier = std::max(0, card.auxDestroyRewardMultiplierPercent);
+    const bool grantsImmediateRewards = multiplier > 0;
     int destroyed = 0;
     int totalDamageReward = 0;
     int totalShieldReward = 0;
@@ -2036,14 +2037,18 @@ void GameEngine::resolveAuxiliaryShipDestroyRewards(const CardDef& card) {
         if (extraTriggers > 0) {
             totalExtraTriggers += extraTriggers;
         }
-        log("Dismantled " + ship.displayName + " for immediate reward.");
+        if (grantsImmediateRewards) {
+            log("Dismantled " + ship.displayName + " for immediate reward.");
+        } else {
+            log("Dismantled " + ship.displayName + ".");
+        }
         ++destroyed;
     }
     if (totalExtraTriggers > 0) {
         triggerAuxiliaryShipsNow(totalExtraTriggers);
     }
-    if (destroyed > 0) {
-        log("Lossless Recycling resolves: +" + std::to_string(totalShieldReward) +
+    if (destroyed > 0 && grantsImmediateRewards) {
+        log(card.name + " resolves: +" + std::to_string(totalShieldReward) +
             " shield, +" + std::to_string(totalHealReward) + " HP, " +
             std::to_string(totalDamageReward) + " damage, +" +
             std::to_string(totalEnemyHeatReward) + " enemy heat.");

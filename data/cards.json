@@ -2134,6 +2134,7 @@
       "description": "摧毁 `1` 个附属舰，使敌人获得 `4` 点热量并抽 `1` 张牌。",
       "rarity": "common",
       "cost": 0,
+      "auxDestroyCount": 1,
       "draw": 1,
       "enemyHeat": 4,
       "name_en": "Scorch Recycle",
@@ -2144,6 +2145,7 @@
         "description": "摧毁 `2` 个附属舰，使敌人获得 `6` 点热量并抽 `2` 张牌。",
         "description_en": "Destroy 2 Auxiliary Ship, apply 6 Heat to the enemy, and draw 2 card.",
         "cost": 0,
+        "auxDestroyCount": 2,
         "draw": 2,
         "enemyHeat": 6
       }
