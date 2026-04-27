@@ -1,6 +1,8 @@
 # Star Abyss Salvager
 
-`Star Abyss Salvager` is a text-based roguelike deckbuilding game developed for the ENGG1340 / COMP2113 course project. The player pilots a salvager ship into the Star Abyss, chooses routes across dangerous sectors, fights hostile ships in turn-based card battles, upgrades the deck, collects relics, and progresses toward different story routes and endings.
+`Star Abyss Salvager` is a text-based roguelike deckbuilding game developed for the COMP2113 course project. The player pilots a salvager ship into the Star Abyss, chooses routes across dangerous sectors, fights hostile ships in turn-based card battles, upgrades the deck, collects relics, and progresses toward different story routes and endings.
+
+The combat and run-based structure are partly inspired by **Slay the Spire**, while the setting, story routes, heat system, auxiliary ships, and terminal UI are custom to this project.
 
 ## Team Members
 
@@ -298,7 +300,4 @@ The current playable version includes:
 
 ## Notes
 
-- The player-facing currency is displayed as `credits`, although some internal variables still use the older name `scrap`.
-- Saves are stored in a text-based `.sav` format.
-- Card content is data-driven from `data/cards.json`, while route/event/enemy content is currently authored in C++.
 - A more detailed technical handoff is available in `DEVELOPMENT_STATUS.md`.

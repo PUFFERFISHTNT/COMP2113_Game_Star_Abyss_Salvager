@@ -334,6 +334,7 @@ Implemented:
 - start new run
 - load save
 - leaderboard
+- achievements
 - help
 - English / Chinese language toggle
 - exit
@@ -344,6 +345,7 @@ Implemented:
 
 - difficulty selection
 - starter ship selection
+- setup-page descriptions for the currently selected difficulty and ship
 
 Current ships:
 
@@ -356,6 +358,7 @@ Current difficulty labels:
 - Easy
 - Normal
 - Hard
+- Hell
 
 ### 6.3 Route / Node Flow
 
@@ -415,6 +418,9 @@ Implemented enemy-side mechanics:
 - weakened attacks
 - shield lock handling
 - turn pattern cycling
+- difficulty-based aggressive intent selection
+- probabilistic second intents for elite and boss fights on higher difficulties
+- hidden enemy intents in Hell difficulty
 
 Implemented end conditions:
 
@@ -448,6 +454,9 @@ Implemented encounter families include:
 - event-based full-deck upgrade service
 - reactor leak outcomes
 - smuggler cache outcomes
+- escape-route events
+- truth-route events
+- story-boss prompt events
 
 These are currently authored directly in code and already support different risk / reward branches.
 
@@ -486,6 +495,15 @@ Implemented:
 - appending run results to a runtime-created `data/leaderboard.txt`
 - viewing leaderboard entries in the info screen
 
+### 6.10 Achievement System
+
+Implemented:
+
+- recording completed event encounters into a persistent registry
+- viewing completed events from the main menu
+- hiding uncompleted achievements entirely
+- achievement-count feedback in the main menu
+
 ## 7. Content Database Status
 
 The current release is **partly data-driven and partly code-authored**.
@@ -507,6 +525,7 @@ Advantages of the current approach:
 - enemies, ships, and relics are still easy to validate because they remain code-authored
 - easy offline delivery
 - save validation can still check ids against known runtime databases
+- achievement records can persist independently from run saves
 
 Disadvantages:
 
