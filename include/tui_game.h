@@ -533,6 +533,7 @@ private:
     void resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, bool immediateContext);
     void triggerAuxiliaryShipsNow(int times);
     void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
+    void resolveAuxiliaryShipRemovalBurst(const AuxiliaryShipState& ship, const char* reason);
     bool resolveBlackboxProtocol(size_t handIndex);
     void resolveFirstFormChangeRelic();
     void beginAuxiliaryTransformSelection(const CardDef& card, int transformCount);

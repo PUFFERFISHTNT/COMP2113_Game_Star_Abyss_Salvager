@@ -1120,21 +1120,21 @@
       "id": "df_23",
       "name": "中央母舰",
       "type": "Ability",
-      "description": "本场战斗中，你首次召唤附属舰时，额外召唤同类型 `1` 个。",
+      "description": "本场战斗中，你每次召唤附属舰时，额外召唤同类型 `1` 个。",
       "rarity": "uncommon",
       "cost": 1,
       "firstSummonExtraCopies": 1,
-      "firstSummonExtraScope": 1,
+      "firstSummonExtraScope": 3,
       "name_en": "Command Carrier",
-      "description_en": "The first time you summon an Auxiliary Ship this battle, summon 1 extra copy of that type.",
+      "description_en": "This battle, whenever you summon an Auxiliary Ship, summon 1 extra copy of that type.",
       "upgrade": {
         "name": "中央母舰+++",
         "name_en": "Command Carrier+++",
-        "description": "本场战斗中，你每回合首次召唤附属舰时，额外召唤同类型 `1` 个。",
-        "description_en": "The first time you summon an Auxiliary Ship each turn this battle, summon 1 extra copy of that type.",
+        "description": "本场战斗中，你每次召唤附属舰时，额外召唤同类型 `2` 个。",
+        "description_en": "This battle, whenever you summon an Auxiliary Ship, summon 2 extra copies of that type.",
         "cost": 1,
-        "firstSummonExtraCopies": 1,
-        "firstSummonExtraScope": 2
+        "firstSummonExtraCopies": 2,
+        "firstSummonExtraScope": 3
       }
     },
     {

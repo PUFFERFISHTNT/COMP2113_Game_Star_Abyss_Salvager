@@ -31,6 +31,31 @@ bool ContainsCardId(const std::vector<std::string>& card_ids, const std::string&
     return std::find(card_ids.begin(), card_ids.end(), card_id) != card_ids.end();
 }
 
+std::string BaseRewardCardId(const std::string& card_ref) {
+    constexpr const char* kTemporaryCopyPrefix = "tmp|";
+    std::string ref = card_ref;
+    if (ref.rfind(kTemporaryCopyPrefix, 0) == 0) {
+        ref = ref.substr(std::char_traits<char>::length(kTemporaryCopyPrefix));
+    }
+    const size_t upgrade_marker = ref.find('@');
+    if (upgrade_marker != std::string::npos) {
+        ref.resize(upgrade_marker);
+    }
+    return ref;
+}
+
+void AppendOwnedRewardExclusions(std::vector<std::string>* excluded, const std::vector<std::string>& pile) {
+    if (excluded == nullptr) {
+        return;
+    }
+    for (const std::string& ref : pile) {
+        const std::string base_id = BaseRewardCardId(ref);
+        if (!base_id.empty() && !ContainsCardId(*excluded, base_id)) {
+            excluded->push_back(base_id);
+        }
+    }
+}
+
 std::vector<std::string> BuildRewardPool(const std::vector<CardDef>& card_pool,
                                          const std::string& ship_id,
                                          const std::vector<std::string>& excluded,
@@ -49,6 +74,22 @@ std::vector<std::string> BuildRewardPool(const std::vector<CardDef>& card_pool,
         pool.push_back(card.id);
     }
     return pool;
+}
+
+std::vector<std::string> CurrentOwnedRewardExclusions(const RunState& state) {
+    std::vector<std::string> excluded;
+    excluded.reserve(state.player.drawPile.size() + state.player.hand.size() + state.player.discardPile.size());
+    AppendOwnedRewardExclusions(&excluded, state.player.drawPile);
+    AppendOwnedRewardExclusions(&excluded, state.player.hand);
+    AppendOwnedRewardExclusions(&excluded, state.player.discardPile);
+    AppendOwnedRewardExclusions(&excluded, state.player.exilePile);
+    for (const ActiveAbilityState& ability : state.player.activeAbilities) {
+        const std::string base_id = BaseRewardCardId(ability.cardRef);
+        if (!base_id.empty() && !ContainsCardId(excluded, base_id)) {
+            excluded.push_back(base_id);
+        }
+    }
+    return excluded;
 }
 
 CardRarity RollBattleRewardRarity(int sector, std::mt19937& rng) {
@@ -87,23 +128,35 @@ void GameEngine::chooseReward(int index) {
 }
 
 std::vector<std::string> GameEngine::randomCardChoices(size_t count) {
-    std::vector<std::string> pool;
-    for (const CardDef& card : cardPool_) {
-        if (card.starterCopies != 0) {
-            continue;
+    std::vector<std::string> choices;
+    const std::vector<std::string> owned_excluded = CurrentOwnedRewardExclusions(state_);
+    auto add_random_card = [&](bool prefer_new) {
+        std::vector<std::string> pool = BuildRewardPool(cardPool_, state_.player.shipId, choices, nullptr);
+        if (prefer_new) {
+            pool.erase(std::remove_if(pool.begin(),
+                                      pool.end(),
+                                      [&](const std::string& card_id) {
+                                          return ContainsCardId(owned_excluded, card_id);
+                                      }),
+                       pool.end());
         }
-        if (IsColorlessCardId(card.id)) {
-            continue;
+        ShuffleVector(pool, rng_);
+        if (!pool.empty()) {
+            choices.push_back(pool.front());
         }
-        if (MatchesShipCardPool(card.id, state_.player.shipId)) {
-            pool.push_back(card.id);
+    };
+
+    while (choices.size() < count) {
+        const size_t before = choices.size();
+        add_random_card(true);
+        if (choices.size() == before) {
+            add_random_card(false);
+        }
+        if (choices.size() == before) {
+            break;
         }
     }
-    ShuffleVector(pool, rng_);
-    if (pool.size() > count) {
-        pool.resize(count);
-    }
-    return pool;
+    return choices;
 }
 
 std::vector<std::string> GameEngine::randomBattleCardChoices(size_t count, const std::string& nodeType) {
@@ -139,26 +192,35 @@ std::vector<std::string> GameEngine::randomBattleCardChoices(size_t count, const
 }
 
 std::vector<std::string> GameEngine::randomCardChoicesByRarity(size_t count, CardRarity rarity) {
-    std::vector<std::string> pool;
-    for (const CardDef& card : cardPool_) {
-        if (card.starterCopies != 0) {
-            continue;
+    std::vector<std::string> choices;
+    const std::vector<std::string> owned_excluded = CurrentOwnedRewardExclusions(state_);
+    auto add_random_card = [&](bool prefer_new) {
+        std::vector<std::string> pool = BuildRewardPool(cardPool_, state_.player.shipId, choices, &rarity);
+        if (prefer_new) {
+            pool.erase(std::remove_if(pool.begin(),
+                                      pool.end(),
+                                      [&](const std::string& card_id) {
+                                          return ContainsCardId(owned_excluded, card_id);
+                                      }),
+                       pool.end());
         }
-        if (IsColorlessCardId(card.id)) {
-            continue;
+        ShuffleVector(pool, rng_);
+        if (!pool.empty()) {
+            choices.push_back(pool.front());
         }
-        if (card.rarity != rarity) {
-            continue;
+    };
+
+    while (choices.size() < count) {
+        const size_t before = choices.size();
+        add_random_card(true);
+        if (choices.size() == before) {
+            add_random_card(false);
         }
-        if (MatchesShipCardPool(card.id, state_.player.shipId)) {
-            pool.push_back(card.id);
+        if (choices.size() == before) {
+            break;
         }
     }
-    ShuffleVector(pool, rng_);
-    if (pool.size() > count) {
-        pool.resize(count);
-    }
-    return pool;
+    return choices;
 }
 
 std::vector<std::string> GameEngine::randomMarketCardChoices(size_t count) {

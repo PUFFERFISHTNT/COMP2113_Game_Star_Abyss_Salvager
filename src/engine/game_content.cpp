@@ -165,6 +165,15 @@ void GameEngine::recordCurrentOwnedCards() {
     collect(state_.player.drawPile);
     collect(state_.player.hand);
     collect(state_.player.discardPile);
+    collect(state_.player.exilePile);
+    for (const ActiveAbilityState& ability : state_.player.activeAbilities) {
+        const std::string baseId = baseCardId(ability.cardRef);
+        if (baseId.empty() || cardById(baseId) == nullptr || hasObtainedCard(baseId)) {
+            continue;
+        }
+        obtainedCardIds_.push_back(baseId);
+        changed = true;
+    }
     if (!changed) {
         return;
     }
@@ -180,6 +189,7 @@ void GameEngine::queueOwnedCardToDiscard(const std::string& cardRef) {
     }
     recordObtainedCard(cardRef);
     state_.player.discardPile.push_back(cardRef);
+    recordCurrentOwnedCards();
 }
 
 void GameEngine::queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs) {

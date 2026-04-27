@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <string_view>
 
 extern int g_sa_permanent_shield;
 
@@ -13,6 +14,7 @@ constexpr int kPlayerFormOverload = 1;
 constexpr int kPlayerFormDefense = 2;
 constexpr int kFirstSummonScopeBattleOnce = 1;
 constexpr int kFirstSummonScopePerTurn = 2;
+constexpr int kEverySummonScopeBattleAlways = 3;
 constexpr const char* kTemporaryCopyPrefix = "tmp|";
 constexpr const char* kAuxUnitInterceptor = "aux_interceptor";
 constexpr const char* kAuxUnitGuardian = "aux_guardian";
@@ -40,6 +42,21 @@ enum class AuxiliaryTriggerContext {
 
 bool IsHighHeat(int heat, int max_heat) {
     return std::max(0, heat) * 2 > std::max(1, max_heat);
+}
+
+bool AuxiliaryRemovalCountsAsDestroyed(const char* reason) {
+    if (reason == nullptr) {
+        return false;
+    }
+    const std::string_view reason_view(reason);
+    return reason_view == "replaced" || reason_view == "furnace" || reason_view == "dismantled";
+}
+
+int ScaleAuxiliaryRemovalBurstValue(int value, int bonus_percent) {
+    if (value <= 0) {
+        return 0;
+    }
+    return (value * (150 + std::max(0, bonus_percent)) + 99) / 100;
 }
 
 int MaxAuxiliaryShipSlots(const PlayerState& player) {
@@ -254,6 +271,9 @@ void GameEngine::playCard(size_t index) {
     if (state_.player.firstCardCostZeroThisTurn) {
         state_.player.firstCardCostZeroThisTurn = false;
         log("Stored reverse-entropy window makes this card cost 0.");
+    }
+    if (!temporaryCopy) {
+        recordObtainedCard(resolvedRef);
     }
     if (IsAbilityCard(card)) {
         // Ability cards leave the combat deck after being played and remain
@@ -834,7 +854,7 @@ void GameEngine::playCard(size_t index) {
         state_.player.firstSummonExtraCopies = std::max(state_.player.firstSummonExtraCopies, card.firstSummonExtraCopies);
         state_.player.firstSummonExtraScope = std::max(
             state_.player.firstSummonExtraScope,
-            std::min(kFirstSummonScopePerTurn, card.firstSummonExtraScope));
+            std::min(kEverySummonScopeBattleAlways, card.firstSummonExtraScope));
         log("Auxiliary launch protocol is now enhanced.");
     }
     if (card.summonCardPlayedDrawThisTurn > 0) {
@@ -1808,17 +1828,23 @@ void GameEngine::summonAuxiliaryShips(const CardDef& card, const std::string& ba
 
     int extraCopies = 0;
     if (state_.player.firstSummonExtraCopies > 0) {
+        const bool every_summon_ready =
+            state_.player.firstSummonExtraScope == kEverySummonScopeBattleAlways;
         const bool battle_once_ready =
             state_.player.firstSummonExtraScope == kFirstSummonScopeBattleOnce &&
             !state_.player.firstSummonUsedThisBattle;
         const bool per_turn_ready =
             state_.player.firstSummonExtraScope == kFirstSummonScopePerTurn &&
             !state_.player.firstSummonUsedThisTurn;
-        if (battle_once_ready || per_turn_ready) {
+        if (every_summon_ready || battle_once_ready || per_turn_ready) {
             extraCopies = state_.player.firstSummonExtraCopies;
-            state_.player.firstSummonUsedThisBattle = true;
-            state_.player.firstSummonUsedThisTurn = true;
-            log("Auxiliary command protocol duplicates this launch.");
+            if (!every_summon_ready) {
+                state_.player.firstSummonUsedThisBattle = true;
+                state_.player.firstSummonUsedThisTurn = true;
+            }
+            log(every_summon_ready
+                    ? "Auxiliary command protocol duplicates every launch."
+                    : "Auxiliary command protocol duplicates this launch.");
         }
     }
 
@@ -2016,9 +2042,49 @@ void GameEngine::resolveAuxiliaryShipDestroyRewards(const CardDef& card) {
     }
 }
 
+void GameEngine::resolveAuxiliaryShipRemovalBurst(const AuxiliaryShipState& ship, const char* reason) {
+    if (!AuxiliaryRemovalCountsAsDestroyed(reason)) {
+        return;
+    }
+
+    const int bonusPercent = std::max(0, state_.player.auxEffectPercentBonusThisTurn);
+    const int attack = ScaleAuxiliaryRemovalBurstValue(ship.attack, bonusPercent);
+    const int shield = ScaleAuxiliaryRemovalBurstValue(ship.shield, bonusPercent);
+    const int heal = ScaleAuxiliaryRemovalBurstValue(ship.heal, bonusPercent);
+    const int enemyHeat = ScaleAuxiliaryRemovalBurstValue(ship.endTurnEnemyHeat, bonusPercent);
+    bool triggered = false;
+
+    if (attack > 0) {
+        applyDamageToEnemy(attack, false, 1);
+        log(ship.displayName + " triggers a parting strike for " + std::to_string(attack) + ".");
+        triggered = true;
+    }
+    if (shield > 0) {
+        state_.player.shield += shield;
+        log(ship.displayName + " leaves behind +" + std::to_string(shield) + " shield.");
+        triggered = true;
+    }
+    if (heal > 0) {
+        const int before = state_.player.hp;
+        state_.player.hp = std::min(state_.player.maxHp, state_.player.hp + heal);
+        log(ship.displayName + " restores " + std::to_string(state_.player.hp - before) + " HP on departure.");
+        triggered = true;
+    }
+    if (enemyHeat > 0) {
+        changeEnemyHeat(enemyHeat);
+        log(ship.displayName + " spikes enemy heat by " + std::to_string(enemyHeat) + " on departure.");
+        triggered = true;
+    }
+    if (triggered && state_.player.auxTriggerEnemyHeatBonusThisTurn > 0) {
+        changeEnemyHeat(state_.player.auxTriggerEnemyHeatBonusThisTurn);
+    }
+}
+
 void GameEngine::onAuxiliaryShipRemoved(const AuxiliaryShipState& ship, const char* reason) {
-    (void)ship;
-    (void)reason;
+    resolveAuxiliaryShipRemovalBurst(ship, reason);
+    if (!AuxiliaryRemovalCountsAsDestroyed(reason)) {
+        return;
+    }
     if (state_.player.auxOnRemoveDrawThisBattle > 0) {
         drawCards(state_.player.auxOnRemoveDrawThisBattle);
     }

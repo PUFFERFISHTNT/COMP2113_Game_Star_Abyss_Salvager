@@ -159,6 +159,10 @@ Element AuxiliaryShipPanel(UiLanguage language,
                            Tr(language, ". Newest summons replace the oldest when full.",
                               " 个。满位时新召唤会替换最旧附属舰。")) |
                           color(kDim),
+                      text(Tr(language,
+                              "Replacement counts as destruction. Replaced or destroyed ships trigger once at +50% Attack / Shield / Repair / Heat.",
+                              u8"\u66ff\u6362\u6309\u6467\u6bc1\u5904\u7406\u3002\u88ab\u66ff\u6362\u6216\u88ab\u6467\u6bc1\u7684\u9644\u5c5e\u8230\u4f1a\u4ee5 +50% \u653b\u51fb / \u62a4\u76fe / \u6062\u590d / \u70ed\u91cf\u89e6\u53d1\u4e00\u6b21\u3002")) |
+                          color(kDim),
                       separator(),
                       hbox(std::move(slots)),
                   })) |

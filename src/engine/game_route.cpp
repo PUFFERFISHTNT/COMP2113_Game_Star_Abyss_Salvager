@@ -582,6 +582,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
 }
 
 void GameEngine::finishCurrentNode() {
+    recordCurrentOwnedCards();
     state_.encounter = {};
     state_.reward = {};
     state_.animation = {};
