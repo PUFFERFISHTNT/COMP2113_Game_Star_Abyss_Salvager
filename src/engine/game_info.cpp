@@ -1,5 +1,6 @@
 #include "engine/game_info.h"
 
+#include <algorithm>
 #include <fstream>
 #include <vector>
 
@@ -175,7 +176,6 @@ void GameEngine::fillHelpInfo() {
     state_.info.title = "Flight Manual";
     state_.info.footer = "Keyboard: 1-9 and 0 choose cards, E ends turn, S saves, L loads, [/] or PgUp/PgDn scroll, Esc returns.";
     state_.info.lines = {
-        "Star Abyss Salvager now runs through the FTXUI gameplay flow instead of the old placeholder help screen.",
         "Map flow: choose one node per jump, clear three jumps, then defeat a sector boss.",
         "Battle flow: start each turn with up to 5 cards, spend energy to play modules, then end turn with E.",
         "Cards can draw extra modules, but your hand caps at 10 cards just like a deckbuilder battle lane.",

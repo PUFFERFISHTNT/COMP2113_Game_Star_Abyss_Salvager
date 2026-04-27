@@ -1137,9 +1137,6 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
     if (StartsWith(text, "Map flow: choose one node per jump, clear three jumps, then defeat a sector boss.")) {
         return "地图流程：每次跃迁选择一个节点，完成三次跳跃后击败该星区 Boss。";
     }
-    if (StartsWith(text, "Star Abyss Salvager now runs through the FTXUI gameplay flow instead of the old placeholder help screen.")) {
-        return "Star Abyss Salvager 现在已经使用完整的 FTXUI 游戏流程，而不是之前的帮助占位页。";
-    }
     if (StartsWith(text, "Result: ")) {
         return "结果：" + TranslateGameText(language, text.substr(8));
     }
