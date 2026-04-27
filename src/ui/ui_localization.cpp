@@ -336,6 +336,7 @@ std::string TranslateGameText(UiLanguage language, const std::string& text) {
         {"Stabilize the core and harden your next engagement.", "稳定核心，让下一场战斗更稳健。"},
         {"Trade time for permanent hull reinforcement.", "花时间换取永久性的船体强化。"},
         {"Use the station fabricators to upgrade one card for free.", "使用维修站的制造设备，免费升级 1 种卡牌。"},
+        {"Use the station scrapyard to remove one card from your deck for free.", "使用维修站的拆解场，免费从牌组中移除 1 张卡牌。"},
         {"Finish repairs and continue the route.", "结束维修并继续航线。"},
         {"Strip Scrap", "拆解废料"},
         {"Recover Module Rack", "回收模块架"},

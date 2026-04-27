@@ -555,6 +555,7 @@ const std::vector<SceneEntry>& SceneCatalogue() {
         {"Location · Repair Station", "地点 · 维修站", "location", "repair"},
         {"Location · Salvage Wreck", "地点 · 残骸打捞", "location", "salvage"},
         {"Location · Black Market", "地点 · 黑市", "location", "market"},
+        {"Service · Repair Purge", "服务 · 维修删牌", "service", "repair_purge"},
         {"Service · Repair Retrofit", "服务 · 维修升级", "service", "repair_upgrade"},
         {"Service · Market Upgrade", "服务 · 黑市升级", "service", "market_upgrade"},
         {"Service · Market Purge", "服务 · 黑市移除", "service", "market_purge"},
@@ -644,7 +645,9 @@ void GameEngine::dev_openDebugScene(const std::string& sceneKey,
     }
 
     if (sceneKey == "service") {
-        if (payload == "repair_upgrade") {
+        if (payload == "repair_purge") {
+            enterRepairPurge(0);
+        } else if (payload == "repair_upgrade") {
             enterRepairUpgrade(0);
         } else if (payload == "market_upgrade") {
             enterMarketUpgrade(0);
@@ -734,7 +737,8 @@ void GameEngine::dev_reloadCurrentEncounter() {
         dev_openDebugScene("location", "market");
         return;
     }
-    if (encounterId == "repair_upgrade" || encounterId == "market_upgrade" ||
+    if (encounterId == "repair_upgrade" || encounterId == "repair_purge" ||
+        encounterId == "market_upgrade" ||
         encounterId == "market_purge" || encounterId == "event_upgrade" ||
         encounterId == "event_purge") {
         dev_openDebugScene("service", encounterId);

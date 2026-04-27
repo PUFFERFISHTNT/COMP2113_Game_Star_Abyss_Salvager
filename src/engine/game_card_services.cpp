@@ -699,18 +699,11 @@ void GameEngine::openRepairStation() {
         state_.encounter.payloadValues.push_back(0);
     };
 
-    if (!state_.repairStationPatchUsed) {
-        add_option("Patch Hull (+10 HP)", "Reliable, clean repairs for a bruised ship.", "repair_patch");
-    }
-    if (!state_.repairStationVentUsed) {
-        add_option("Vent Reactor (-6 Heat, +4 Shield)", "Stabilize the core and harden your next engagement.", "repair_vent");
-    }
-    if (!state_.repairStationPlatingUsed) {
-        add_option("Install Plating (+4 Max HP)", "Trade time for permanent hull reinforcement.", "repair_plating");
-    }
-    if (!state_.repairStationUpgradeUsed) {
-        add_option("Upgrade 1 card", "Use the station fabricators to upgrade one card for free.", "repair_upgrade");
-    }
+    add_option("Patch Hull (+10 HP)", "Reliable, clean repairs for a bruised ship.", "repair_patch");
+    add_option("Vent Reactor (-6 Heat, +4 Shield)", "Stabilize the core and harden your next engagement.", "repair_vent");
+    add_option("Install Plating (+4 Max HP)", "Trade time for permanent hull reinforcement.", "repair_plating");
+    add_option("Upgrade 1 card", "Use the station fabricators to upgrade one card for free.", "repair_upgrade");
+    add_option("Purge 1 card", "Use the station scrapyard to remove one card from your deck for free.", "repair_purge");
     add_option("Leave station", "Finish repairs and continue the route.", "leave");
 }
 
@@ -867,8 +860,55 @@ void GameEngine::enterRepairUpgrade(size_t offset) {
         state_.encounter.payloadIds.push_back(candidate);
         state_.encounter.payloadValues.push_back(0);
     }
-    state_.encounter.choices.push_back("Back to station");
-    state_.encounter.details.push_back("Return to the repair station services.");
+    state_.encounter.choices.push_back("Leave station");
+    state_.encounter.details.push_back("Leave the retrofit console unused and depart the station.");
+    state_.encounter.payloadIds.push_back(kPayloadSkipService);
+    state_.encounter.payloadValues.push_back(0);
+}
+
+void GameEngine::enterRepairPurge(size_t offset) {
+    const std::vector<std::pair<std::string, int>> candidates = purgeableCards();
+    const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
+    const size_t safeOffset =
+        candidates.empty() ? 0 : std::min(offset, ((candidates.size() - 1) / kCardServicePageSize) * kCardServicePageSize);
+    const size_t currentPage = candidates.empty() ? 1 : (safeOffset / kCardServicePageSize) + 1;
+    const size_t upper = std::min(candidates.size(), safeOffset + kCardServicePageSize);
+
+    state_.encounter = {};
+    state_.encounter.typeId = "repair";
+    state_.encounter.encounterId = "repair_purge";
+    state_.encounter.title = "Repair Station Scrapyard";
+    state_.encounter.description =
+        "Select one card to erase from your deck for free before leaving the repair station. Page " +
+        std::to_string(currentPage) + "/" + std::to_string(totalPages) +
+        ". Starter cards may appear on later pages. Scroll with mouse wheel, [ ], or PgUp/PgDn if needed.";
+    state_.page = AppPage::Encounter;
+    resumePage_ = AppPage::Encounter;
+
+    for (size_t i = safeOffset; i < upper; ++i) {
+        state_.encounter.choices.push_back(displayCardName(candidates[i].first));
+        state_.encounter.details.push_back("Purge 1 copy from the deck. Copies owned: " +
+                                           std::to_string(candidates[i].second) + ".");
+        state_.encounter.payloadIds.push_back(candidates[i].first);
+        state_.encounter.payloadValues.push_back(0);
+    }
+    if (safeOffset > 0) {
+        const size_t previousOffset = safeOffset >= kCardServicePageSize ? safeOffset - kCardServicePageSize : 0;
+        state_.encounter.choices.push_back("Previous purge targets");
+        state_.encounter.details.push_back("Return to the previous page of cards that can be removed. Previous page: " +
+                                           std::to_string(currentPage - 1) + "/" + std::to_string(totalPages) + ".");
+        state_.encounter.payloadIds.push_back(kPayloadPrevPurge);
+        state_.encounter.payloadValues.push_back(static_cast<int>(previousOffset));
+    }
+    if (upper < candidates.size()) {
+        state_.encounter.choices.push_back("More purge targets");
+        state_.encounter.details.push_back("Cycle to the next page of cards that can be removed. Next page: " +
+                                           std::to_string(currentPage + 1) + "/" + std::to_string(totalPages) + ".");
+        state_.encounter.payloadIds.push_back(kPayloadCyclePurge);
+        state_.encounter.payloadValues.push_back(static_cast<int>(upper));
+    }
+    state_.encounter.choices.push_back("Leave station");
+    state_.encounter.details.push_back("Leave the scrapyard unused and continue your route.");
     state_.encounter.payloadIds.push_back(kPayloadSkipService);
     state_.encounter.payloadValues.push_back(0);
 }
@@ -960,10 +1000,13 @@ bool GameEngine::resolvePurgeSelection(size_t index) {
     const std::string payload = index < state_.encounter.payloadIds.size() ? state_.encounter.payloadIds[index] : "";
     const int price = index < state_.encounter.payloadValues.size() ? state_.encounter.payloadValues[index] : 0;
     const bool marketContext = state_.encounter.encounterId == "market_purge";
+    const bool repairContext = state_.encounter.encounterId == "repair_purge";
 
     if (payload == kPayloadPrevPurge || payload == kPayloadCyclePurge) {
         if (marketContext) {
             enterMarketPurge(static_cast<size_t>(std::max(0, price)));
+        } else if (repairContext) {
+            enterRepairPurge(static_cast<size_t>(std::max(0, price)));
         } else {
             enterEventPurge(static_cast<size_t>(std::max(0, price)));
         }
@@ -980,6 +1023,9 @@ bool GameEngine::resolvePurgeSelection(size_t index) {
         if (marketContext) {
             state_.statusLine = "You leave the purge console untouched.";
             openMarketShop();
+        } else if (repairContext) {
+            state_.statusLine = "You leave the station scrapyard unused.";
+            finishCurrentNode();
         } else {
             state_.statusLine = "You leave the purge rig untouched.";
             finishCurrentNode();
@@ -1050,7 +1096,7 @@ bool GameEngine::resolveUpgradeSelection(size_t index) {
             openMarketShop();
         } else if (repairContext) {
             state_.statusLine = "You leave the retrofit console unused.";
-            openRepairStation();
+            finishCurrentNode();
         } else {
             state_.statusLine = "You leave the tuning lattice unused.";
             finishCurrentNode();
@@ -1073,8 +1119,7 @@ bool GameEngine::resolveUpgradeSelection(size_t index) {
     if (marketContext) {
         openMarketShop();
     } else if (repairContext) {
-        state_.repairStationUpgradeUsed = true;
-        openRepairStation();
+        finishCurrentNode();
     } else {
         finishCurrentNode();
     }

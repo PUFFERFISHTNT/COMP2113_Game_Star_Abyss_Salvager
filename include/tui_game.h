@@ -603,6 +603,7 @@ private:
     bool resolveUpgradeSelection(size_t index);
     void enterMarketPurge(size_t offset);
     void enterMarketUpgrade(size_t offset);
+    void enterRepairPurge(size_t offset);
     void enterRepairUpgrade(size_t offset);
     void enterEventPurge(size_t offset);
     void enterEventUpgrade(size_t offset);

@@ -61,6 +61,10 @@ void GameEngine::resolveEncounter(size_t index) {
             resolveUpgradeSelection(index);
             return;
         }
+        if (state_.encounter.encounterId == "repair_purge") {
+            resolvePurgeSelection(index);
+            return;
+        }
         const std::string payload = index < state_.encounter.payloadIds.size() ? state_.encounter.payloadIds[index] : "";
         if (payload == "leave" || index >= state_.encounter.choices.size()) {
             state_.statusLine = "You undock from the repair station.";
@@ -83,14 +87,18 @@ void GameEngine::resolveEncounter(size_t index) {
             state_.statusLine = "New plating installed. Max HP increased by 4.";
         } else if (payload == "repair_upgrade" || (payload.empty() && index == 3)) {
             enterRepairUpgrade(0);
-            state_.statusLine = "The station opens a retrofit console. Choose one card to upgrade for free.";
+            state_.statusLine = "The station opens a retrofit console. Choose one card to upgrade for free, then depart.";
+            return;
+        } else if (payload == "repair_purge" || (payload.empty() && index == 4)) {
+            enterRepairPurge(0);
+            state_.statusLine = "The station opens a scrapyard console. Choose one card to erase for free, then depart.";
             return;
         } else {
             state_.statusLine = "You undock from the repair station.";
             finishCurrentNode();
             return;
         }
-        openRepairStation();
+        finishCurrentNode();
         return;
     }
 

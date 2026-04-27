@@ -30,13 +30,21 @@ bool StarAbyssApp::HandleEvent(Event event) {
     const auto& state = engine_.state();
     const bool is_service_screen = state.page == AppPage::Encounter &&
                                    (state.encounter.encounterId == "market_upgrade" ||
+                                    state.encounter.encounterId == "market_purge" ||
                                     state.encounter.encounterId == "repair_upgrade" ||
-                                    state.encounter.encounterId == "event_upgrade");
+                                    state.encounter.encounterId == "repair_purge" ||
+                                    state.encounter.encounterId == "event_upgrade" ||
+                                    state.encounter.encounterId == "event_purge");
     const std::string service_screen_id = is_service_screen ? state.encounter.encounterId : "";
-    const bool is_market_upgrade_screen = is_service_screen && state.encounter.encounterId == "market_upgrade";
-    const bool is_repair_or_event_upgrade_screen =
+    const bool is_market_service_screen = is_service_screen &&
+                                          (state.encounter.encounterId == "market_upgrade" ||
+                                           state.encounter.encounterId == "market_purge");
+    const bool is_repair_or_event_service_screen =
         is_service_screen &&
-        (state.encounter.encounterId == "repair_upgrade" || state.encounter.encounterId == "event_upgrade");
+        (state.encounter.encounterId == "repair_upgrade" ||
+         state.encounter.encounterId == "repair_purge" ||
+         state.encounter.encounterId == "event_upgrade" ||
+         state.encounter.encounterId == "event_purge");
     const auto execute_service_action = [&]() {
         if (!serviceActionVisible_ || serviceActionChoiceIndex_ >= engine_.state().encounter.choices.size()) {
             return false;
@@ -269,11 +277,11 @@ bool StarAbyssApp::HandleEvent(Event event) {
         if (event == Event::Escape) {
             return execute_service_action();
         }
-        if (is_market_upgrade_screen &&
+        if (is_market_service_screen &&
             (event == Event::Character('b') || event == Event::Character('B') || event == Event::Character('0'))) {
             return execute_service_action();
         }
-        if (is_repair_or_event_upgrade_screen && event == Event::Character('0')) {
+        if (is_repair_or_event_service_screen && event == Event::Character('0')) {
             return execute_service_action();
         }
     }
