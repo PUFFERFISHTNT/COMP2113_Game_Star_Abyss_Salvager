@@ -6,13 +6,11 @@ The combat and run-based structure are partly inspired by **Slay the Spire**, wh
 
 ## Team Members
 
-The current local Git history shows contributions from:
-
+- `PUFFERFISHTNT` Xu Yukuan(3036478148)
 - `Annie-goat`  Guo Xinyao(3036483478)
 - `victorxsy` Xu Siyuan(3036482955)
 - `Andy-MRX`  Hu Pengfei(3036588852)
 - `Kong Ce` Kong Ce(3036483650)
-- `PUFFERFISHTNT` Xu Yukuan(3036478148)
 
 ## Game Description
 
