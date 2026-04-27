@@ -881,12 +881,12 @@
       "cost": 1,
       "damage": 5,
       "name_en": "Swarm Assault",
-      "description_en": "Deal 4 damage. Deal +2 damage for each Interceptor Drone you have.",
+      "description_en": "Deal 5 damage. Deal +2 damage for each Interceptor Drone you have.",
       "upgrade": {
         "name": "蜂群扑杀+++",
         "name_en": "Swarm Assault+++",
         "description": "造成 `7` 伤害。每有 `1` 个拦截机，再造成 `2` 伤害。",
-        "description_en": "Deal 6 damage. Deal +2 damage for each Interceptor Drone you have.",
+        "description_en": "Deal 7 damage. Deal +2 damage for each Interceptor Drone you have.",
         "cost": 1,
         "damage": 7
       }
