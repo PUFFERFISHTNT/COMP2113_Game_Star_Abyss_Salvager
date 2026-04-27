@@ -1236,6 +1236,56 @@ void GameEngine::chooseEnemyIntent() {
         std::uniform_int_distribution<int> attack_pick(0, static_cast<int>(attack_indices.size()) - 1);
         return attack_indices[static_cast<size_t>(attack_pick(rng_))];
     };
+    const auto select_secondary_index = [&](const std::string& primary_kind) {
+        std::vector<int> candidate_indices;
+        std::vector<int> attack_candidates;
+        candidate_indices.reserve(enemy->pattern.size());
+        attack_candidates.reserve(enemy->pattern.size());
+        for (size_t i = 0; i < enemy->pattern.size(); ++i) {
+            const std::string& kind = enemy->pattern[i].kind;
+            if (kind == primary_kind) {
+                continue;
+            }
+            candidate_indices.push_back(static_cast<int>(i));
+            if (kind == "attack") {
+                attack_candidates.push_back(static_cast<int>(i));
+            }
+        }
+        if (candidate_indices.empty()) {
+            return -1;
+        }
+
+        int index = candidate_indices.front();
+        for (int step = 1; step <= static_cast<int>(enemy->pattern.size()); ++step) {
+            const int candidate = (state_.enemy.patternIndex + step) % static_cast<int>(enemy->pattern.size());
+            if (enemy->pattern[static_cast<size_t>(candidate)].kind != primary_kind) {
+                index = candidate;
+                break;
+            }
+        }
+
+        if (enemy->behavior == "chaotic") {
+            std::uniform_int_distribution<int> candidate_pick(0, static_cast<int>(candidate_indices.size()) - 1);
+            index = candidate_indices[static_cast<size_t>(candidate_pick(rng_))];
+        }
+
+        if (!aggressive_selection || primary_kind == "attack" || attack_candidates.empty()) {
+            return index;
+        }
+
+        std::uniform_int_distribution<int> aggression_roll(1, 100);
+        const bool should_force_attack =
+            enemy->behavior == "chaotic"
+                ? aggression_roll(rng_) <= 80
+                : (enemy->pattern[static_cast<size_t>(index)].kind != "attack" &&
+                   aggression_roll(rng_) <= 75);
+        if (!should_force_attack) {
+            return index;
+        }
+
+        std::uniform_int_distribution<int> attack_pick(0, static_cast<int>(attack_candidates.size()) - 1);
+        return attack_candidates[static_cast<size_t>(attack_pick(rng_))];
+    };
 
     const auto apply_intent = [&](const IntentDef& intent,
                                   std::string* kind,
@@ -1261,7 +1311,10 @@ void GameEngine::chooseEnemyIntent() {
         return;
     }
 
-    const int secondary_index = select_index(1);
+    const int secondary_index = select_secondary_index(state_.enemy.intentKind);
+    if (secondary_index < 0) {
+        return;
+    }
     apply_intent(enemy->pattern[static_cast<size_t>(secondary_index)],
                  &state_.enemy.secondaryIntentKind,
                  &state_.enemy.secondaryIntentLabel,

@@ -147,6 +147,17 @@ Palette SentinelPalette(int tick) {
     };
 }
 
+Palette GenesisGuardianPalette(int tick) {
+    const Color engine = tick % 2 == 0 ? Color::RGB(159, 241, 255) : Color::RGB(255, 215, 138);
+    return {
+        {'v', {"█", Color::RGB(108, 82, 178), false}},
+        {'c', {"█", Color::RGB(112, 228, 255), true}},
+        {'g', {"█", Color::RGB(184, 255, 220), true}},
+        {'y', {"█", Color::RGB(255, 231, 163), true}},
+        {'e', {"█", engine, true}},
+    };
+}
+
 std::vector<std::string> VanguardRows() {
     return {
         "          c          ",
@@ -223,6 +234,21 @@ std::vector<std::string> SentinelRows() {
     };
 }
 
+std::vector<std::string> GenesisGuardianRows() {
+    return {
+        "          yyy          ",
+        "       ccyyyycc        ",
+        "     vvccggggccvv      ",
+        "   vvccggvvvvggccvv    ",
+        "  vvccggvvyyvvggccvv   ",
+        " vvccggvvyyyyvvggccvv  ",
+        "  vvccggvvyyvvggccvv   ",
+        "   vvccggvvvvggccvv    ",
+        "     vvccggggccvv      ",
+        "       cceeveecc       ",
+    };
+}
+
 }  // namespace
 
 Elements PlayerArt(const RunState& state, int tick) {
@@ -236,6 +262,9 @@ Elements PlayerArt(const RunState& state, int tick) {
 }
 
 Elements EnemyArt(const RunState& state, int tick) {
+    if (state.enemy.enemyId == "creation_core_guardian") {
+        return RenderSprite(GenesisGuardianRows(), GenesisGuardianPalette(tick));
+    }
     if (state.enemy.enemyId == "furnace_carrier") {
         return RenderSprite(FurnaceCarrierRows(), FurnaceCarrierPalette(tick));
     }

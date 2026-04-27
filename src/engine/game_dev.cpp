@@ -255,6 +255,9 @@ void GameEngine::dev_setEscapeStage(int stage) {
 void GameEngine::dev_setTruthStage(int stage, bool postBattle) {
     if (stage < 1) stage = 1;
     if (stage > 6) stage = 6;
+    if (stage == 6) {
+        postBattle = false;
+    }
     g_sa_beacon_activated = 1;
     g_sa_truth_stage = stage;
     g_sa_truth_post_battle = postBattle;
@@ -265,7 +268,7 @@ void GameEngine::dev_setTruthStage(int stage, bool postBattle) {
         NodeOption node{"event", "Truth", "Dev jump", 1, ""};
         startEncounterForNode(node);
     } else {
-        state_.activeNodeType = "elite";
+        state_.activeNodeType = stage == 6 ? "boss" : "elite";
         state_.statusLine = "Dev: truth stage advanced.";
         state_.page = AppPage::Map;
         resumePage_ = AppPage::Map;
@@ -569,6 +572,7 @@ const std::vector<SceneEntry>& SceneCatalogue() {
         {"Event · Wandering Trader", "事件 · 游商", "event_static", "event_d2"},
         {"Event · Pirate Ambush", "事件 · 海盗伏击", "event_static", "event_d3"},
         {"Event · Cryo Pod", "事件 · 冷冻舱", "event_static", "event_d4"},
+        {"Story Boss · Creation Core Guardian", "剧情 Boss · 创世核心守卫", "story_boss", "creation_core_guardian"},
         {"Story Boss · Broker Echo", "剧情 Boss · 经纪人回响", "story_boss", "the_pale_broker"},
         {"Story Boss · Cinder Shrine Signal", "剧情 Boss · 灰烬圣所信号", "story_boss", "saint_of_cinders"},
         {"Story Boss · Beneath Choir Resonance", "剧情 Boss · 深渊合唱回响", "story_boss", "the_choir_beneath"},
@@ -695,13 +699,21 @@ void GameEngine::dev_openDebugScene(const std::string& sceneKey,
 
         if (payload.rfind("truth_", 0) == 0) {
             const int stage = std::atoi(payload.c_str() + 6);
-            if (stage >= 1 && stage <= 5) {
+            if (stage >= 1 && stage <= 6) {
                 g_sa_beacon_activated = 1;
                 g_sa_truth_stage = stage;
-                g_sa_truth_post_battle = true;
+                g_sa_truth_post_battle = stage <= 5;
                 g_sa_escape_stage = 0;
                 g_sa_escape_intro_pending = false;
-                startEncounterForNode({"event", "Truth Route", "Developer route jump.", 1, ""});
+                if (stage <= 5) {
+                    startEncounterForNode({"event", "Truth Route", "Developer route jump.", 1, ""});
+                } else {
+                    state_.activeNodeType = "boss";
+                    state_.statusLine = "Dev: truth final boss prepared.";
+                    state_.page = AppPage::Map;
+                    resumePage_ = AppPage::Map;
+                    generateRouteOptions();
+                }
             }
         }
     }

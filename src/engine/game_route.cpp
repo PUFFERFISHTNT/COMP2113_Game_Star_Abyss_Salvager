@@ -162,7 +162,7 @@ void GameEngine::generateRouteOptions() {
                 case 3: state_.routeOptions.push_back({"elite", "Phantom Guardian", "An illusory sentinel materializes, defending the captain's sanctum.", 5, ""}); break;
                 case 4: state_.routeOptions.push_back({"elite", "Space Ripper", "A spatial anomaly tears through reality, attacking anything in its path.", 5, ""}); break;
                 case 5: state_.routeOptions.push_back({"elite", "Pseudo-God Apostle", "A being of immense power emerges from the origin horizon.", 5, ""}); break;
-                case 6: state_.routeOptions.push_back({"boss", "Creation Core Guardian", "The ultimate guardian of the Ark's creation core unfolds in the void.", 6, ""}); break;
+                case 6: state_.routeOptions.push_back({"boss", "Creation Core Guardian", "The ultimate guardian of the Ark's creation core unfolds in the void.", 6, "creation_core_guardian"}); break;
             }
         } else {
             switch (g_sa_truth_stage) {

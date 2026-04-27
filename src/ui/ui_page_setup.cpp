@@ -4,6 +4,8 @@
 
 #include "ui/ui_panels.h"
 
+#include <ftxui/screen/terminal.hpp>
+
 using namespace ftxui;
 
 namespace {
@@ -53,6 +55,8 @@ std::string ShipDescription(UiLanguage language, int ship_index) {
 Element StarAbyssApp::RenderSetup() const {
     const std::string difficulty_description = DifficultyDescription(language_, difficultyIndex_);
     const std::string ship_description = ShipDescription(language_, shipIndex_);
+    const int terminal_width = Terminal::Size().dimx;
+    const int note_width = std::max(26, terminal_width - 14);
     Element content = vbox({
         text(Tr(language_, "Launch Setup", "出航设置")) | bold | color(kGold) | center,
         text(Tr(language_, "Pick difficulty and hull profile before diving in.", "在跃入深渊前，先选择难度与舰体。")) | color(kHull) | center,
@@ -61,9 +65,9 @@ Element StarAbyssApp::RenderSetup() const {
         window(text(Tr(language_, "Starter Ship", "初始飞船")) | color(kGold), shipToggle_->Render()) | bgcolor(kPanel),
         separator(),
         window(text(Tr(language_, "Difficulty Notes", "难度说明")) | color(kHull),
-               paragraph(difficulty_description) | color(Color::White)) | bgcolor(kPanelAlt),
+               WrappedParagraph(difficulty_description, note_width) | color(Color::White)) | bgcolor(kPanelAlt),
         window(text(Tr(language_, "Ship Notes", "飞船说明")) | color(kGold),
-               paragraph(ship_description) | color(Color::White)) | bgcolor(kPanelAlt),
+               WrappedParagraph(ship_description, note_width) | color(Color::White)) | bgcolor(kPanelAlt),
         separator(),
         hbox({startRunButton_->Render() | flex, setupBackButton_->Render() | flex}),
     });
