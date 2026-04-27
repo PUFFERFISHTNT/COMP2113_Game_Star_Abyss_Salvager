@@ -1,33 +1,186 @@
 # Star Abyss Salvager
 
-This repository contains the current FTXUI-based playable version of **Star Abyss Salvager**.
+`Star Abyss Salvager` is a text-based roguelike deckbuilding game developed for the ENGG1340 / COMP2113 course project. The player pilots a salvager ship into the Star Abyss, chooses routes across dangerous sectors, fights hostile ships in turn-based card battles, upgrades the deck, collects relics, and progresses toward different story routes and endings.
 
-It is structured as an offline-friendly terminal game project with:
+## Team Members
 
-- a thin bootstrap entry point in `src/tui_main.cpp`
-- a top-level application controller in `src/tui_app.cpp`
-- a central gameplay API in `src/tui_game.cpp`
-- gameplay modules under `src/engine/`
-- UI modules under `src/ui/`
-- public headers under `include/`
-- runtime card data in `data/cards.json`
-- vendored FTXUI sources under `vendor/FTXUI/`
+The current local Git history shows contributions from:
 
-The project builds with `make` and does not require downloading dependencies from the internet.
+- `Annie-goat`  Guo Xinyao(3036483478)
+- `victorxsy` Xu Siyuan(3036482955)
+- `Andy-MRX`  Hu Pengfei(3036588852)
+- `Kong Ce` Kong Ce(3036483650)
+- `PUFFERFISHTNT` Xu Yukuan(3036478148)
 
-## Requirements
+## Game Description
 
-The repository is designed for a basic development environment with:
+This game combines:
 
-- `g++` with C++17 support
-- GNU `make`
-- a UTF-8 terminal
+- route selection across sectors
+- random encounters and branching events
+- turn-based card combat
+- deck growth through rewards, upgrades, and purges
+- multiple ships with different combat styles
+- multiple difficulty levels
+- bilingual English / Chinese UI
 
-No package-manager install steps are required because FTXUI is already vendored.
+The player starts a new run by choosing a ship and a difficulty, then advances through nodes such as battle, elite, salvage, repair, event, market, and boss nodes. Different event choices can unlock alternative routes, including the escape route and truth route.
 
-## Build
+## Features Implemented
 
-Run all commands from the repository root:
+### Core Gameplay
+
+- `3` starter ships:
+  - `Vanguard`: heat-oriented direct offense
+  - `Drift Fox`: auxiliary ship / drone-focused playstyle
+  - `Iron Bastion`: defensive form-switching playstyle
+- `4` difficulty levels:
+  - `Easy`
+  - `Normal`
+  - `Hard`
+  - `Hell`
+- sector-based map progression with route choice
+- normal battles, elite battles, and boss battles
+- enemy intent system
+- reward screens for cards, credits, and relics
+- black market services:
+  - buy colorless cards
+  - purge cards
+  - upgrade cards
+- repair station and event-based free upgrade / purge services
+- multiple endings and special route events
+
+### Combat Systems
+
+- turn-based deck combat
+- draw pile, discard pile, exile pile, and hand limit
+- energy system
+- shield system
+- heat / overheat system
+- auxiliary ship / drone system
+- combat forms:
+  - `Neutral`
+  - `Overload`
+  - `Defense`
+- card upgrade system using definitions from `data/cards.json`
+
+### Persistent Systems
+
+- manual save / load
+- autosave
+- obtained card registry
+- leaderboard
+- event achievement system
+- saved language preference
+
+### UI / Quality-of-Life
+
+- bilingual English / Chinese interface
+- keyboard and mouse input
+- owned card viewer
+- full card library viewer
+- scrollable long pages
+- setup page descriptions for each difficulty and ship
+
+## How the Course Coding Requirements Are Satisfied
+
+### 1. Generation of Random Events
+
+Randomness is used throughout the game, including:
+
+- random route generation in `src/engine/game_route.cpp`
+- random event selection
+- random enemy selection for battles
+- random reward card generation in `src/engine/game_reward.cpp`
+- random relic rewards
+- random market offers
+- random branches in some event outcomes
+
+This directly supports replayability and makes each run different.
+
+### 2. Data Structures for Storing Data
+
+The project uses multiple data structures to represent gameplay state:
+
+- `RunState`, `PlayerState`, `EnemyState`, `EncounterState`, `RewardState`, and `InfoState` in `include/tui_game.h`
+- `std::vector` for piles, logs, relics, route options, encounters, and achievements
+- `std::array` for fixed UI button groups and page labels
+- structured gameplay records such as `CardDef`, `CardView`, `NodeOption`, and `AuxiliaryShipState`
+
+These structures support card combat, routing, save/load, and UI rendering.
+
+### 3. Dynamic Memory Management
+
+The game uses dynamic memory management through standard C++ facilities:
+
+- `std::vector` and `std::string` for dynamically sized runtime data
+- `std::shared_ptr` and `std::make_shared` in the FTXUI application shell
+- dynamically built FTXUI component trees and modal stacks
+
+This is essential because the number of cards, encounters, route options, save entries, and UI components changes during play.
+
+### 4. File Input / Output
+
+The project reads and writes several files:
+
+- `data/cards.json`: loads card and upgrade definitions
+- `save/*.sav`: manual saves and autosave
+- `save/ui_language.txt`: saved language preference
+- `save/obtained_cards.txt`: unlocked card registry
+- `save/completed_events.txt`: completed event achievements
+- `data/leaderboard.txt`: recorded run results
+
+This supports persistent progression, save/load, and content loading.
+
+### 5. Program Codes in Multiple Files
+
+The project is modularized into multiple source files instead of one monolithic file:
+
+- bootstrap:
+  - `src/tui_main.cpp`
+- app shell:
+  - `src/tui_app.cpp`
+- gameplay API:
+  - `src/tui_game.cpp`
+- engine modules:
+  - `src/engine/*.cpp`
+- UI modules:
+  - `src/ui/*.cpp`
+- headers:
+  - `include/**/*.h`
+
+This separation improves maintainability and keeps gameplay logic, save logic, routing logic, and rendering logic independent.
+
+### 6. Multiple Difficulty Levels
+
+The game supports `Easy`, `Normal`, `Hard`, and `Hell`.
+
+- `Easy`: baseline forgiving mode
+- `Normal`: enemies are more attack-oriented; elite and boss enemies may prepare a second intent
+- `Hard`: stronger enemy stats and stronger enemy intent values
+- `Hell`: same enemy strength as `Hard`, but enemy intents are hidden as `Unknown`
+
+This requirement is fully implemented and exposed to the player on the setup page.
+
+## Non-Standard Libraries
+
+### FTXUI
+
+This project uses the vendored [FTXUI](https://github.com/ArthurSonzogni/FTXUI) terminal UI library under `vendor/FTXUI/`.
+
+FTXUI is used for:
+
+- full-screen terminal rendering
+- buttons, toggles, menus, and modal dialogs
+- keyboard and mouse input handling
+- page layout and panels
+- scrollable pages
+
+No extra download is needed because the library source is already included in this repository.
+
+## Compilation Instructions
+
+Run all commands from the project root:
 
 ```bash
 make
@@ -39,87 +192,85 @@ This builds:
 ./star_abyss_salvager
 ```
 
-## Run
+### Requirements
+
+- `g++` with C++17 support
+- GNU `make`
+- UTF-8 terminal
+
+The build is offline-friendly. No internet installation is required.
+
+## Execution Instructions
+
+Run from the project root:
 
 ```bash
 ./star_abyss_salvager
 ```
 
-Launch the executable from the repository root so relative runtime paths keep working correctly.
-
-Important runtime paths:
+Please launch the executable from the repository root so the following relative paths work correctly:
 
 - `data/cards.json`
 - `save/*.sav`
 - `save/ui_language.txt`
 - `save/obtained_cards.txt`
-- `data/leaderboard.txt` after the first finished run
-
-## Clean
-
-```bash
-make clean
-```
+- `save/completed_events.txt`
+- `data/leaderboard.txt`
 
 ## Controls
 
-The game supports both keyboard and mouse through FTXUI.
+### General Controls
 
-General:
-
-- `1` to `9`, `0`: choose visible menu entries or play cards
-- `S`: open the save dialog
-- `L`: open the load dialog
-- `Esc`: leave the current safe page, close a modal, or return to the main menu depending on context
+- `1` - `9`, `0`: choose visible menu entries or play cards
+- `S`: open save dialog
+- `L`: open load dialog
+- `Esc`: close a modal, leave a safe page, or return to main menu depending on context
 - `PgUp` / `PgDn`: scroll long pages
-- `Ctrl+Up` / `Ctrl+Down`: fallback scrolling for terminals where PageUp/PageDown is inconvenient
-- mouse: click buttons, cards, map nodes, rewards, save slots, and service actions
+- `Ctrl+Up` / `Ctrl+Down`: fallback scrolling
+- `[` / `]`: additional scrolling shortcuts
+- mouse:
+  - click menu buttons
+  - click map nodes
+  - click encounter options
+  - click reward cards
+  - click service cards
 
-Battle:
+### Battle Controls
 
+- `1` - `9`, `0`: play cards in hand
 - `E`: end turn
+- mouse: click cards, auxiliary ship targets, and battle UI buttons
 
-Service upgrade screens:
+### Service / Upgrade Screens
 
-- black market upgrade: `Esc`, `B`, or `0` returns to the broker
-- repair-station and event upgrade screens: `Esc` or `0` skips the service
-- the visible service action card is directly clickable with the mouse
+- black market upgrade screen:
+  - `Esc`, `B`, or `0` returns to the broker
+- repair / event upgrade screen:
+  - `Esc` or `0` skips the service
 
-## Current Playable Scope
+## What Is Included in the Current Game
 
-The current build already supports:
+The current playable version includes:
 
 - main menu
-- English / Chinese language toggle
-- new run setup with difficulty and starter ship selection
-- route selection across battle, elite, salvage, repair, event, market, and boss nodes
-- turn-based deck combat with enemy intent display
-- reward screens with cards, credits, and relics
-- black market card buying, purge service, and full-deck upgrade service
-- repair-station and event full-deck upgrade services
-- owned-card viewer and card library viewer
-- autosave plus manual named saves
-- save browsing and load browsing
-- leaderboard writing and viewing
-- developer mode hooks in the current codebase
+- run setup
+- multilingual UI
+- multiple difficulty levels
+- three playable ships
+- route progression across sectors
+- random events and branching narrative
+- turn-based card combat
+- heat / overheat combat mechanics
+- auxiliary ship mechanics
+- relic rewards
+- card upgrades
+- purge systems
+- save / load / autosave
+- leaderboard viewing
+- card library viewing
+- event achievements
 
-## Important Runtime Notes
-
-- Saves are written into `save/` using a text-based `.sav` format.
-- Card definitions and upgrade definitions are loaded from `data/cards.json`.
-- Older `save/*.cards.json` sidecar files are no longer used; upgrades are resolved from `data/cards.json` and stale sidecars are cleaned on the next save.
-- The internal currency field is still named `scrap`, but every player-facing UI surface should display it as **credits**.
-- The executable should be run from the repository root because card data, saves, language preferences, and leaderboard files all use relative paths.
-- The build system is now modularized around `src/engine/` and `src/ui/`; this repository is no longer organized as only two oversized source files.
-
-## Build and Portability Notes
-
-- The project uses a `make`-based offline build flow.
-- FTXUI is linked from vendored source instead of a system-installed package.
-- The `Makefile` branches between Windows and POSIX behavior.
-- On non-Clang toolchains, the build links `-lstdc++fs` for compatibility with older filesystem implementations.
-
-## Repository Layout
+## Project Structure
 
 ```text
 .
@@ -127,73 +278,27 @@ The current build already supports:
 |-- README.md
 |-- DEVELOPMENT_STATUS.md
 |-- data/
-|   `-- cards.json
+|   |-- cards.json
+|   `-- leaderboard.txt
 |-- include/
 |   |-- engine/
-|   |   |-- game_battle.h
-|   |   |-- game_card_json.h
-|   |   |-- game_card_services.h
-|   |   |-- game_content.h
-|   |   |-- game_dev.h
-|   |   |-- game_encounter.h
-|   |   |-- game_info.h
-|   |   |-- game_reward.h
-|   |   |-- game_route.h
-|   |   `-- game_save.h
 |   |-- ui/
-|   |   |-- star_abyss_app.h
-|   |   |-- ui_art.h
-|   |   |-- ui_localization.h
-|   |   |-- ui_panels.h
-|   |   `-- ui_save_dialog.h
 |   |-- tui_app.h
 |   `-- tui_game.h
 |-- save/
 |-- src/
 |   |-- engine/
-|   |   |-- game_battle.cpp
-|   |   |-- game_card_json.cpp
-|   |   |-- game_card_services.cpp
-|   |   |-- game_content.cpp
-|   |   |-- game_dev.cpp
-|   |   |-- game_encounter.cpp
-|   |   |-- game_info.cpp
-|   |   |-- game_reward.cpp
-|   |   |-- game_route.cpp
-|   |   `-- game_save.cpp
 |   |-- ui/
-|   |   |-- ui_art.cpp
-|   |   |-- ui_card_viewer.cpp
-|   |   |-- ui_input.cpp
-|   |   |-- ui_localization.cpp
-|   |   |-- ui_page_battle.cpp
-|   |   |-- ui_page_encounter.cpp
-|   |   |-- ui_page_info.cpp
-|   |   |-- ui_page_main_menu.cpp
-|   |   |-- ui_page_map.cpp
-|   |   |-- ui_page_reward.cpp
-|   |   |-- ui_page_setup.cpp
-|   |   |-- ui_page_summary.cpp
-|   |   |-- ui_panels.cpp
-|   |   |-- ui_save_dialog.cpp
-|   |   `-- ui_sync.cpp
 |   |-- tui_app.cpp
 |   |-- tui_game.cpp
 |   `-- tui_main.cpp
 `-- vendor/
     `-- FTXUI/
-        |-- LICENSE
-        |-- include/
-        `-- src/
 ```
 
-Notes:
+## Notes
 
-- `obj/` is generated after builds and is not listed above as source structure.
-- There may be a local `.code-workspace` file under `src/engine/`; that is editor metadata, not part of the runtime architecture.
-
-## Development Handoff
-
-For a more detailed explanation of architecture, gameplay systems, save format, technical debt, and recommended next steps, read:
-
-- `DEVELOPMENT_STATUS.md`
+- The player-facing currency is displayed as `credits`, although some internal variables still use the older name `scrap`.
+- Saves are stored in a text-based `.sav` format.
+- Card content is data-driven from `data/cards.json`, while route/event/enemy content is currently authored in C++.
+- A more detailed technical handoff is available in `DEVELOPMENT_STATUS.md`.
