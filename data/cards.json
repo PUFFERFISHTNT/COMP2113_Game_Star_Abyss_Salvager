@@ -1215,11 +1215,11 @@
       "upgrade": {
         "name": "王蜂旗舰+++",
         "name_en": "Queen Wasp Flagship+++",
-        "description": "召唤 `2` 个王蜂机。王蜂机拥有 `11` 攻击、`3` 护盾，并使所有其他附属舰在回合结束时额外触发 `2` 次。",
-        "description_en": "Summon 2 Queen Wasp Drones. Each has 11 Attack, 3 Shield, and makes all other Auxiliary Ships trigger 2 extra times at end of turn.",
+        "description": "召唤 `1` 个王蜂机。王蜂机拥有 `11` 攻击、`3` 护盾，并使所有其他附属舰在回合结束时额外触发 `2` 次。",
+        "description_en": "Summon 1 Queen Wasp Drone. It has 11 Attack, 3 Shield, and makes all other Auxiliary Ships trigger 2 extra times at end of turn.",
         "cost": 3,
         "damage": 0,
-        "summonDroneCount": 2,
+        "summonDroneCount": 1,
         "summonDroneAttack": 11,
         "summonDroneShield": 3,
         "auxEndTurnExtraTriggerTimes": 2
