@@ -9,6 +9,9 @@ using namespace ftxui;
 
 // Keeps the landing screen presentation isolated from run/battle UI so the
 // menu can evolve independently from gameplay pages.
+// what it does: Renders the main menu page with ambient ship art and menu actions.
+// what the inputs are: None.
+// what the outputs are: Returns the main menu page element (ftxui::Element).
 Element StarAbyssApp::RenderMainMenu() const {
     const int terminal_width = Terminal::Size().dimx;
     const bool compact_layout = terminal_width < 118;

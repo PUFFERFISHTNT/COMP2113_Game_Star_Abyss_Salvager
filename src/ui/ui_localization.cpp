@@ -11,19 +11,31 @@
 // layout and interaction, while gameplay text continues to map 1:1 with the
 // original single-file implementation.
 
+// what it does: Chooses English or Chinese UI text for the active language.
+// what the inputs are: language - selected UI language; english - English text; chinese - Chinese text.
+// what the outputs are: Returns the selected localized string (std::string).
 std::string Tr(UiLanguage language, const std::string& english, const std::string& chinese) {
     return language == UiLanguage::Chinese ? chinese : english;
 }
 
+// what it does: Checks whether a string starts with a prefix.
+// what the inputs are: text - source string to inspect; prefix - prefix to match.
+// what the outputs are: Returns true when text starts with prefix; otherwise false (bool).
 bool StartsWith(const std::string& text, const std::string& prefix) {
     return text.size() >= prefix.size() && text.compare(0, prefix.size(), prefix) == 0;
 }
 
+// what it does: Checks whether a string ends with a suffix.
+// what the inputs are: text - source string to inspect; suffix - suffix to match.
+// what the outputs are: Returns true when text ends with suffix; otherwise false (bool).
 bool EndsWith(const std::string& text, const std::string& suffix) {
     return text.size() >= suffix.size() &&
            text.compare(text.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+// what it does: Translates known game text while preserving dynamic text patterns.
+// what the inputs are: language - selected UI language; text - source game text.
+// what the outputs are: Returns translated text when available, otherwise the source text (std::string).
 std::string TranslateGameText(UiLanguage language, const std::string& text) {
     static std::map<std::string, std::string> zh_to_en;
     static std::map<std::string, std::string> en_to_zh;

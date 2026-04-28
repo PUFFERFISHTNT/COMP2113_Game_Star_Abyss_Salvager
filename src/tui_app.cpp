@@ -24,6 +24,9 @@ constexpr const char* kLanguagePreferencePath = "save/ui_language.txt";
 
 }  // namespace
 
+// what it does: Constructs the terminal app and wires all UI components, modals, and overlays.
+// what the inputs are: screen - interactive FTXUI screen used for rendering and event posting.
+// what the outputs are: Creates a StarAbyssApp instance (constructor).
 StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     LoadLanguagePreference();
 
@@ -177,6 +180,9 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     });
 }
 
+// what it does: Stops the ticker thread and releases app resources.
+// what the inputs are: None.
+// what the outputs are: No return value (destructor).
 StarAbyssApp::~StarAbyssApp() {
     running_ = false;
     if (ticker_.joinable()) {
@@ -184,6 +190,9 @@ StarAbyssApp::~StarAbyssApp() {
     }
 }
 
+// what it does: Loads the saved language preference and falls back to English when needed.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::LoadLanguagePreference() {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -208,6 +217,9 @@ void StarAbyssApp::LoadLanguagePreference() {
     }
 }
 
+// what it does: Saves the current language preference to disk.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::SaveLanguagePreference() const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -220,6 +232,9 @@ void StarAbyssApp::SaveLanguagePreference() const {
     output << (language_ == UiLanguage::Chinese ? "zh\n" : "en\n");
 }
 
+// what it does: Creates the root application component for the FTXUI loop.
+// what the inputs are: screen - interactive FTXUI screen used by the app.
+// what the outputs are: Returns the root UI component (ftxui::Component).
 ftxui::Component CreateApp(ftxui::ScreenInteractive& screen) {
     auto app = std::make_shared<StarAbyssApp>(screen);
     auto layered = Renderer(app->root(), [app] {

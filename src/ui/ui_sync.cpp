@@ -3,6 +3,9 @@
 #include "engine/game_dev.h"
 #include "ui/ui_localization.h"
 
+// what it does: Synchronizes visible UI labels, page selection, and overlays with engine state.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::SyncUi() {
     if (engine_.state().page == AppPage::MainMenu &&
         activePage_ != static_cast<int>(AppPage::MainMenu) &&

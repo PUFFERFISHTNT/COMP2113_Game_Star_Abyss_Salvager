@@ -4,6 +4,9 @@
 
 namespace {
 
+// what it does: Randomly shuffles a vector using the supplied random generator.
+// what the inputs are: values - vector to shuffle; rng - random number generator used for ordering.
+// what the outputs are: No return value (void).
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
@@ -28,6 +31,9 @@ bool g_sa_escape_intro_pending = true;
 bool g_sa_game_intro_pending = true;
 std::string g_sa_event_epilogue;
 
+// what it does: Starts a new run, resets route-story flags, and enters the intro or map.
+// what the inputs are: difficulty - selected difficulty level; shipId - selected ship identifier.
+// what the outputs are: No return value (void).
 void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     resetRunState();
     const ShipTemplate* ship = shipTemplateById(shipId);
@@ -83,6 +89,9 @@ void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     state_.statusLine = "Run initialized. Chart your first jump.";
 }
 
+// what it does: Switches to the main menu while preserving the run resume page.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::showMainMenu() {
     if (state_.hasRun && state_.page != AppPage::MainMenu && state_.page != AppPage::Setup && state_.page != AppPage::Info) {
         resumePage_ = state_.page;
@@ -90,6 +99,9 @@ void GameEngine::showMainMenu() {
     state_.page = AppPage::MainMenu;
 }
 
+// what it does: Resumes an active run from the stored resume page.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::resumeRun() {
     if (!state_.hasRun) {
         return;
@@ -97,6 +109,9 @@ void GameEngine::resumeRun() {
     state_.page = resumePage_;
 }
 
+// what it does: Chooses a route node and starts its battle or encounter.
+// what the inputs are: index - zero-based route option index.
+// what the outputs are: No return value (void).
 void GameEngine::chooseNode(size_t index) {
     if (state_.page != AppPage::Map || index >= state_.routeOptions.size()) {
         return;
@@ -114,14 +129,23 @@ void GameEngine::chooseNode(size_t index) {
     }
 }
 
+// what it does: Returns the engine to the main menu.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::returnToMenu() {
     showMainMenu();
 }
 
+// what it does: Opens the setup page for starting another run.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::startAnotherRun() {
     state_.page = AppPage::Setup;
 }
 
+// what it does: Generates map route options for normal, escape, truth, and boss flows.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::generateRouteOptions() {
     state_.routeOptions.clear();
 
@@ -293,6 +317,9 @@ void GameEngine::generateRouteOptions() {
     }
 }
 
+// what it does: Builds encounter state for the selected non-battle route node.
+// what the inputs are: node - selected route node option.
+// what the outputs are: No return value (void).
 void GameEngine::startEncounterForNode(const NodeOption& node) {
     if (node.typeId == "battle" || node.typeId == "elite" || node.typeId == "boss") {
         startBattle(node.typeId, node.enemyId);
@@ -574,6 +601,9 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
     }
 }
 
+// what it does: Completes the active node, advances route/story state, and returns to map or summary.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::finishCurrentNode() {
     recordCurrentOwnedCards();
     state_.encounter = {};

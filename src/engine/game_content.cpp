@@ -12,15 +12,24 @@ constexpr const char* kObtainedCardsRegistryPath = "save/obtained_cards.txt";
 constexpr const char* kCompletedEventsRegistryPath = "save/completed_events.txt";
 constexpr const char* kSeenEnemiesRegistryPath = "save/seen_enemies.txt";
 
+// what it does: Randomly shuffles a vector using the supplied random generator.
+// what the inputs are: values - vector to shuffle; rng - random number generator used for ordering.
+// what the outputs are: No return value (void).
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
 }
 
+// what it does: Checks whether a string is present in a vector.
+// what the inputs are: values - strings to search; needle - string to find.
+// what the outputs are: Returns true when the string exists; otherwise false (bool).
 bool HasString(const std::vector<std::string>& values, const std::string& needle) {
     return std::find(values.begin(), values.end(), needle) != values.end();
 }
 
+// what it does: Trims ASCII whitespace used in registry files.
+// what the inputs are: value - source line to trim.
+// what the outputs are: Returns trimmed text (std::string).
 std::string TrimAscii(const std::string& value) {
     size_t begin = 0;
     while (begin < value.size() && (value[begin] == ' ' || value[begin] == '\t' || value[begin] == '\r')) {
@@ -35,6 +44,9 @@ std::string TrimAscii(const std::string& value) {
 
 }  // namespace
 
+// what it does: Loads card data and initializes built-in enemies, ships, and relics.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::initializeData() {
     std::string error;
     const std::string cards_path = ResolveCardsJsonPath();
@@ -128,10 +140,16 @@ void GameEngine::initializeData() {
     };
 }
 
+// what it does: Checks whether a card has been recorded in the obtained-card registry.
+// what the inputs are: cardId - card identifier or reference to check.
+// what the outputs are: Returns true when obtained; otherwise false (bool).
 bool GameEngine::hasObtainedCard(const std::string& cardId) const {
     return HasString(obtainedCardIds_, baseCardId(cardId));
 }
 
+// what it does: Records a card as obtained and persists the registry.
+// what the inputs are: cardRef - card reference to record.
+// what the outputs are: No return value (void).
 void GameEngine::recordObtainedCard(const std::string& cardRef) {
     if (dev_session_active_) {
         return;
@@ -147,6 +165,9 @@ void GameEngine::recordObtainedCard(const std::string& cardRef) {
     saveObtainedCardRegistry(nullptr);
 }
 
+// what it does: Records all cards currently owned by the run as obtained.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::recordCurrentOwnedCards() {
     if (dev_session_active_) {
         return;
@@ -183,6 +204,9 @@ void GameEngine::recordCurrentOwnedCards() {
     saveObtainedCardRegistry(nullptr);
 }
 
+// what it does: Adds a newly owned card reference to the discard pile.
+// what the inputs are: cardRef - card reference to add.
+// what the outputs are: No return value (void).
 void GameEngine::queueOwnedCardToDiscard(const std::string& cardRef) {
     if (cardRef.empty()) {
         return;
@@ -192,12 +216,18 @@ void GameEngine::queueOwnedCardToDiscard(const std::string& cardRef) {
     recordCurrentOwnedCards();
 }
 
+// what it does: Adds multiple newly owned card references to the discard pile.
+// what the inputs are: cardRefs - card references to add.
+// what the outputs are: No return value (void).
 void GameEngine::queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs) {
     for (const std::string& cardRef : cardRefs) {
         queueOwnedCardToDiscard(cardRef);
     }
 }
 
+// what it does: Loads obtained-card identifiers from persistent storage.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::loadObtainedCardRegistry() {
     obtainedCardIds_.clear();
     std::ifstream input(kObtainedCardsRegistryPath);
@@ -218,6 +248,9 @@ void GameEngine::loadObtainedCardRegistry() {
     obtainedCardIds_.erase(unique_end, obtainedCardIds_.end());
 }
 
+// what it does: Saves obtained-card identifiers to persistent storage.
+// what the inputs are: error - optional error message output.
+// what the outputs are: Returns true when saving succeeds; otherwise false (bool).
 bool GameEngine::saveObtainedCardRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -239,6 +272,9 @@ bool GameEngine::saveObtainedCardRegistry(std::string* error) const {
     return true;
 }
 
+// what it does: Checks whether an event achievement has been completed.
+// what the inputs are: encounterId - event encounter identifier to check.
+// what the outputs are: Returns true when completed; otherwise false (bool).
 bool GameEngine::hasCompletedEventAchievement(const std::string& encounterId) const {
     return std::any_of(completedEventAchievements_.begin(),
                        completedEventAchievements_.end(),
@@ -247,6 +283,9 @@ bool GameEngine::hasCompletedEventAchievement(const std::string& encounterId) co
                        });
 }
 
+// what it does: Records a completed event achievement and persists it.
+// what the inputs are: encounterId - event encounter identifier; title - event achievement title.
+// what the outputs are: No return value (void).
 void GameEngine::recordCompletedEventAchievement(const std::string& encounterId, const std::string& title) {
     if (dev_session_active_ || encounterId.empty() || title.empty() || hasCompletedEventAchievement(encounterId)) {
         return;
@@ -263,6 +302,9 @@ void GameEngine::recordCompletedEventAchievement(const std::string& encounterId,
     saveCompletedEventAchievementRegistry(nullptr);
 }
 
+// what it does: Loads completed event achievements from persistent storage.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::loadCompletedEventAchievementRegistry() {
     completedEventAchievements_.clear();
     std::ifstream input(kCompletedEventsRegistryPath);
@@ -293,6 +335,9 @@ void GameEngine::loadCompletedEventAchievementRegistry() {
               });
 }
 
+// what it does: Saves completed event achievements to persistent storage.
+// what the inputs are: error - optional error message output.
+// what the outputs are: Returns true when saving succeeds; otherwise false (bool).
 bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -314,10 +359,16 @@ bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const
     return true;
 }
 
+// what it does: Checks whether an enemy has been recorded as seen.
+// what the inputs are: enemyId - enemy identifier to check.
+// what the outputs are: Returns true when seen; otherwise false (bool).
 bool GameEngine::hasSeenEnemy(const std::string& enemyId) const {
     return HasString(seenEnemyIds_, enemyId);
 }
 
+// what it does: Records an enemy as seen and persists the registry.
+// what the inputs are: enemyId - enemy identifier to record.
+// what the outputs are: No return value (void).
 void GameEngine::recordSeenEnemy(const std::string& enemyId) {
     if (dev_session_active_ || enemyId.empty() || enemyTemplateById(enemyId) == nullptr || hasSeenEnemy(enemyId)) {
         return;
@@ -329,6 +380,9 @@ void GameEngine::recordSeenEnemy(const std::string& enemyId) {
     saveSeenEnemyRegistry(nullptr);
 }
 
+// what it does: Loads seen enemy identifiers from persistent storage.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::loadSeenEnemyRegistry() {
     seenEnemyIds_.clear();
     std::ifstream input(kSeenEnemiesRegistryPath);
@@ -349,6 +403,9 @@ void GameEngine::loadSeenEnemyRegistry() {
     seenEnemyIds_.erase(unique_end, seenEnemyIds_.end());
 }
 
+// what it does: Saves seen enemy identifiers to persistent storage.
+// what the inputs are: error - optional error message output.
+// what the outputs are: Returns true when saving succeeds; otherwise false (bool).
 bool GameEngine::saveSeenEnemyRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -370,6 +427,9 @@ bool GameEngine::saveSeenEnemyRegistry(std::string* error) const {
     return true;
 }
 
+// what it does: Builds the player's starting state from the selected ship and difficulty.
+// what the inputs are: ship - selected ship template; difficulty - selected difficulty level.
+// what the outputs are: No return value (void).
 void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     PlayerState player;
     player.shipId = ship.id;
@@ -407,6 +467,9 @@ void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     }
 }
 
+// what it does: Grants a relic and applies its immediate stat effects.
+// what the inputs are: relicId - relic identifier to grant.
+// what the outputs are: No return value (void).
 void GameEngine::grantRelic(const std::string& relicId) {
     if (relicId.empty() || hasRelic(relicId)) {
         return;
@@ -420,6 +483,9 @@ void GameEngine::grantRelic(const std::string& relicId) {
     }
 }
 
+// what it does: Checks whether the player owns a relic.
+// what the inputs are: relicId - relic identifier to check.
+// what the outputs are: Returns true when owned; otherwise false (bool).
 bool GameEngine::hasRelic(const std::string& relicId) const {
     return HasString(state_.player.relics, relicId);
 }

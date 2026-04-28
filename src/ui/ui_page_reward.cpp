@@ -12,6 +12,9 @@ using namespace ftxui;
 
 namespace {
 
+// what it does: Determines how many reward cards should fit in each row.
+// what the inputs are: terminal_width - current terminal width in cells; visible_slots - number of reward slots to display.
+// what the outputs are: Returns the card count per row (int).
 int RewardCardsPerRow(int terminal_width, size_t visible_slots) {
     if (visible_slots == 0) {
         return 1;
@@ -25,6 +28,9 @@ int RewardCardsPerRow(int terminal_width, size_t visible_slots) {
     return 1;
 }
 
+// what it does: Calculates a stable card panel width for reward cards.
+// what the inputs are: terminal_width - current terminal width in cells; cards_per_row - number of cards in a row.
+// what the outputs are: Returns the card panel width in cells (int).
 int RewardCardWidth(int terminal_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int available_width = std::max(28, terminal_width - 12);
@@ -36,6 +42,9 @@ int RewardCardWidth(int terminal_width, int cards_per_row) {
 
 // Reward rendering is separated so future reward types can expand without
 // touching battle resolution or summary/info pages.
+// what it does: Renders the reward selection page with cards, relics, and actions.
+// what the inputs are: None.
+// what the outputs are: Returns the reward page element (ftxui::Element).
 Element StarAbyssApp::RenderReward() const {
     const RunState& state = engine_.state();
     const std::vector<CardView> reward_cards = engine_.rewardCards();

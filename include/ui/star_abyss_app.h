@@ -20,9 +20,19 @@ namespace dev_mode { class DevModeUi; }
 
 class StarAbyssApp {
 public:
+    // what it does: Constructs the terminal UI application and wires its components.
+    // what the inputs are: screen - interactive FTXUI screen used for rendering and events.
+    // what the outputs are: Creates a StarAbyssApp instance (constructor).
     explicit StarAbyssApp(ftxui::ScreenInteractive& screen);
+
+    // what it does: Stops background app activity and releases UI resources.
+    // what the inputs are: None.
+    // what the outputs are: No return value (destructor).
     ~StarAbyssApp();
 
+    // what it does: Provides the root component used by the FTXUI event loop.
+    // what the inputs are: None.
+    // what the outputs are: Returns the app root component (ftxui::Component).
     ftxui::Component root() const { return root_; }
 
 private:
@@ -47,38 +57,164 @@ private:
     static constexpr int kWheelScrollLines = 4;
     static constexpr int kPageScrollLines = 14;
 
+    // what it does: Synchronizes UI labels, selected pages, and controls with engine state.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void SyncUi();
+
+    // what it does: Handles a single keyboard or mouse event for app-level interactions.
+    // what the inputs are: event - FTXUI event to process.
+    // what the outputs are: Returns true when the event is consumed; otherwise false (bool).
     bool HandleEvent(ftxui::Event event);
+
+    // what it does: Scrolls the currently active scrollable view.
+    // what the inputs are: delta_lines - signed number of lines to scroll.
+    // what the outputs are: Returns true when scrolling was handled; otherwise false (bool).
     bool ScrollActiveView(int delta_lines);
+
+    // what it does: Saves the current run using the active save dialog context.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void SaveRun();
+
+    // what it does: Opens the load-run flow and refreshes available save slots.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void LoadRun();
+
+    // what it does: Returns from an information page to the correct previous page.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void BackFromInfo();
+
+    // what it does: Opens the save dialog in the requested mode.
+    // what the inputs are: mode - save dialog mode to display.
+    // what the outputs are: No return value (void).
     void OpenSaveDialog(SaveDialogMode mode);
+
+    // what it does: Closes the save dialog and clears its visible state.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void CloseSaveDialog();
+
+    // what it does: Rebuilds the list of visible save entries from disk.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void RefreshSaveEntries();
+
+    // what it does: Saves the current run to a named save slot.
+    // what the inputs are: slot_name - target save slot name; show_feedback - whether to show status feedback.
+    // what the outputs are: No return value (void).
     void SaveToSlot(const std::string& slot_name, bool show_feedback);
+
+    // what it does: Loads the save slot currently selected in the save dialog.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void LoadSelectedSave();
+
+    // what it does: Writes the current run to the autosave slot.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void AutoSave();
+
+    // what it does: Removes invalid characters from a user-entered save name.
+    // what the inputs are: raw_name - original save name text.
+    // what the outputs are: Returns a filesystem-safe save name (std::string).
     std::string SanitizeSaveName(const std::string& raw_name) const;
+
+    // what it does: Builds the display label for a save entry.
+    // what the inputs are: index - zero-based save entry index.
+    // what the outputs are: Returns the display label text (std::string).
     std::string SaveDisplayName(size_t index) const;
+
+    // what it does: Opens the card viewer in the requested browsing mode.
+    // what the inputs are: mode - card viewer mode to show.
+    // what the outputs are: No return value (void).
     void OpenCardViewer(CardViewerMode mode);
+
+    // what it does: Closes the card viewer and resets its visible state.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void CloseCardViewer();
+
+    // what it does: Opens or closes the battle pile inspector for the requested pile.
+    // what the inputs are: target - pile inspector target to toggle.
+    // what the outputs are: No return value (void).
     void ToggleBattlePileInspector(BattlePileInspector target);
+
+    // what it does: Closes the battle pile inspector.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void CloseBattlePileInspector();
+
+    // what it does: Loads the saved UI language preference from disk.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void LoadLanguagePreference();
+
+    // what it does: Saves the current UI language preference to disk.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void SaveLanguagePreference() const;
+
+    // what it does: Applies a vertical scroll frame to long rendered content.
+    // what the inputs are: content - element to frame; scroll_line - top visible line offset.
+    // what the outputs are: Returns the framed element (ftxui::Element).
     ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
+
+    // what it does: Converts an app page enum to the matching array index.
+    // what the inputs are: page - app page enum value.
+    // what the outputs are: Returns the page index (size_t).
     static constexpr size_t PageIndex(AppPage page) { return static_cast<size_t>(page); }
 
+    // what it does: Renders the main menu page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderMainMenu() const;
+
+    // what it does: Renders the run setup page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderSetup() const;
+
+    // what it does: Renders the route map page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderMap() const;
+
+    // what it does: Renders the active encounter page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderEncounter() const;
+
+    // what it does: Renders the battle page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderBattle() const;
+
+    // what it does: Renders the reward selection page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderReward() const;
+
+    // what it does: Renders the run summary page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderSummary() const;
+
+    // what it does: Renders the information page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the page element (ftxui::Element).
     ftxui::Element RenderInfo() const;
+
+    // what it does: Renders the save/load dialog overlay.
+    // what the inputs are: None.
+    // what the outputs are: Returns the dialog element (ftxui::Element).
     ftxui::Element RenderSaveDialog() const;
+
+    // what it does: Renders the card viewer overlay.
+    // what the inputs are: None.
+    // what the outputs are: Returns the viewer element (ftxui::Element).
     ftxui::Element RenderCardViewer() const;
 
     ftxui::ScreenInteractive& screen_;

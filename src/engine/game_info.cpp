@@ -6,6 +6,9 @@
 
 namespace {
 
+// what it does: Converts a numeric difficulty value to a display label.
+// what the inputs are: difficulty - numeric difficulty value.
+// what the outputs are: Returns the difficulty label (std::string).
 std::string DifficultyLabel(int difficulty) {
     if (difficulty == 0) {
         return "Easy";
@@ -19,6 +22,9 @@ std::string DifficultyLabel(int difficulty) {
     return "Normal";
 }
 
+// what it does: Provides the static event achievement catalog.
+// what the inputs are: None.
+// what the outputs are: Returns event achievement id/title pairs (const std::vector<std::pair<std::string, std::string>>&).
 const std::vector<std::pair<std::string, std::string>>& EventAchievementCatalog() {
     static const std::vector<std::pair<std::string, std::string>> catalog = {
         {"game_intro", "Star Abyss Salvager"},
@@ -55,11 +61,17 @@ const std::vector<std::pair<std::string, std::string>>& EventAchievementCatalog(
 
 }  // namespace
 
+// what it does: Shows the help information page.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::showHelp() {
     fillHelpInfo();
     state_.page = AppPage::Info;
 }
 
+// what it does: Shows a simple list of completed event achievements.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::showAchievements() {
     state_.info = {};
     state_.info.title = "Completed Events";
@@ -74,6 +86,9 @@ void GameEngine::showAchievements() {
     state_.page = AppPage::Info;
 }
 
+// what it does: Builds all event achievement entries with completion flags.
+// what the inputs are: None.
+// what the outputs are: Returns event achievement entries (std::vector<AchievementEntry>).
 std::vector<AchievementEntry> GameEngine::allEventAchievementEntries() const {
     std::vector<AchievementEntry> result;
     const auto& catalog = EventAchievementCatalog();
@@ -87,6 +102,9 @@ std::vector<AchievementEntry> GameEngine::allEventAchievementEntries() const {
     return result;
 }
 
+// what it does: Builds all enemy achievement entries with discovery flags.
+// what the inputs are: None.
+// what the outputs are: Returns enemy achievement entries (std::vector<AchievementEntry>).
 std::vector<AchievementEntry> GameEngine::allEnemyAchievementEntries() const {
     std::vector<AchievementEntry> result;
     result.reserve(enemyPool_.size());
@@ -105,6 +123,9 @@ std::vector<AchievementEntry> GameEngine::allEnemyAchievementEntries() const {
     return result;
 }
 
+// what it does: Shows a custom information page.
+// what the inputs are: title - page title; lines - page body lines; footer - footer text.
+// what the outputs are: No return value (void).
 void GameEngine::showInfo(const std::string& title,
                           const std::vector<std::string>& lines,
                           const std::string& footer) {
@@ -115,6 +136,9 @@ void GameEngine::showInfo(const std::string& title,
     state_.page = AppPage::Info;
 }
 
+// what it does: Loads and shows the run leaderboard from disk.
+// what the inputs are: path - leaderboard file path.
+// what the outputs are: No return value (void).
 void GameEngine::showLeaderboard(const std::string& path) {
     state_.info = {};
     state_.info.title = "Run Ledger";
@@ -136,41 +160,68 @@ void GameEngine::showLeaderboard(const std::string& path) {
     state_.page = AppPage::Info;
 }
 
+// what it does: Builds the display label for the current difficulty.
+// what the inputs are: None.
+// what the outputs are: Returns the difficulty name (std::string).
 std::string GameEngine::difficultyName() const {
     return DifficultyLabel(state_.difficulty);
 }
 
+// what it does: Finds a ship display name by id.
+// what the inputs are: shipId - ship identifier to look up.
+// what the outputs are: Returns the ship name or fallback name (std::string).
 std::string GameEngine::shipNameForId(const std::string& shipId) const {
     const ShipTemplate* ship = shipTemplateById(shipId);
     return ship != nullptr ? ship->name : ships_.front().name;
 }
 
+// what it does: Finds a relic display name by id.
+// what the inputs are: relicId - relic identifier to look up.
+// what the outputs are: Returns the relic name or fallback id (std::string).
 std::string GameEngine::relicNameForId(const std::string& relicId) const {
     const RelicDef* relic = relicById(relicId);
     return relic != nullptr ? relic->name : relicId;
 }
 
+// what it does: Finds a relic description by id.
+// what the inputs are: relicId - relic identifier to look up.
+// what the outputs are: Returns the relic description or empty string (std::string).
 std::string GameEngine::relicDescriptionForId(const std::string& relicId) const {
     const RelicDef* relic = relicById(relicId);
     return relic != nullptr ? relic->description : "";
 }
 
+// what it does: Counts completed event achievements.
+// what the inputs are: None.
+// what the outputs are: Returns completed event achievement count (size_t).
 size_t GameEngine::completedEventAchievementCount() const {
     return completedEventAchievements_.size();
 }
 
+// what it does: Counts total event achievements in the catalog.
+// what the inputs are: None.
+// what the outputs are: Returns total event achievement count (size_t).
 size_t GameEngine::totalEventAchievementCount() const {
     return EventAchievementCatalog().size();
 }
 
+// what it does: Counts enemies seen by the player.
+// what the inputs are: None.
+// what the outputs are: Returns seen enemy count (size_t).
 size_t GameEngine::seenEnemyCount() const {
     return seenEnemyIds_.size();
 }
 
+// what it does: Counts all enemy templates available for discovery.
+// what the inputs are: None.
+// what the outputs are: Returns total enemy count (size_t).
 size_t GameEngine::totalEnemyCount() const {
     return enemyPool_.size();
 }
 
+// what it does: Fills the help information state with gameplay instructions.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void GameEngine::fillHelpInfo() {
     state_.info = {};
     state_.info.title = "Flight Manual";
@@ -187,6 +238,9 @@ void GameEngine::fillHelpInfo() {
     };
 }
 
+// what it does: Fills the run summary state and appends a leaderboard entry.
+// what the inputs are: victory - whether the run ended in victory.
+// what the outputs are: No return value (void).
 void GameEngine::fillSummary(bool victory) {
     state_.hasRun = false;
     state_.info = {};

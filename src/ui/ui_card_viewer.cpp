@@ -12,6 +12,9 @@ using namespace ftxui;
 
 namespace {
 
+// what it does: Determines how many cards should appear in each viewer row.
+// what the inputs are: terminal_width - current terminal width in cells; visible_cards - number of cards to display.
+// what the outputs are: Returns the card count per row (int).
 int CardViewerCardsPerRow(int terminal_width, size_t visible_cards) {
     if (visible_cards == 0) {
         return 1;
@@ -25,6 +28,9 @@ int CardViewerCardsPerRow(int terminal_width, size_t visible_cards) {
     return 1;
 }
 
+// what it does: Calculates a stable card width for the card viewer.
+// what the inputs are: terminal_width - current terminal width in cells; cards_per_row - card count per row.
+// what the outputs are: Returns the card panel width in cells (int).
 int CardViewerCardWidth(int terminal_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int available_width = std::max(32, terminal_width - 18);
@@ -32,6 +38,9 @@ int CardViewerCardWidth(int terminal_width, int cards_per_row) {
     return std::max(28, std::min(44, computed_width));
 }
 
+// what it does: Renders one card entry for owned-card and library views.
+// what the inputs are: language - selected UI language; card_view - card view to render; copies - owned copy count; show_copies - whether to display copy count; obtained - whether the card is unlocked; card_width - target panel width.
+// what the outputs are: Returns the card entry panel element (ftxui::Element).
 Element CardViewerEntryPanel(UiLanguage language,
                              const CardView& card_view,
                              int copies,
@@ -77,6 +86,9 @@ Element CardViewerEntryPanel(UiLanguage language,
            size(HEIGHT, GREATER_THAN, 10);
 }
 
+// what it does: Renders one achievement entry for the achievements view.
+// what the inputs are: language - selected UI language; entry - achievement entry to render; category_label - category display text; card_width - target panel width.
+// what the outputs are: Returns the achievement panel element (ftxui::Element).
 Element AchievementEntryPanel(UiLanguage language,
                               const AchievementEntry& entry,
                               const std::string& category_label,
@@ -106,6 +118,9 @@ Element AchievementEntryPanel(UiLanguage language,
 
 }  // namespace
 
+// what it does: Renders the card library, owned-card list, or achievements overlay.
+// what the inputs are: None.
+// what the outputs are: Returns the card viewer element (ftxui::Element).
 Element StarAbyssApp::RenderCardViewer() const {
     const int terminal_width = Terminal::Size().dimx;
     const int terminal_height = Terminal::Size().dimy;

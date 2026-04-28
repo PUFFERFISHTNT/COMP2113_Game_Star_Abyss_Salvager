@@ -11,10 +11,16 @@
 
 using namespace ftxui;
 
+// what it does: Applies vertical scroll framing and indicators to long content.
+// what the inputs are: content - element to frame; scroll_line - top visible line offset.
+// what the outputs are: Returns the scroll-framed element (ftxui::Element).
 Element StarAbyssApp::ApplyVerticalScrollFrame(Element content, int scroll_line) const {
     return content | focusPosition(0, scroll_line) | vscroll_indicator | yframe;
 }
 
+// what it does: Scrolls the currently active page, card viewer, or save dialog.
+// what the inputs are: delta_lines - signed number of lines to scroll.
+// what the outputs are: Returns true after updating the active scroll position (bool).
 bool StarAbyssApp::ScrollActiveView(int delta_lines) {
     int& scroll_line = saveDialogVisible_ ? saveDialogScrollLine_
                                           : (cardViewerVisible_ ? cardViewerScrollLine_
@@ -23,6 +29,9 @@ bool StarAbyssApp::ScrollActiveView(int delta_lines) {
     return true;
 }
 
+// what it does: Handles global app input, shortcuts, mouse interactions, and overlay priority.
+// what the inputs are: event - FTXUI event to process.
+// what the outputs are: Returns true when the event is consumed; otherwise false (bool).
 bool StarAbyssApp::HandleEvent(Event event) {
     const auto contains = [](const Box& box, int x, int y) {
         return x >= box.x_min && x <= box.x_max && y >= box.y_min && y <= box.y_max;
@@ -507,6 +516,9 @@ bool StarAbyssApp::HandleEvent(Event event) {
     return false;
 }
 
+// what it does: Opens the card viewer overlay in an allowed mode for the current page.
+// what the inputs are: mode - card viewer mode to display.
+// what the outputs are: No return value (void).
 void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
     if (saveDialogVisible_ || mode == CardViewerMode::None) {
         return;
@@ -523,21 +535,33 @@ void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
     cardViewerScrollLine_ = 0;
 }
 
+// what it does: Closes the card viewer overlay and resets its scroll state.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::CloseCardViewer() {
     cardViewerVisible_ = false;
     cardViewerMode_ = CardViewerMode::None;
     cardViewerScrollLine_ = 0;
 }
 
+// what it does: Toggles the draw or discard pile inspector during battle.
+// what the inputs are: target - pile inspector target to toggle.
+// what the outputs are: No return value (void).
 void StarAbyssApp::ToggleBattlePileInspector(BattlePileInspector target) {
     battlePileInspector_ = battlePileInspector_ == target ? BattlePileInspector::None : target;
     pageScrollLines_[PageIndex(AppPage::Battle)] = 0;
 }
 
+// what it does: Closes the active battle pile inspector.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::CloseBattlePileInspector() {
     battlePileInspector_ = BattlePileInspector::None;
 }
 
+// what it does: Returns from the information screen to a run page or the main menu.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::BackFromInfo() {
     if (infoReturnsToRun_ && engine_.state().hasRun) engine_.resumeRun();
     else engine_.showMainMenu();

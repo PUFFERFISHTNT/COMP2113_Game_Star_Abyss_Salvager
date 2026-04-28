@@ -47,20 +47,53 @@ inline constexpr const char* kPassword = "123456";
 
 class DevModeUi {
 public:
+    // what it does: Constructs the developer-mode UI and its backing controls.
+    // what the inputs are: engine - game engine to control; screen - interactive FTXUI screen; language - active UI language reference; visible - modal visibility flag; on_close - callback invoked when the UI closes.
+    // what the outputs are: Creates a DevModeUi instance (constructor).
     DevModeUi(GameEngine& engine,
               ftxui::ScreenInteractive& screen,
               UiLanguage& language,
               bool& visible,
               std::function<void()> on_close);
 
+    // what it does: Provides the modal component for developer-mode entry and controls.
+    // what the inputs are: None.
+    // what the outputs are: Returns the modal root component (ftxui::Component).
     ftxui::Component component() const { return root_; }
+
+    // what it does: Provides the persistent overlay component for developer-mode controls.
+    // what the inputs are: None.
+    // what the outputs are: Returns the overlay root component (ftxui::Component).
     ftxui::Component overlay() const { return overlay_root_; }
 
+    // what it does: Opens the developer-mode modal.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void open();
+
+    // what it does: Dismisses the developer-mode modal without leaving developer mode.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void dismissModal();
+
+    // what it does: Leaves developer mode and resets its UI state.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void exitDeveloperMode();
+
+    // what it does: Handles keyboard events for the developer overlay.
+    // what the inputs are: event - FTXUI event to process.
+    // what the outputs are: Returns true when the overlay consumes the event; otherwise false (bool).
     bool handleOverlayEvent(ftxui::Event event);
+
+    // what it does: Reports whether developer mode has been unlocked.
+    // what the inputs are: None.
+    // what the outputs are: Returns true when unlocked; otherwise false (bool).
     bool unlocked() const { return unlocked_; }
+
+    // what it does: Reports whether a developer debug panel is visible.
+    // what the inputs are: None.
+    // what the outputs are: Returns true when any debug panel is visible; otherwise false (bool).
     bool debugPanelVisible() const { return debug_panel_visible_ || event_panel_visible_; }
 
 private:
@@ -69,17 +102,64 @@ private:
         Main = 1,
     };
 
+    // what it does: Rebuilds all localized labels used by the developer UI.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void rebuildLabels();
+
+    // what it does: Renders the developer-mode password page.
+    // what the inputs are: None.
+    // what the outputs are: Returns the password page element (ftxui::Element).
     ftxui::Element renderPassword() const;
+
+    // what it does: Renders the main developer control modal.
+    // what the inputs are: None.
+    // what the outputs are: Returns the main modal element (ftxui::Element).
     ftxui::Element renderMain() const;
+
+    // what it does: Renders the developer overlay layer.
+    // what the inputs are: None.
+    // what the outputs are: Returns the overlay element (ftxui::Element).
     ftxui::Element renderOverlay() const;
+
+    // what it does: Renders the live debug control panel.
+    // what the inputs are: None.
+    // what the outputs are: Returns the debug panel element (ftxui::Element).
     ftxui::Element renderDebugPanel() const;
+
+    // what it does: Renders the event selection developer panel.
+    // what the inputs are: None.
+    // what the outputs are: Returns the event panel element (ftxui::Element).
     ftxui::Element renderEventPanel() const;
+
+    // what it does: Resets developer UI selections and transient text.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void resetUiState();
+
+    // what it does: Rebuilds the selectable destination list for developer jumps.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void rebuildDestinationOptions();
+
+    // what it does: Opens the floating debug panel.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void openDebugPanel();
+
+    // what it does: Closes the floating debug panel.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void closeDebugPanel();
+
+    // what it does: Opens the developer event selection panel.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void openEventPanel();
+
+    // what it does: Closes the developer event selection panel.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void closeEventPanel();
 
     GameEngine& engine_;

@@ -14,6 +14,9 @@ namespace {
 
 // Service screens reuse the encounter page, so these helpers keep the card-grid
 // behavior local instead of leaking service-specific formatting into the engine.
+// what it does: Determines how many service cards should appear in each row.
+// what the inputs are: available_width - available panel width in cells; visible_cards - number of cards to display.
+// what the outputs are: Returns the card count per row (int).
 int ServiceCardsPerRow(int available_width, size_t visible_cards) {
     if (visible_cards == 0) {
         return 1;
@@ -24,6 +27,9 @@ int ServiceCardsPerRow(int available_width, size_t visible_cards) {
     return 1;
 }
 
+// what it does: Calculates a stable service card panel width.
+// what the inputs are: available_width - available panel width in cells; cards_per_row - card count per row.
+// what the outputs are: Returns the card panel width in cells (int).
 int ServiceCardWidth(int available_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int computed_width = std::max(30, (available_width - 4) / safe_columns);
@@ -33,6 +39,9 @@ int ServiceCardWidth(int available_width, int cards_per_row) {
 // Service payloads sometimes refer to upgraded instances via "base@level".
 // The preview renderer needs the base id and numeric level separately so it can
 // ask the engine for the next upgraded snapshot without mutating game state.
+// what it does: Extracts the base card reference from an upgraded card reference.
+// what the inputs are: card_ref - card reference that may include an upgrade suffix.
+// what the outputs are: Returns the base card reference (std::string).
 std::string BaseCardRef(const std::string& card_ref) {
     const size_t separator = card_ref.rfind('@');
     if (separator == std::string::npos) {
@@ -46,6 +55,9 @@ std::string BaseCardRef(const std::string& card_ref) {
     return card_ref.substr(0, separator);
 }
 
+// what it does: Extracts the numeric upgrade level from a card reference.
+// what the inputs are: card_ref - card reference that may include an upgrade suffix.
+// what the outputs are: Returns the parsed upgrade level, or zero when absent/invalid (int).
 int CardRefUpgradeLevel(const std::string& card_ref) {
     const size_t separator = card_ref.rfind('@');
     if (separator == std::string::npos) {
@@ -63,10 +75,16 @@ int CardRefUpgradeLevel(const std::string& card_ref) {
     }
 }
 
+// what it does: Builds a card reference from a base id and upgrade level.
+// what the inputs are: base_id - base card identifier; upgrade_level - upgrade level to encode.
+// what the outputs are: Returns the encoded card reference (std::string).
 std::string MakeCardRef(const std::string& base_id, int upgrade_level) {
     return upgrade_level <= 0 ? base_id : (base_id + "@" + std::to_string(upgrade_level));
 }
 
+// what it does: Finds the encounter choice index for a service action payload.
+// what the inputs are: state - current run state; target_payload - payload value to find.
+// what the outputs are: Returns the matching choice index, or choices size when absent (size_t).
 size_t FindServiceActionChoiceIndex(const RunState& state, const std::string& target_payload) {
     for (size_t i = 0; i < state.encounter.payloadIds.size() && i < state.encounter.choices.size(); ++i) {
         if (state.encounter.payloadIds[i] == target_payload) {
@@ -78,6 +96,9 @@ size_t FindServiceActionChoiceIndex(const RunState& state, const std::string& ta
 
 // Build a compact "before -> after" delta list so upgrade screens can explain
 // exactly what changes when the player confirms the service.
+// what it does: Appends one upgrade delta line when a numeric value changes.
+// what the inputs are: lines - output line list; language - selected UI language; label_en - English label; label_zh - Chinese label; before - current value; after - upgraded value.
+// what the outputs are: No return value (void).
 void PushUpgradeDelta(std::vector<std::string>* lines,
                       UiLanguage language,
                       const std::string& label_en,
@@ -90,6 +111,9 @@ void PushUpgradeDelta(std::vector<std::string>* lines,
     lines->push_back(Tr(language, label_en, label_zh) + " " + std::to_string(before) + " -> " + std::to_string(after));
 }
 
+// what it does: Builds localized before/after lines for a card upgrade preview.
+// what the inputs are: language - selected UI language; current - current card definition; upgraded - upgraded card definition.
+// what the outputs are: Returns upgrade delta lines (std::vector<std::string>).
 std::vector<std::string> UpgradeDeltaLines(UiLanguage language, const CardDef& current, const CardDef& upgraded) {
     std::vector<std::string> lines;
     PushUpgradeDelta(&lines, language, "Cost", "费用", current.cost, upgraded.cost);
@@ -124,6 +148,9 @@ std::vector<std::string> UpgradeDeltaLines(UiLanguage language, const CardDef& c
 
 // Encounter rendering branches the most by event type. This module keeps market
 // UI, generic events, and purge flows together without leaking into battle/map.
+// what it does: Renders the active encounter page, including market and service flows.
+// what the inputs are: None.
+// what the outputs are: Returns the encounter page element (ftxui::Element).
 Element StarAbyssApp::RenderEncounter() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;

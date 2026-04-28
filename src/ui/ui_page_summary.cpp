@@ -8,6 +8,9 @@ using namespace ftxui;
 
 // Summary is intentionally isolated from transient battle/map widgets because it
 // only renders the final report and post-run actions.
+// what it does: Renders the final run summary page and post-run actions.
+// what the inputs are: None.
+// what the outputs are: Returns the summary page element (ftxui::Element).
 Element StarAbyssApp::RenderSummary() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;

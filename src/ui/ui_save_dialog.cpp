@@ -13,18 +13,30 @@
 
 using namespace ftxui;
 
+// what it does: Checks whether a character is valid in save-slot names.
+// what the inputs are: ch - character byte to validate.
+// what the outputs are: Returns true when the character is allowed; otherwise false (bool).
 bool IsAllowedSaveNameChar(unsigned char ch) {
     return std::isalnum(ch) != 0 || ch == '_' || ch == '-';
 }
 
+// what it does: Saves the current run using the entered save-slot name.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::SaveRun() {
     SaveToSlot(saveNameInput_, true);
 }
 
+// what it does: Loads the currently selected save slot.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::LoadRun() {
     LoadSelectedSave();
 }
 
+// what it does: Opens the save or load dialog and refreshes save entries.
+// what the inputs are: mode - dialog mode to open.
+// what the outputs are: No return value (void).
 void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
     CloseCardViewer();
     saveDialogMode_ = mode;
@@ -42,11 +54,17 @@ void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
     }
 }
 
+// what it does: Closes the save/load dialog and clears its mode.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::CloseSaveDialog() {
     saveDialogVisible_ = false;
     saveDialogMode_ = SaveDialogMode::None;
 }
 
+// what it does: Converts raw save-name input into a safe slot name.
+// what the inputs are: raw_name - user-entered save name.
+// what the outputs are: Returns a sanitized save slot name (std::string).
 std::string StarAbyssApp::SanitizeSaveName(const std::string& raw_name) const {
     std::string cleaned;
     for (unsigned char ch : raw_name) {
@@ -65,6 +83,9 @@ std::string StarAbyssApp::SanitizeSaveName(const std::string& raw_name) const {
     return cleaned.empty() ? "save" : cleaned;
 }
 
+// what it does: Scans the save directory and rebuilds save dialog lists.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::RefreshSaveEntries() {
     namespace fs = std::filesystem;
     saveEntries_.clear();
@@ -110,6 +131,9 @@ void StarAbyssApp::RefreshSaveEntries() {
     }
 }
 
+// what it does: Builds the user-facing label for a save slot.
+// what the inputs are: index - zero-based save slot index.
+// what the outputs are: Returns the display name for the save slot (std::string).
 std::string StarAbyssApp::SaveDisplayName(size_t index) const {
     if (index >= saveSlotNames_.size()) {
         return "";
@@ -121,6 +145,9 @@ std::string StarAbyssApp::SaveDisplayName(size_t index) const {
     return entry;
 }
 
+// what it does: Saves the current run to a specific slot and optionally shows feedback.
+// what the inputs are: slot_name - target save slot name; show_feedback - whether to show status feedback.
+// what the outputs are: No return value (void).
 void StarAbyssApp::SaveToSlot(const std::string& slot_name, bool show_feedback) {
     if (!engine_.state().hasRun) {
         if (show_feedback) {
@@ -153,6 +180,9 @@ void StarAbyssApp::SaveToSlot(const std::string& slot_name, bool show_feedback) 
     }
 }
 
+// what it does: Loads the save file currently selected in the dialog.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::LoadSelectedSave() {
     if (savePaths_.empty()) {
         engine_.showInfo(Tr(language_, "Load Failed", "读取失败"),
@@ -180,6 +210,9 @@ void StarAbyssApp::LoadSelectedSave() {
     }
 }
 
+// what it does: Saves the active run to the autosave slot when a run exists.
+// what the inputs are: None.
+// what the outputs are: No return value (void).
 void StarAbyssApp::AutoSave() {
     if (!engine_.state().hasRun) {
         return;
@@ -189,6 +222,9 @@ void StarAbyssApp::AutoSave() {
 
 // The save dialog is separated from page rendering because it is a modal
 // workflow shared by map, encounter, battle, and menu actions.
+// what it does: Renders the save/load dialog overlay.
+// what the inputs are: None.
+// what the outputs are: Returns the save dialog element (ftxui::Element).
 Element StarAbyssApp::RenderSaveDialog() const {
     const bool save_mode = saveDialogMode_ == SaveDialogMode::Save;
     const int terminal_width = Terminal::Size().dimx;

@@ -21,6 +21,9 @@ extern std::string g_sa_event_epilogue;
 
 namespace {
 
+// what it does: Splits a line into fields by a delimiter.
+// what the inputs are: line - source text to split; delimiter - separator character.
+// what the outputs are: Returns split fields (std::vector<std::string>).
 std::vector<std::string> Split(const std::string& line, char delimiter) {
     std::vector<std::string> parts;
     std::stringstream stream(line);
@@ -31,6 +34,9 @@ std::vector<std::string> Split(const std::string& line, char delimiter) {
     return parts;
 }
 
+// what it does: Converts text to an integer with fallback on failure.
+// what the inputs are: value - text to convert; fallback - value used if parsing fails.
+// what the outputs are: Returns parsed integer or fallback value (int).
 int ToInt(const std::string& value, int fallback = 0) {
     try {
         return std::stoi(value);
@@ -39,10 +45,16 @@ int ToInt(const std::string& value, int fallback = 0) {
     }
 }
 
+// what it does: Converts a boolean to the save-file token format.
+// what the inputs are: value - boolean to encode.
+// what the outputs are: Returns "1" for true or "0" for false (std::string).
 std::string BoolToken(bool value) {
     return value ? "1" : "0";
 }
 
+// what it does: Extracts text after a save-file key prefix.
+// what the inputs are: line - full save line; key_with_delimiter - required key prefix.
+// what the outputs are: Returns remaining text after the key, or empty string (std::string).
 std::string ValueAfterKey(const std::string& line, const char* key_with_delimiter) {
     const std::string prefix(key_with_delimiter);
     if (line.rfind(prefix, 0) != 0) {
@@ -51,6 +63,9 @@ std::string ValueAfterKey(const std::string& line, const char* key_with_delimite
     return line.substr(prefix.size());
 }
 
+// what it does: Converts an app page enum to a save-file token.
+// what the inputs are: page - page enum to encode.
+// what the outputs are: Returns the page token (std::string).
 std::string PageToString(AppPage page) {
     switch (page) {
     case AppPage::MainMenu:
@@ -73,6 +88,9 @@ std::string PageToString(AppPage page) {
     return "MainMenu";
 }
 
+// what it does: Converts a save-file token into an app page enum.
+// what the inputs are: value - page token to parse.
+// what the outputs are: Returns the parsed app page (AppPage).
 AppPage PageFromString(const std::string& value) {
     if (value == "Setup") {
         return AppPage::Setup;
@@ -98,6 +116,9 @@ AppPage PageFromString(const std::string& value) {
     return AppPage::MainMenu;
 }
 
+// what it does: Builds the legacy upgraded-cards sidecar path for a save file.
+// what the inputs are: save_path - main save file path.
+// what the outputs are: Returns the sidecar JSON path (std::string).
 std::string UpgradedCardsJsonPath(const std::string& save_path) {
     namespace fs = std::filesystem;
     const fs::path path(save_path);
@@ -106,6 +127,9 @@ std::string UpgradedCardsJsonPath(const std::string& save_path) {
 
 }  // namespace
 
+// what it does: Writes the current run state to a save file.
+// what the inputs are: path - save file path; error - optional error message output.
+// what the outputs are: Returns true when saving succeeds; otherwise false (bool).
 bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     if (!state_.hasRun && state_.page != AppPage::Summary) {
         if (error != nullptr) {
@@ -325,6 +349,9 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     return true;
 }
 
+// what it does: Loads a run state from a save file and validates it.
+// what the inputs are: path - save file path; error - optional error message output.
+// what the outputs are: Returns true when loading succeeds; otherwise false (bool).
 bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     std::ifstream input(path.c_str());
     if (!input) {

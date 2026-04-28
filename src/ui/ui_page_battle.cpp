@@ -12,6 +12,9 @@ using namespace ftxui;
 
 namespace {
 
+// what it does: Determines how many battle cards should appear in each row.
+// what the inputs are: terminal_width - current terminal width in cells; visible_slots - number of visible card slots.
+// what the outputs are: Returns the card count per row (int).
 int BattleCardsPerRow(int terminal_width, size_t visible_slots) {
     if (visible_slots == 0) {
         return 1;
@@ -31,6 +34,9 @@ int BattleCardsPerRow(int terminal_width, size_t visible_slots) {
     return 1;
 }
 
+// what it does: Calculates a stable card panel width for battle hand cards.
+// what the inputs are: terminal_width - current terminal width in cells; cards_per_row - card count per row.
+// what the outputs are: Returns the card panel width in cells (int).
 int BattleCardWidth(int terminal_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int available_width = std::max(24, terminal_width - 8);
@@ -38,6 +44,9 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
     return std::max(22, std::min(34, computed_width));
 }
 
+// what it does: Builds localized detail lines for an auxiliary ship slot.
+// what the inputs are: language - selected UI language; ship - auxiliary ship state to summarize.
+// what the outputs are: Returns auxiliary ship detail lines (std::vector<std::string>).
 std::vector<std::string> AuxiliaryShipDetailLines(UiLanguage language, const AuxiliaryShipState& ship) {
     std::vector<std::string> lines;
     std::vector<std::string> primary;
@@ -73,6 +82,9 @@ std::vector<std::string> AuxiliaryShipDetailLines(UiLanguage language, const Aux
     return lines;
 }
 
+// what it does: Renders one auxiliary ship slot for the battle page.
+// what the inputs are: language - selected UI language; slot_index - zero-based slot index; ship - optional auxiliary ship state; highlighted - whether the slot is selected.
+// what the outputs are: Returns the auxiliary ship slot element (ftxui::Element).
 Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship, bool highlighted) {
     if (ship == nullptr) {
         return vbox({
@@ -129,6 +141,9 @@ Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliarySh
            bgcolor(highlighted ? Color::RGB(66, 49, 16) : style.background);
 }
 
+// what it does: Renders the auxiliary ship bay panel and reflects slot boxes for mouse input.
+// what the inputs are: language - selected UI language; state - current run state; slot_boxes - optional output boxes for hit testing; selected_slot - selected auxiliary slot index; selection_pending - whether selection mode is active.
+// what the outputs are: Returns the auxiliary ship panel element (ftxui::Element).
 Element AuxiliaryShipPanel(UiLanguage language,
                            const RunState& state,
                            std::vector<ftxui::Box>* slot_boxes,
@@ -173,6 +188,9 @@ Element AuxiliaryShipPanel(UiLanguage language,
 
 // Battle is the densest screen in the project. Splitting it out keeps combat
 // layout, card visualization, and action affordances in one dedicated unit.
+// what it does: Renders the battle page with combat status, hand cards, auxiliary ships, and log.
+// what the inputs are: None.
+// what the outputs are: Returns the battle page element (ftxui::Element).
 Element StarAbyssApp::RenderBattle() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;

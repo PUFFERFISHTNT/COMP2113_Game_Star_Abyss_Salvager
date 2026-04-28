@@ -19,6 +19,9 @@
 
 namespace {
 
+// what it does: Resolves the current executable path for locating data files.
+// what the inputs are: None.
+// what the outputs are: Returns the executable path, or empty path if unavailable (std::filesystem::path).
 std::filesystem::path ExecutablePath() {
 #if defined(__APPLE__)
     uint32_t size = 0;
@@ -65,8 +68,14 @@ struct JsonValue {
 
 class JsonParser {
 public:
+    // what it does: Creates a parser for a JSON source string.
+    // what the inputs are: source - JSON text to parse.
+    // what the outputs are: Constructs a JsonParser instance.
     explicit JsonParser(const std::string& source) : source_(source) {}
 
+    // what it does: Parses the complete JSON source into a root value.
+    // what the inputs are: value - parsed root output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool Parse(JsonValue* value, std::string* error) {
         SkipWhitespace();
         if (!ParseValue(value, error)) {
@@ -83,6 +92,9 @@ public:
     }
 
 private:
+    // what it does: Parses a single JSON value at the current position.
+    // what the inputs are: value - parsed value output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseValue(JsonValue* value, std::string* error) {
         if (IsDone()) {
             if (error != nullptr) {
@@ -123,6 +135,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON object into key/value fields.
+    // what the inputs are: object - parsed object output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseObject(std::map<std::string, JsonValue>* object, std::string* error) {
         ++position_;  // consume {
         SkipWhitespace();
@@ -173,6 +188,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON array into ordered values.
+    // what the inputs are: array - parsed array output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseArray(std::vector<JsonValue>* array, std::string* error) {
         ++position_;  // consume [
         SkipWhitespace();
@@ -209,6 +227,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON string and supported escape sequences.
+    // what the inputs are: value - parsed string output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseString(std::string* value, std::string* error) {
         if (IsDone() || source_[position_] != '"') {
             if (error != nullptr) {
@@ -259,6 +280,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON boolean literal.
+    // what the inputs are: value - parsed boolean output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseBool(bool* value, std::string* error) {
         if (source_.compare(position_, 4, "true") == 0) {
             *value = true;
@@ -276,6 +300,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON null literal.
+    // what the inputs are: error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseNull(std::string* error) {
         if (source_.compare(position_, 4, "null") == 0) {
             position_ += 4;
@@ -287,6 +314,9 @@ private:
         return false;
     }
 
+    // what it does: Parses a JSON number into a double value.
+    // what the inputs are: value - parsed number output; error - optional error message output.
+    // what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
     bool ParseNumber(double* value, std::string* error) {
         const size_t start = position_;
         if (source_[position_] == '-') {
@@ -322,12 +352,18 @@ private:
         }
     }
 
+    // what it does: Advances past whitespace characters in the JSON source.
+    // what the inputs are: None.
+    // what the outputs are: No return value (void).
     void SkipWhitespace() {
         while (!IsDone() && std::isspace(static_cast<unsigned char>(source_[position_])) != 0) {
             ++position_;
         }
     }
 
+    // what it does: Checks whether the parser has consumed the full source.
+    // what the inputs are: None.
+    // what the outputs are: Returns true at end of source; otherwise false (bool).
     bool IsDone() const {
         return position_ >= source_.size();
     }
@@ -336,6 +372,9 @@ private:
     size_t position_ = 0;
 };
 
+// what it does: Reads a text file into memory.
+// what the inputs are: path - file path to read; content - file content output; error - optional error message output.
+// what the outputs are: Returns true when reading succeeds; otherwise false (bool).
 bool ReadFile(const std::string& path, std::string* content, std::string* error) {
     std::ifstream input(path.c_str(), std::ios::binary);
     if (!input) {
@@ -350,11 +389,17 @@ bool ReadFile(const std::string& path, std::string* content, std::string* error)
     return true;
 }
 
+// what it does: Looks up a field in a JSON object map.
+// what the inputs are: object - object fields to search; key - field name to find.
+// what the outputs are: Returns the field value pointer, or nullptr if missing (const JsonValue*).
 const JsonValue* FindObjectField(const std::map<std::string, JsonValue>& object, const std::string& key) {
     const auto found = object.find(key);
     return found == object.end() ? nullptr : &found->second;
 }
 
+// what it does: Reads a string field from a JSON object with fallback.
+// what the inputs are: object - object fields to search; key - field name; fallback - value used when absent or wrong type.
+// what the outputs are: Returns the field string or fallback value (std::string).
 std::string GetStringField(const std::map<std::string, JsonValue>& object,
                            const std::string& key,
                            const std::string& fallback = "") {
@@ -365,6 +410,9 @@ std::string GetStringField(const std::map<std::string, JsonValue>& object,
     return value->string_value;
 }
 
+// what it does: Reads an integer field from a JSON object with fallback.
+// what the inputs are: object - object fields to search; key - field name; fallback - value used when absent or wrong type.
+// what the outputs are: Returns the field integer or fallback value (int).
 int GetIntField(const std::map<std::string, JsonValue>& object,
                 const std::string& key,
                 int fallback = 0) {
@@ -375,6 +423,9 @@ int GetIntField(const std::map<std::string, JsonValue>& object,
     return static_cast<int>(value->number_value);
 }
 
+// what it does: Reads a boolean field from a JSON object with fallback.
+// what the inputs are: object - object fields to search; key - field name; fallback - value used when absent or wrong type.
+// what the outputs are: Returns the field boolean or fallback value (bool).
 bool GetBoolField(const std::map<std::string, JsonValue>& object,
                   const std::string& key,
                   bool fallback = false) {
@@ -385,6 +436,9 @@ bool GetBoolField(const std::map<std::string, JsonValue>& object,
     return value->bool_value;
 }
 
+// what it does: Reads an object field from a JSON object.
+// what the inputs are: object - object fields to search; key - field name.
+// what the outputs are: Returns nested object pointer, or nullptr if absent or wrong type (const std::map<std::string, JsonValue>*).
 const std::map<std::string, JsonValue>* GetObjectField(
     const std::map<std::string, JsonValue>& object, const std::string& key) {
     const JsonValue* value = FindObjectField(object, key);
@@ -394,6 +448,9 @@ const std::map<std::string, JsonValue>* GetObjectField(
     return &value->object_value;
 }
 
+// what it does: Converts a rarity token into a CardRarity value.
+// what the inputs are: rarity - rarity token from JSON.
+// what the outputs are: Returns the parsed card rarity (CardRarity).
 CardRarity ParseRarity(const std::string& rarity) {
     if (rarity == "uncommon" || rarity == "blue") {
         return CardRarity::Uncommon;
@@ -404,6 +461,9 @@ CardRarity ParseRarity(const std::string& rarity) {
     return CardRarity::Common;
 }
 
+// what it does: Converts a CardRarity value into its JSON token.
+// what the inputs are: rarity - card rarity value.
+// what the outputs are: Returns the rarity token (std::string).
 std::string RarityToken(CardRarity rarity) {
     switch (rarity) {
     case CardRarity::Common:
@@ -416,6 +476,9 @@ std::string RarityToken(CardRarity rarity) {
     return "common";
 }
 
+// what it does: Parses card definitions and optional upgrades from a JSON root.
+// what the inputs are: root - parsed JSON root; upgraded_cards - whether entries are legacy upgrades; cards - card output; upgrades - upgrade output; error - optional error message output.
+// what the outputs are: Returns true when parsing succeeds; otherwise false (bool).
 bool ParseCardList(const JsonValue& root,
                    bool upgraded_cards,
                    std::vector<CardDef>* cards,
@@ -574,6 +637,9 @@ bool ParseCardList(const JsonValue& root,
 
 }  // namespace
 
+// what it does: Resolves the best available path to the cards JSON data file.
+// what the inputs are: None.
+// what the outputs are: Returns the selected cards JSON path (std::string).
 std::string ResolveCardsJsonPath() {
     namespace fs = std::filesystem;
 
@@ -592,6 +658,9 @@ std::string ResolveCardsJsonPath() {
     return (fs::path("data") / "cards.json").string();
 }
 
+// what it does: Loads card definitions and upgrades from a JSON file.
+// what the inputs are: path - JSON file path; cards - card output; upgrades - upgrade output; error - optional error message output.
+// what the outputs are: Returns true when loading succeeds; otherwise false (bool).
 bool LoadCardsFromJsonFile(const std::string& path,
                            std::vector<CardDef>* cards,
                            std::vector<CardDef>* upgrades,

@@ -21,10 +21,16 @@ const Color kDim = Color::RGB(104, 118, 140);
 
 namespace {
 
+// what it does: Builds a label/value/max metric string.
+// what the inputs are: label - metric label; value - current value; maxValue - maximum value.
+// what the outputs are: Returns formatted metric text (std::string).
 std::string MetricText(const std::string& label, int value, int maxValue) {
     return label + " " + std::to_string(value) + "/" + std::to_string(maxValue);
 }
 
+// what it does: Removes leading and trailing ASCII spaces from text.
+// what the inputs are: value - source text to trim.
+// what the outputs are: Returns trimmed text (std::string).
 std::string TrimAsciiSpaces(const std::string& value) {
     size_t begin = 0;
     while (begin < value.size() && value[begin] == ' ') {
@@ -37,6 +43,9 @@ std::string TrimAsciiSpaces(const std::string& value) {
     return value.substr(begin, end - begin);
 }
 
+// what it does: Splits display text into short lines at punctuation boundaries.
+// what the inputs are: text - source display text.
+// what the outputs are: Returns split display lines (std::vector<std::string>).
 std::vector<std::string> SplitDisplayTextByPunctuation(const std::string& text) {
     static const std::vector<std::string> separators = {", ", ",", ".", "; ", ";", "，", "。", "；"};
 
@@ -77,6 +86,9 @@ std::vector<std::string> SplitDisplayTextByPunctuation(const std::string& text) 
     return lines;
 }
 
+// what it does: Joins localized description clauses into one sentence.
+// what the inputs are: language - selected UI language; clauses - clause strings to join.
+// what the outputs are: Returns joined description text (std::string).
 std::string JoinClauses(UiLanguage language, const std::vector<std::string>& clauses) {
     if (clauses.empty()) {
         return "";
@@ -93,6 +105,9 @@ std::string JoinClauses(UiLanguage language, const std::vector<std::string>& cla
     return result;
 }
 
+// what it does: Builds an energy pip display string.
+// what the inputs are: energy - current energy; max_energy - maximum energy pips.
+// what the outputs are: Returns formatted energy pip text (std::string).
 std::string EnergyPips(int energy, int max_energy) {
     std::string out = "Energy ";
     for (int i = 0; i < max_energy; ++i) {
@@ -107,6 +122,9 @@ std::string EnergyPips(int energy, int max_energy) {
     return out;
 }
 
+// what it does: Wraps UTF-8 glyph text to fit a target display width.
+// what the inputs are: input - source text; width_hint - maximum display width in cells.
+// what the outputs are: Returns wrapped text lines (std::vector<std::string>).
 std::vector<std::string> WrapGlyphLines(const std::string& input, int width_hint) {
     const int safe_width = std::max(1, width_hint);
     std::vector<std::string> wrapped;
@@ -146,6 +164,9 @@ std::vector<std::string> WrapGlyphLines(const std::string& input, int width_hint
     return wrapped;
 }
 
+// what it does: Builds a localized summary of the enemy's current intent.
+// what the inputs are: language - selected UI language; state - current run state; secondary - whether to summarize the secondary intent.
+// what the outputs are: Returns the intent summary text (std::string).
 std::string IntentSummary(UiLanguage language, const RunState& state, bool secondary = false) {
     if (state.difficulty >= 3) {
         return Tr(language, "Unknown", "未知");
@@ -217,6 +238,9 @@ std::string IntentSummary(UiLanguage language, const RunState& state, bool secon
 
 }  // namespace
 
+// what it does: Creates an animated button style using an accent color.
+// what the inputs are: accent - color used for active and focused button states.
+// what the outputs are: Returns configured button options (ftxui::ButtonOption).
 ButtonOption AccentButton(Color accent) {
     auto option = ButtonOption::Animated();
     option.transform = [accent](const EntryState& state) {
@@ -233,6 +257,9 @@ ButtonOption AccentButton(Color accent) {
     return option;
 }
 
+// what it does: Renders a labeled gauge for hull, heat, or other numeric resources.
+// what the inputs are: label - gauge label; value - current value; maxValue - maximum value; gauge_color - filled gauge color; text_color - label color.
+// what the outputs are: Returns the gauge panel element (ftxui::Element).
 Element GaugePanel(const std::string& label, int value, int maxValue, Color gauge_color, Color text_color) {
     const int safe_max = std::max(1, maxValue);
     const float ratio = static_cast<float>(std::max(0, value)) / static_cast<float>(safe_max);
@@ -244,6 +271,9 @@ Element GaugePanel(const std::string& label, int value, int maxValue, Color gaug
            bgcolor(kPanel);
 }
 
+// what it does: Renders wrapped text as a vertical paragraph element.
+// what the inputs are: text_content - paragraph text; width_hint - target wrap width in cells.
+// what the outputs are: Returns the wrapped paragraph element (ftxui::Element).
 Element WrappedParagraph(const std::string& text_content, int width_hint) {
     Elements lines;
     for (const std::string& line : WrapGlyphLines(text_content, width_hint)) {
@@ -252,6 +282,9 @@ Element WrappedParagraph(const std::string& text_content, int width_hint) {
     return vbox(std::move(lines));
 }
 
+// what it does: Renders a titled information panel with fallback empty text.
+// what the inputs are: language - selected UI language; title - panel title; lines - body lines; accent - title color.
+// what the outputs are: Returns the information panel element (ftxui::Element).
 Element InfoPanel(UiLanguage language, const std::string& title, const std::vector<std::string>& lines, Color accent) {
     Elements content;
     for (const std::string& line : lines) {
@@ -263,10 +296,16 @@ Element InfoPanel(UiLanguage language, const std::string& title, const std::vect
     return window(text(title) | color(accent) | bold, vbox(std::move(content))) | bgcolor(kPanelAlt);
 }
 
+// what it does: Builds the keyboard shortcut label for a battle card slot.
+// what the inputs are: index - zero-based hand slot index.
+// what the outputs are: Returns the shortcut label text (std::string).
 std::string BattleKeyLabel(size_t index) {
     return index == 9 ? "0" : std::to_string(index + 1);
 }
 
+// what it does: Builds localized rules text for a card from authored or generated data.
+// what the inputs are: language - selected UI language; card - card definition to describe.
+// what the outputs are: Returns card description text (std::string).
 std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
     const std::string authored_description =
         language == UiLanguage::English && !card.descriptionEn.empty() ? card.descriptionEn : card.description;
@@ -439,10 +478,16 @@ std::string CardDescriptionText(UiLanguage language, const CardDef& card) {
     return generated.empty() ? TranslateGameText(language, card.description) : generated;
 }
 
+// what it does: Splits a card description into display-friendly lines.
+// what the inputs are: language - selected UI language; card - card definition to describe.
+// what the outputs are: Returns description lines (std::vector<std::string>).
 std::vector<std::string> CardDescriptionLines(UiLanguage language, const CardDef& card) {
     return SplitDisplayTextByPunctuation(CardDescriptionText(language, card));
 }
 
+// what it does: Joins card fact strings into compact localized text.
+// what the inputs are: language - selected UI language; facts - fact strings to join.
+// what the outputs are: Returns compact fact text (std::string).
 std::string CompactFactText(UiLanguage language, const std::vector<std::string>& facts) {
     if (facts.empty()) {
         return "";
@@ -458,12 +503,18 @@ std::string CompactFactText(UiLanguage language, const std::vector<std::string>&
     return result;
 }
 
+// what it does: Builds the localized scroll-control hint line.
+// what the inputs are: language - selected UI language.
+// what the outputs are: Returns scroll hint text (std::string).
 std::string ScrollHintLine(UiLanguage language) {
     return Tr(language,
               "Scroll: mouse wheel, PgUp/PgDn, Ctrl+Up/Ctrl+Down, or [ and ].",
               "滚动：鼠标滚轮、PgUp/PgDn、Ctrl+上/下，或 [ 和 ]。");
 }
 
+// what it does: Selects the accent color for a card type.
+// what the inputs are: card - card definition pointer, or nullptr for fallback.
+// what the outputs are: Returns the accent color (ftxui::Color).
 Color CardAccent(const CardDef* card) {
     if (card == nullptr) {
         return kDim;
@@ -486,6 +537,9 @@ Color CardAccent(const CardDef* card) {
     return kHull;
 }
 
+// what it does: Selects the frame color for a card rarity.
+// what the inputs are: card - card definition pointer, or nullptr for fallback.
+// what the outputs are: Returns the frame color (ftxui::Color).
 Color CardFrameColor(const CardDef* card) {
     if (card == nullptr) {
         return Color::RGB(214, 222, 232);
@@ -501,6 +555,9 @@ Color CardFrameColor(const CardDef* card) {
     return Color::RGB(232, 238, 247);
 }
 
+// what it does: Selects the background color for a card panel.
+// what the inputs are: card - card definition pointer, or nullptr for fallback; playable - whether the card is currently playable.
+// what the outputs are: Returns the background color (ftxui::Color).
 Color CardBackground(const CardDef* card, bool playable) {
     if (card == nullptr) {
         return kPanelAlt;
@@ -526,6 +583,9 @@ Color CardBackground(const CardDef* card, bool playable) {
     return Color::RGB(13, 34, 49);
 }
 
+// what it does: Renders a service-screen deck card with selectable and preview states.
+// what the inputs are: language - selected UI language; entry - owned card entry; selectable - whether this card can be chosen; hotkey - displayed shortcut number; direct_select_mode - whether click/enter selects directly; focused_target - whether this card is focused; purge_mode - whether purge styling is active; card_width - target panel width; upgrade_preview - optional upgraded card preview.
+// what the outputs are: Returns the service deck card element (ftxui::Element).
 Element ServiceDeckCardPanel(UiLanguage language,
                              const CardOwnershipEntry& entry,
                              bool selectable,
@@ -598,6 +658,9 @@ Element ServiceDeckCardPanel(UiLanguage language,
            size(HEIGHT, GREATER_THAN, 10);
 }
 
+// what it does: Builds concise localized fact labels for a card's mechanics.
+// what the inputs are: language - selected UI language; card - card definition to summarize.
+// what the outputs are: Returns card fact labels (std::vector<std::string>).
 std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     std::vector<std::string> facts;
     const bool ability_card = card.type == "Ability";
@@ -751,6 +814,9 @@ std::vector<std::string> CardFacts(UiLanguage language, const CardDef& card) {
     return facts;
 }
 
+// what it does: Builds localized player status lines for map and encounter panels.
+// what the inputs are: language - selected UI language; state - current run state.
+// what the outputs are: Returns player status lines (std::vector<std::string>).
 std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& state) {
     const bool has_origin = std::find(state.player.relics.begin(), state.player.relics.end(), "origin") !=
                             state.player.relics.end();
@@ -778,6 +844,9 @@ std::vector<std::string> PlayerStatusLines(UiLanguage language, const RunState& 
     return lines;
 }
 
+// what it does: Builds localized player summary lines for the battle page.
+// what the inputs are: language - selected UI language; state - current run state.
+// what the outputs are: Returns battle player summary lines (std::vector<std::string>).
 std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const RunState& state) {
     const bool has_origin = std::find(state.player.relics.begin(), state.player.relics.end(), "origin") !=
                             state.player.relics.end();
@@ -842,6 +911,9 @@ std::vector<std::string> BattlePlayerSummaryLines(UiLanguage language, const Run
     return lines;
 }
 
+// what it does: Builds localized enemy summary lines for the battle page.
+// what the inputs are: language - selected UI language; state - current run state.
+// what the outputs are: Returns battle enemy summary lines (std::vector<std::string>).
 std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunState& state) {
     std::vector<std::string> lines;
     lines.push_back(Tr(language, "Intent: ", "意图：") + IntentSummary(language, state));
@@ -871,6 +943,9 @@ std::vector<std::string> BattleEnemySummaryLines(UiLanguage language, const RunS
     return lines;
 }
 
+// what it does: Renders a battle entity panel with hull gauge and detail lines.
+// what the inputs are: title - panel title; hull_label - hull gauge label; hp - current hull value; max_hp - maximum hull value; accent - accent color; lines - detail lines.
+// what the outputs are: Returns the battle entity panel element (ftxui::Element).
 Element BattleEntityPanel(const std::string& title,
                           const std::string& hull_label,
                           int hp,
@@ -888,6 +963,9 @@ Element BattleEntityPanel(const std::string& title,
     return window(text(title) | color(accent) | bold, vbox(std::move(content))) | bgcolor(kPanel);
 }
 
+// what it does: Renders a titled action block around a button and hint text.
+// what the inputs are: title - action title; hint - helper text; button - FTXUI button component; accent - title color.
+// what the outputs are: Returns the action panel element (ftxui::Element).
 Element ActionPanel(const std::string& title, const std::string& hint, const Component& button, Color accent) {
     return window(text(title) | color(accent) | bold,
                   vbox({
@@ -898,6 +976,9 @@ Element ActionPanel(const std::string& title, const std::string& hint, const Com
            flex | bgcolor(kPanelAlt);
 }
 
+// what it does: Builds localized relic display lines for the current player.
+// what the inputs are: language - selected UI language; engine - game engine used for relic metadata; state - current run state.
+// what the outputs are: Returns relic display lines (std::vector<std::string>).
 std::vector<std::string> RelicLines(UiLanguage language, const GameEngine& engine, const RunState& state) {
     std::vector<std::string> lines;
     for (const std::string& relic_id : state.player.relics) {
