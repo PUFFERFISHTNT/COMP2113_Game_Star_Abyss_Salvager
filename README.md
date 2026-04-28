@@ -5,6 +5,10 @@ You pilot a salvager ship into the Star Abyss, route through unstable sectors, f
 
 The structure is inspired by **Slay the Spire**, but the implemented game logic is its own system: heat and overheat management, auxiliary ships, form switching, route events, story boss branches, an escape route, and a truth route.
 
+## Screenshot
+
+![Current gameplay screenshot](docs/images/game-screenshot.png)
+
 ## Team Members
 
 - `PUFFERFISHTNT` Xu Yukuan (3036478148)
@@ -104,6 +108,8 @@ flowchart LR
 
 ## Difficulty Modes
 
+![Launch setup screenshot](docs/images/launch-setup.png)
+
 ### Easy
 
 - current baseline difficulty with the existing forgiving balance
@@ -156,6 +162,8 @@ flowchart LR
 - auxiliary ship deployment, triggering, replacement, and dismantling
 - per-card upgrades loaded from `data/cards.json`
 
+![Battle bridge screenshot](docs/images/battle-bridge.png)
+
 ### Heat / Overheat
 
 - many cards raise or reduce heat
@@ -187,6 +195,8 @@ flowchart LR
   - card rewards
   - relic rewards on elite / boss victories
 
+![Repair station screenshot](docs/images/repair-station.png)
+
 ## UI and Quality-of-Life
 
 - full-screen FTXUI terminal UI
@@ -198,6 +208,10 @@ flowchart LR
 - leaderboard viewer
 - scrollable long pages
 - autosave and manual named saves
+
+![Card library screenshot](docs/images/card-library.png)
+
+![Achievements screenshot](docs/images/achivements.png)
 
 ## Compilation
 
@@ -292,63 +306,7 @@ The game reads or writes:
 - `data/leaderboard.txt`
   - recorded run results
 
-## COMP2113 Requirements
 
-### 1. Random Event Generation
-
-The project uses randomness for:
-
-- route option generation
-- event selection
-- enemy selection
-- card rewards
-- relic rewards
-- market offers
-- some event branches
-
-### 2. Data Structures
-
-The project uses:
-
-- `RunState`, `PlayerState`, `EnemyState`, `EncounterState`, `RewardState`, and `InfoState`
-- `std::vector` for piles, logs, relics, route options, encounters, achievements, and auxiliary ships
-- `std::array` for fixed UI button groups and labels
-- structured records such as `CardDef`, `CardView`, `NodeOption`, and `AuxiliaryShipState`
-
-### 3. Dynamic Memory Management
-
-The project relies on standard C++ dynamic facilities such as:
-
-- `std::vector`
-- `std::string`
-- `std::shared_ptr`
-- dynamically built FTXUI component trees
-
-### 4. File Input / Output
-
-The game reads and writes game content, saves, UI preferences, progression registries, and leaderboard records.
-
-### 5. Multiple Source Files
-
-The project is split across:
-
-- bootstrap
-- app shell
-- gameplay API
-- engine modules
-- UI modules
-- public headers
-
-### 6. Multiple Difficulty Levels
-
-The game implements:
-
-- `Easy`
-- `Normal`
-- `Hard`
-- `Hell`
-
-and exposes them directly in the setup page.
 
 ## Non-Standard Library
 
@@ -391,7 +349,3 @@ FTXUI is used for:
 `-- vendor/
     `-- FTXUI/
 ```
-
-## Notes
-
-- The route / ending flow image in `docs/images/true-ending-flow.png` matches the current in-game branch logic in this repository version.
