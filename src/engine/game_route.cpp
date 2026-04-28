@@ -4,6 +4,7 @@
 
 namespace {
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
@@ -28,6 +29,7 @@ bool g_sa_escape_intro_pending = true;
 bool g_sa_game_intro_pending = true;
 std::string g_sa_event_epilogue;
 
+// Starts a new run from difficulty and ship id, resets story flags, and returns nothing.
 void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     resetRunState();
     const ShipTemplate* ship = shipTemplateById(shipId);
@@ -83,6 +85,7 @@ void GameEngine::startNewRun(int difficulty, const std::string& shipId) {
     state_.statusLine = "Run initialized. Chart your first jump.";
 }
 
+// Moves to the main menu while preserving a resume page when a run exists and returns nothing.
 void GameEngine::showMainMenu() {
     if (state_.hasRun && state_.page != AppPage::MainMenu && state_.page != AppPage::Setup && state_.page != AppPage::Info) {
         resumePage_ = state_.page;
@@ -90,6 +93,7 @@ void GameEngine::showMainMenu() {
     state_.page = AppPage::MainMenu;
 }
 
+// Restores the active run to its resume page without input and returns nothing.
 void GameEngine::resumeRun() {
     if (!state_.hasRun) {
         return;
@@ -97,6 +101,7 @@ void GameEngine::resumeRun() {
     state_.page = resumePage_;
 }
 
+// Chooses the map node at the given index, starts its content, and returns nothing.
 void GameEngine::chooseNode(size_t index) {
     if (state_.page != AppPage::Map || index >= state_.routeOptions.size()) {
         return;
@@ -114,14 +119,17 @@ void GameEngine::chooseNode(size_t index) {
     }
 }
 
+// Sends the engine back to the main menu without input and returns nothing.
 void GameEngine::returnToMenu() {
     showMainMenu();
 }
 
+// Opens the setup page for another run without input and returns nothing.
 void GameEngine::startAnotherRun() {
     state_.page = AppPage::Setup;
 }
 
+// Builds route options for the current sector and story state and returns nothing.
 void GameEngine::generateRouteOptions() {
     state_.routeOptions.clear();
 
@@ -293,6 +301,7 @@ void GameEngine::generateRouteOptions() {
     }
 }
 
+// Starts the selected node's battle, service, story event, or encounter and returns nothing.
 void GameEngine::startEncounterForNode(const NodeOption& node) {
     if (node.typeId == "battle" || node.typeId == "elite" || node.typeId == "boss") {
         startBattle(node.typeId, node.enemyId);
@@ -574,6 +583,7 @@ void GameEngine::startEncounterForNode(const NodeOption& node) {
     }
 }
 
+// Completes the current node, advances route state, and returns nothing.
 void GameEngine::finishCurrentNode() {
     recordCurrentOwnedCards();
     state_.encounter = {};

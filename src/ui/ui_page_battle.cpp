@@ -12,6 +12,7 @@ using namespace ftxui;
 
 namespace {
 
+// Chooses how many battle cards fit in each row from terminal width and visible slots and returns it.
 int BattleCardsPerRow(int terminal_width, size_t visible_slots) {
     if (visible_slots == 0) {
         return 1;
@@ -31,6 +32,7 @@ int BattleCardsPerRow(int terminal_width, size_t visible_slots) {
     return 1;
 }
 
+// Calculates a stable battle card width from terminal width and row count and returns it.
 int BattleCardWidth(int terminal_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int available_width = std::max(24, terminal_width - 8);
@@ -38,6 +40,7 @@ int BattleCardWidth(int terminal_width, int cards_per_row) {
     return std::max(22, std::min(34, computed_width));
 }
 
+// Builds localized detail lines for the given auxiliary ship and returns them.
 std::vector<std::string> AuxiliaryShipDetailLines(UiLanguage language, const AuxiliaryShipState& ship) {
     std::vector<std::string> lines;
     std::vector<std::string> primary;
@@ -73,6 +76,7 @@ std::vector<std::string> AuxiliaryShipDetailLines(UiLanguage language, const Aux
     return lines;
 }
 
+// Renders one auxiliary slot from its index, optional ship, and highlight state and returns the element.
 Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliaryShipState* ship, bool highlighted) {
     if (ship == nullptr) {
         return vbox({
@@ -129,6 +133,7 @@ Element AuxiliaryShipSlot(UiLanguage language, int slot_index, const AuxiliarySh
            bgcolor(highlighted ? Color::RGB(66, 49, 16) : style.background);
 }
 
+// Renders the auxiliary bay from current state, records slot boxes when requested, and returns the panel.
 Element AuxiliaryShipPanel(UiLanguage language,
                            const RunState& state,
                            std::vector<ftxui::Box>* slot_boxes,
@@ -173,6 +178,7 @@ Element AuxiliaryShipPanel(UiLanguage language,
 
 // Battle is the densest screen in the project. Splitting it out keeps combat
 // layout, card visualization, and action affordances in one dedicated unit.
+// Renders the full battle page from current app and engine state and returns the page element.
 Element StarAbyssApp::RenderBattle() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;

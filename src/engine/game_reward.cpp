@@ -5,15 +5,18 @@
 
 namespace {
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
 }
 
+// Checks whether the card id belongs to the colorless pool and returns the result.
 bool IsColorlessCardId(const std::string& card_id) {
     return card_id.rfind("cl_", 0) == 0;
 }
 
+// Checks whether the card id belongs to the current ship pool and returns the result.
 bool MatchesShipCardPool(const std::string& card_id, const std::string& ship_id) {
     if (ship_id == "vanguard") {
         return card_id.rfind("vg_", 0) == 0 || card_id.rfind("vgh_", 0) == 0;
@@ -27,10 +30,12 @@ bool MatchesShipCardPool(const std::string& card_id, const std::string& ship_id)
     return false;
 }
 
+// Searches a list for the given card id and returns whether it is present.
 bool ContainsCardId(const std::vector<std::string>& card_ids, const std::string& card_id) {
     return std::find(card_ids.begin(), card_ids.end(), card_id) != card_ids.end();
 }
 
+// Removes temporary or upgrade markers from a reward card reference and returns the base id.
 std::string BaseRewardCardId(const std::string& card_ref) {
     constexpr const char* kTemporaryCopyPrefix = "tmp|";
     std::string ref = card_ref;
@@ -44,6 +49,7 @@ std::string BaseRewardCardId(const std::string& card_ref) {
     return ref;
 }
 
+// Adds base ids from the pile into the exclusion list and returns nothing.
 void AppendOwnedRewardExclusions(std::vector<std::string>* excluded, const std::vector<std::string>& pile) {
     if (excluded == nullptr) {
         return;
@@ -56,6 +62,7 @@ void AppendOwnedRewardExclusions(std::vector<std::string>* excluded, const std::
     }
 }
 
+// Builds an eligible reward pool from card data, ship id, exclusions, and optional rarity and returns it.
 std::vector<std::string> BuildRewardPool(const std::vector<CardDef>& card_pool,
                                          const std::string& ship_id,
                                          const std::vector<std::string>& excluded,
@@ -76,6 +83,7 @@ std::vector<std::string> BuildRewardPool(const std::vector<CardDef>& card_pool,
     return pool;
 }
 
+// Collects currently owned base card ids from the run state and returns them for reward filtering.
 std::vector<std::string> CurrentOwnedRewardExclusions(const RunState& state) {
     std::vector<std::string> excluded;
     excluded.reserve(state.player.drawPile.size() + state.player.hand.size() + state.player.discardPile.size());
@@ -92,6 +100,7 @@ std::vector<std::string> CurrentOwnedRewardExclusions(const RunState& state) {
     return excluded;
 }
 
+// Rolls a battle reward rarity from sector and random generator and returns the chosen rarity.
 CardRarity RollBattleRewardRarity(int sector, std::mt19937& rng) {
     const int clamped_sector = std::max(1, std::min(3, sector));
     const int uncommon_percent = 25 + (clamped_sector - 1) * 5;
@@ -110,6 +119,7 @@ CardRarity RollBattleRewardRarity(int sector, std::mt19937& rng) {
 
 }  // namespace
 
+// Applies the selected reward or skips when requested, then returns nothing.
 void GameEngine::chooseReward(int index) {
     if (state_.page != AppPage::Reward) {
         return;
@@ -127,6 +137,7 @@ void GameEngine::chooseReward(int index) {
     finishCurrentNode();
 }
 
+// Samples general ship-appropriate card rewards by count and returns their ids.
 std::vector<std::string> GameEngine::randomCardChoices(size_t count) {
     std::vector<std::string> choices;
     const std::vector<std::string> owned_excluded = CurrentOwnedRewardExclusions(state_);
@@ -159,6 +170,7 @@ std::vector<std::string> GameEngine::randomCardChoices(size_t count) {
     return choices;
 }
 
+// Samples battle reward cards using node type and count and returns their ids.
 std::vector<std::string> GameEngine::randomBattleCardChoices(size_t count, const std::string& nodeType) {
     std::vector<std::string> choices;
     auto add_card_of_rarity = [&](CardRarity rarity) {
@@ -191,6 +203,7 @@ std::vector<std::string> GameEngine::randomBattleCardChoices(size_t count, const
     return choices;
 }
 
+// Samples cards of one rarity by count and returns their ids.
 std::vector<std::string> GameEngine::randomCardChoicesByRarity(size_t count, CardRarity rarity) {
     std::vector<std::string> choices;
     const std::vector<std::string> owned_excluded = CurrentOwnedRewardExclusions(state_);
@@ -223,6 +236,7 @@ std::vector<std::string> GameEngine::randomCardChoicesByRarity(size_t count, Car
     return choices;
 }
 
+// Samples market cards by count and returns their ids.
 std::vector<std::string> GameEngine::randomMarketCardChoices(size_t count) {
     std::vector<std::string> pool;
     for (const CardDef& card : cardPool_) {
@@ -237,6 +251,7 @@ std::vector<std::string> GameEngine::randomMarketCardChoices(size_t count) {
     return pool;
 }
 
+// Chooses a random unowned relic without input and returns its id.
 std::string GameEngine::randomRelic() {
     std::vector<std::string> candidates;
     for (const RelicDef& relic : relicPool_) {

@@ -53,6 +53,7 @@ extern std::string g_sa_event_epilogue;
 // Engine-side ``dev_*`` hook implementations.
 // =============================================================================
 
+// Starts a developer run when needed, preserves registry snapshots, and returns nothing.
 void GameEngine::dev_initRunIfNeeded(int difficulty, const std::string& shipId) {
     if (!dev_session_active_) {
         dev_obtained_snapshot_ = obtainedCardIds_;
@@ -68,10 +69,12 @@ void GameEngine::dev_initRunIfNeeded(int difficulty, const std::string& shipId) 
     }
 }
 
+// Sets the run difficulty for developer mode and returns nothing.
 void GameEngine::dev_setDifficulty(int difficulty) {
     state_.difficulty = difficulty;
 }
 
+// Rebuilds player state for the selected ship id and returns nothing.
 void GameEngine::dev_setShip(const std::string& shipId) {
     const ShipTemplate* ship = shipTemplateById(shipId);
     if (ship == nullptr) {
@@ -80,29 +83,34 @@ void GameEngine::dev_setShip(const std::string& shipId) {
     setupPlayerForShip(*ship, state_.difficulty);
 }
 
+// Sets player hull to the requested value and returns nothing.
 void GameEngine::dev_setHp(int hp) {
     if (hp < 0) hp = 0;
     if (hp > state_.player.maxHp) state_.player.maxHp = hp;
     state_.player.hp = hp;
 }
 
+// Sets player maximum hull to the requested value and returns nothing.
 void GameEngine::dev_setMaxHp(int maxHp) {
     if (maxHp < 1) maxHp = 1;
     state_.player.maxHp = maxHp;
     if (state_.player.hp > maxHp) state_.player.hp = maxHp;
 }
 
+// Sets player energy to the requested value and returns nothing.
 void GameEngine::dev_setEnergy(int energy) {
     if (energy < 0) energy = 0;
     state_.player.energy = energy;
     if (state_.player.maxEnergy < energy) state_.player.maxEnergy = energy;
 }
 
+// Sets player scrap to the requested value and returns nothing.
 void GameEngine::dev_setScrap(int scrap) {
     if (scrap < 0) scrap = 0;
     state_.player.scrap = scrap;
 }
 
+// Sets player heat to the requested value, syncs overheat state, and returns nothing.
 void GameEngine::dev_setHeat(int heat) {
     if (heat < 0) heat = 0;
     if (heat > state_.player.maxHeat) heat = state_.player.maxHeat;
@@ -110,31 +118,38 @@ void GameEngine::dev_setHeat(int heat) {
     syncPlayerOverheatState();
 }
 
+// Sets player shield to the requested value and returns nothing.
 void GameEngine::dev_setShield(int shield) {
     if (shield < 0) shield = 0;
     state_.player.shield = shield;
 }
 
+// Adds the given delta to player hull and returns nothing.
 void GameEngine::dev_addHp(int delta) {
     dev_setHp(state_.player.hp + delta);
 }
 
+// Adds the given delta to player energy and returns nothing.
 void GameEngine::dev_addEnergy(int delta) {
     dev_setEnergy(state_.player.energy + delta);
 }
 
+// Adds the given delta to player scrap and returns nothing.
 void GameEngine::dev_addScrap(int delta) {
     dev_setScrap(state_.player.scrap + delta);
 }
 
+// Adds the given delta to player heat and returns nothing.
 void GameEngine::dev_addHeat(int delta) {
     dev_setHeat(state_.player.heat + delta);
 }
 
+// Adds the given delta to player shield and returns nothing.
 void GameEngine::dev_addShield(int delta) {
     dev_setShield(state_.player.shield + delta);
 }
 
+// Ends developer mode, restores snapshots, resets route flags, and returns nothing.
 void GameEngine::dev_shutdownSession() {
     if (dev_obtained_snapshot_valid_) {
         obtainedCardIds_ = dev_obtained_snapshot_;
@@ -162,6 +177,7 @@ void GameEngine::dev_shutdownSession() {
     g_sa_event_epilogue.clear();
 }
 
+// Jumps the developer run to the requested sector and depth and returns nothing.
 void GameEngine::dev_jumpToSector(int sector, int depth) {
     if (sector < 1) sector = 1;
     if (sector > 3) sector = 3;
@@ -179,12 +195,14 @@ void GameEngine::dev_jumpToSector(int sector, int depth) {
     state_.statusLine = "Dev jump applied.";
 }
 
+// Adds the given card id to the draw pile when valid and returns nothing.
 void GameEngine::dev_addCardToDrawPile(const std::string& cardId) {
     if (cardById(cardId) == nullptr) return;
     state_.player.drawPile.push_back(makeCardRef(cardId, 0));
     recordObtainedCard(cardId);
 }
 
+// Adds the given card id to hand or discard when valid and returns nothing.
 void GameEngine::dev_addCardToHand(const std::string& cardId) {
     if (cardById(cardId) == nullptr) return;
     if (static_cast<int>(state_.player.hand.size()) >= kBattleHandLimit) {
@@ -195,6 +213,7 @@ void GameEngine::dev_addCardToHand(const std::string& cardId) {
     recordObtainedCard(cardId);
 }
 
+// Plays the last card in hand during a developer battle and returns whether it tried to play.
 bool GameEngine::dev_playTopOfHand() {
     if (state_.page != AppPage::Battle || state_.player.hand.empty()) {
         return false;
@@ -207,12 +226,14 @@ bool GameEngine::dev_playTopOfHand() {
     return true;
 }
 
+// Starts a developer battle from node type and enemy id and returns nothing.
 void GameEngine::dev_startBattleWith(const std::string& nodeType, const std::string& enemyId) {
     state_.encounter = {};
     state_.reward = {};
     startBattle(nodeType, enemyId);
 }
 
+// Forces the current developer battle to victory and returns nothing.
 void GameEngine::dev_skipCurrentBattleAsVictory() {
     if (state_.page != AppPage::Battle) {
         return;
@@ -221,6 +242,7 @@ void GameEngine::dev_skipCurrentBattleAsVictory() {
     handleBattleVictory();
 }
 
+// Replaces current state with the supplied developer encounter data and returns nothing.
 void GameEngine::dev_forceEncounter(const std::string& typeId,
                                     const std::string& encounterId,
                                     const std::string& title,
@@ -239,6 +261,7 @@ void GameEngine::dev_forceEncounter(const std::string& typeId,
     resumePage_ = AppPage::Encounter;
 }
 
+// Jumps to the requested escape story stage and returns nothing.
 void GameEngine::dev_setEscapeStage(int stage) {
     if (stage < 1) stage = 1;
     if (stage > 8) stage = 8;
@@ -252,6 +275,7 @@ void GameEngine::dev_setEscapeStage(int stage) {
     startEncounterForNode(node);
 }
 
+// Jumps to the requested truth story stage and post-battle state and returns nothing.
 void GameEngine::dev_setTruthStage(int stage, bool postBattle) {
     if (stage < 1) stage = 1;
     if (stage > 6) stage = 6;
@@ -276,6 +300,7 @@ void GameEngine::dev_setTruthStage(int stage, bool postBattle) {
     }
 }
 
+// Shows a selected ending summary by kind and returns nothing.
 void GameEngine::dev_showEnding(int kind) {
     fillSummary(true);
     if (kind == 1) {
@@ -314,6 +339,7 @@ void GameEngine::dev_showEnding(int kind) {
     }
 }
 
+// Returns the developer run to map state and returns nothing.
 void GameEngine::dev_returnToMap() {
     state_.encounter = {};
     state_.reward = {};
@@ -325,6 +351,7 @@ void GameEngine::dev_returnToMap() {
     state_.statusLine = "Dev: returned to map.";
 }
 
+// Lists all card ids for developer menus and returns them.
 std::vector<std::string> GameEngine::dev_listCardIds() const {
     std::vector<std::string> ids;
     ids.reserve(cardPool_.size());
@@ -334,6 +361,7 @@ std::vector<std::string> GameEngine::dev_listCardIds() const {
     return ids;
 }
 
+// Lists card ids with display names for developer menus and returns the pairs.
 std::vector<std::pair<std::string, std::string>>
 GameEngine::dev_listCardsWithNames() const {
     std::vector<std::pair<std::string, std::string>> out;
@@ -344,6 +372,7 @@ GameEngine::dev_listCardsWithNames() const {
     return out;
 }
 
+// Lists enemy ids with display names for developer menus and returns the pairs.
 std::vector<std::pair<std::string, std::string>>
 GameEngine::dev_listEnemiesWithNames() const {
     std::vector<std::pair<std::string, std::string>> out;
@@ -354,6 +383,7 @@ GameEngine::dev_listEnemiesWithNames() const {
     return out;
 }
 
+// Lists ship ids with display names for developer menus and returns the pairs.
 std::vector<std::pair<std::string, std::string>>
 GameEngine::dev_listShipsWithNames() const {
     std::vector<std::pair<std::string, std::string>> out;
@@ -395,6 +425,7 @@ struct SceneEntry {
     const char* payload;
 };
 
+// Checks a scene entry and returns whether it should appear in the map scene picker.
 bool IsSelectableMapScene(const SceneEntry& entry) {
     if (entry.sceneKey == nullptr) {
         return false;
@@ -410,6 +441,7 @@ bool IsSelectableMapScene(const SceneEntry& entry) {
     return true;
 }
 
+// Copies optional encounter text entries into strings and returns the list.
 std::vector<std::string> CopyEncounterText(const std::array<const char*, 4>& values) {
     std::vector<std::string> out;
     for (const char* value : values) {
@@ -421,6 +453,7 @@ std::vector<std::string> CopyEncounterText(const std::array<const char*, 4>& val
     return out;
 }
 
+// Loads a static encounter entry into the engine and returns nothing.
 void ForceStaticEncounter(GameEngine& engine, const EncounterEntry& entry) {
     engine.dev_forceEncounter(entry.typeId,
                               entry.encounterId == nullptr ? "" : entry.encounterId,
@@ -430,6 +463,7 @@ void ForceStaticEncounter(GameEngine& engine, const EncounterEntry& entry) {
                               CopyEncounterText(entry.detailsEn));
 }
 
+// Provides the static developer encounter catalogue without input and returns it.
 const std::vector<EncounterEntry>& EncounterCatalogue() {
     static const std::vector<EncounterEntry> kEntries = {
         {"A1 Distress Beacon", "A1 求救信标", "event", "event_a1",
@@ -549,6 +583,7 @@ const std::vector<EncounterEntry>& EncounterCatalogue() {
     return kEntries;
 }
 
+// Provides the static developer scene catalogue without input and returns it.
 const std::vector<SceneEntry>& SceneCatalogue() {
     static const std::vector<SceneEntry> kEntries = {
         {"Intro · Game Opening", "序章 · 游戏开场", "route", "game_intro"},
@@ -598,6 +633,7 @@ const std::vector<SceneEntry>& SceneCatalogue() {
 
 // Look up an encounter by its engine encounterId. Returns nullptr if the
 // catalogue does not own that ID (e.g. random escape/truth events).
+// Finds a static encounter by id and returns its catalogue entry when present.
 const EncounterEntry* FindEncounterById(const std::string& id) {
     if (id.empty()) {
         return nullptr;
@@ -612,6 +648,7 @@ const EncounterEntry* FindEncounterById(const std::string& id) {
 
 }  // namespace
 
+// Opens the requested developer scene from scene key and payload and returns nothing.
 void GameEngine::dev_openDebugScene(const std::string& sceneKey,
                                     const std::string& payload) {
     const std::string shipId = state_.player.shipId.empty() ? "vanguard" : state_.player.shipId;
@@ -722,6 +759,7 @@ void GameEngine::dev_openDebugScene(const std::string& sceneKey,
     }
 }
 
+// Reopens the current encounter through the developer catalogue when possible and returns nothing.
 void GameEngine::dev_reloadCurrentEncounter() {
     const std::string& encounterId = state_.encounter.encounterId;
 
@@ -769,6 +807,7 @@ namespace dev_mode {
 
 using namespace ftxui;
 
+// Builds the developer UI around the engine, language, visibility flag, and close callback.
 DevModeUi::DevModeUi(GameEngine& engine,
                      ScreenInteractive& /*screen*/,
                      UiLanguage& language,
@@ -1036,6 +1075,7 @@ DevModeUi::DevModeUi(GameEngine& engine,
     });
 }
 
+// Opens the developer modal, chooses the proper page, and returns nothing.
 void DevModeUi::open() {
     visible_ = true;
     page_ = unlocked_ ? Main : Password;
@@ -1043,6 +1083,7 @@ void DevModeUi::open() {
     status_line_.clear();
 }
 
+// Closes the developer modal, clears password text, and returns nothing.
 void DevModeUi::dismissModal() {
     visible_ = false;
     password_input_.clear();
@@ -1050,6 +1091,7 @@ void DevModeUi::dismissModal() {
     if (on_close_) on_close_();
 }
 
+// Exits developer mode through the engine, hides panels, and returns nothing.
 void DevModeUi::exitDeveloperMode() {
     engine_.dev_shutdownSession();
     visible_ = false;
@@ -1057,6 +1099,7 @@ void DevModeUi::exitDeveloperMode() {
     if (on_close_) on_close_();
 }
 
+// Handles one overlay keyboard event and returns whether it was consumed.
 bool DevModeUi::handleOverlayEvent(Event event) {
     if (!debug_panel_visible_ && !event_panel_visible_) {
         return false;
@@ -1075,6 +1118,7 @@ bool DevModeUi::handleOverlayEvent(Event event) {
     return true;
 }
 
+// Resets developer UI selections, panels, and text fields, then returns nothing.
 void DevModeUi::resetUiState() {
     page_ = Password;
     password_input_.clear();
@@ -1093,6 +1137,7 @@ void DevModeUi::resetUiState() {
     ending_index_ = 0;
 }
 
+// Opens the floating debug panel when unlocked and returns nothing.
 void DevModeUi::openDebugPanel() {
     if (!unlocked_) {
         return;
@@ -1102,11 +1147,13 @@ void DevModeUi::openDebugPanel() {
     overlay_page_ = 1;
 }
 
+// Closes the floating debug panel and returns nothing.
 void DevModeUi::closeDebugPanel() {
     debug_panel_visible_ = false;
     overlay_page_ = 0;
 }
 
+// Opens the developer event panel when unlocked and returns nothing.
 void DevModeUi::openEventPanel() {
     if (!unlocked_) {
         return;
@@ -1116,11 +1163,13 @@ void DevModeUi::openEventPanel() {
     overlay_page_ = 2;
 }
 
+// Closes the developer event panel and returns nothing.
 void DevModeUi::closeEventPanel() {
     event_panel_visible_ = false;
     overlay_page_ = 0;
 }
 
+// Rebuilds developer destination labels and targets from static routes and returns nothing.
 void DevModeUi::rebuildDestinationOptions() {
     destination_labels_.clear();
     destination_targets_.clear();
@@ -1148,6 +1197,7 @@ void DevModeUi::rebuildDestinationOptions() {
     }
 }
 
+// Rebuilds all localized developer UI labels and option lists and returns nothing.
 void DevModeUi::rebuildLabels() {
     const bool zh = (language_ == UiLanguage::Chinese);
 
@@ -1258,6 +1308,7 @@ void DevModeUi::rebuildLabels() {
     rebuildDestinationOptions();
 }
 
+// Renders the password modal without input and returns the element.
 Element DevModeUi::renderPassword() const {
     Elements rows;
     rows.push_back(text(title_label_) | bold | color(kGold) | center);
@@ -1281,6 +1332,7 @@ Element DevModeUi::renderPassword() const {
     }) | clear_under;
 }
 
+// Renders the main developer modal without input and returns the element.
 Element DevModeUi::renderMain() const {
     auto section = [&](const std::string& title, std::vector<Element> body) {
         Elements rows;
@@ -1329,6 +1381,7 @@ Element DevModeUi::renderMain() const {
     }) | clear_under;
 }
 
+// Renders the floating overlay or active panel without input and returns the element.
 Element DevModeUi::renderOverlay() const {
     if (!unlocked_ || visible_) {
         return text("");
@@ -1360,6 +1413,7 @@ Element DevModeUi::renderOverlay() const {
     });
 }
 
+// Renders the live debug stats panel without input and returns the element.
 Element DevModeUi::renderDebugPanel() const {
     const RunState& s = engine_.state();
 
@@ -1437,6 +1491,7 @@ Element DevModeUi::renderDebugPanel() const {
             borderDouble | bgcolor(kAbyss)) | clear_under;
 }
 
+// Renders the developer event picker without input and returns the element.
 Element DevModeUi::renderEventPanel() const {
     Elements rows;
     rows.push_back(text(label_event_panel_title_) | bold | color(kGold) | center);

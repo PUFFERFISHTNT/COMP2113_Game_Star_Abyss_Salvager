@@ -10,6 +10,7 @@ using namespace ftxui;
 
 namespace {
 
+// Builds the localized description for a difficulty index and returns it.
 std::string DifficultyDescription(UiLanguage language, int difficulty_index) {
     switch (difficulty_index) {
     case 0:
@@ -31,6 +32,7 @@ std::string DifficultyDescription(UiLanguage language, int difficulty_index) {
     }
 }
 
+// Builds the localized description for a ship index and returns it.
 std::string ShipDescription(UiLanguage language, int ship_index) {
     switch (ship_index) {
     case 0:
@@ -52,6 +54,7 @@ std::string ShipDescription(UiLanguage language, int ship_index) {
 
 // Launch setup remains small, but isolating it now avoids mixing configuration
 // widgets with the much denser battle/map rendering logic.
+// Renders launch setup from current selection state and returns the page element.
 Element StarAbyssApp::RenderSetup() const {
     const std::string difficulty_description = DifficultyDescription(language_, difficultyIndex_);
     const std::string ship_description = ShipDescription(language_, shipIndex_);

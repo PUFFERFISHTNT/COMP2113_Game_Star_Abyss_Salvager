@@ -21,6 +21,7 @@ extern std::string g_sa_event_epilogue;
 
 namespace {
 
+// Splits a line with the given delimiter and returns the pieces.
 std::vector<std::string> Split(const std::string& line, char delimiter) {
     std::vector<std::string> parts;
     std::stringstream stream(line);
@@ -31,6 +32,7 @@ std::vector<std::string> Split(const std::string& line, char delimiter) {
     return parts;
 }
 
+// Parses an integer from text and returns the fallback when parsing fails.
 int ToInt(const std::string& value, int fallback = 0) {
     try {
         return std::stoi(value);
@@ -39,10 +41,12 @@ int ToInt(const std::string& value, int fallback = 0) {
     }
 }
 
+// Converts a boolean to the save-file token string and returns it.
 std::string BoolToken(bool value) {
     return value ? "1" : "0";
 }
 
+// Removes the given save-file key prefix from a line and returns the remaining value.
 std::string ValueAfterKey(const std::string& line, const char* key_with_delimiter) {
     const std::string prefix(key_with_delimiter);
     if (line.rfind(prefix, 0) != 0) {
@@ -51,6 +55,7 @@ std::string ValueAfterKey(const std::string& line, const char* key_with_delimite
     return line.substr(prefix.size());
 }
 
+// Converts an app page enum to its save-file token and returns it.
 std::string PageToString(AppPage page) {
     switch (page) {
     case AppPage::MainMenu:
@@ -73,6 +78,7 @@ std::string PageToString(AppPage page) {
     return "MainMenu";
 }
 
+// Parses an app page token from a save file and returns the page enum.
 AppPage PageFromString(const std::string& value) {
     if (value == "Setup") {
         return AppPage::Setup;
@@ -98,6 +104,7 @@ AppPage PageFromString(const std::string& value) {
     return AppPage::MainMenu;
 }
 
+// Builds the sidecar path for legacy upgraded-card data and returns it.
 std::string UpgradedCardsJsonPath(const std::string& save_path) {
     namespace fs = std::filesystem;
     const fs::path path(save_path);
@@ -106,6 +113,7 @@ std::string UpgradedCardsJsonPath(const std::string& save_path) {
 
 }  // namespace
 
+// Writes the current run to the given file path and returns whether saving succeeded.
 bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     if (!state_.hasRun && state_.page != AppPage::Summary) {
         if (error != nullptr) {
@@ -325,6 +333,7 @@ bool GameEngine::saveToFile(const std::string& path, std::string* error) const {
     return true;
 }
 
+// Reads a run from the given file path, validates it, and returns whether loading succeeded.
 bool GameEngine::loadFromFile(const std::string& path, std::string* error) {
     std::ifstream input(path.c_str());
     if (!input) {

@@ -20,6 +20,7 @@ struct GlyphStyle {
 
 using Palette = std::unordered_map<char, GlyphStyle>;
 
+// Repeats a pattern until it reaches the requested width and returns the trimmed string.
 std::string RepeatPatternToWidth(const std::string& pattern, int width) {
     if (width <= 0 || pattern.empty()) {
         return "";
@@ -33,6 +34,7 @@ std::string RepeatPatternToWidth(const std::string& pattern, int width) {
     return out;
 }
 
+// Measures the given FTXUI box and returns its width in terminal cells.
 int BoxWidth(const Box& box) {
     if (box.x_max < box.x_min || box.y_max < box.y_min) {
         return 0;
@@ -40,6 +42,7 @@ int BoxWidth(const Box& box) {
     return box.x_max - box.x_min + 1;
 }
 
+// Repeats the given glyph count times and returns the combined string.
 std::string RepeatGlyph(const std::string& glyph, int count) {
     std::string out;
     out.reserve(glyph.size() * static_cast<size_t>(count));
@@ -49,6 +52,7 @@ std::string RepeatGlyph(const std::string& glyph, int count) {
     return out;
 }
 
+// Renders an encoded sprite row with the provided palette and returns an FTXUI element.
 Element RenderSpriteRow(const std::string& row, const Palette& palette) {
     Elements segments;
     size_t cursor = 0;
@@ -78,6 +82,7 @@ Element RenderSpriteRow(const std::string& row, const Palette& palette) {
     return hbox(std::move(segments));
 }
 
+// Converts encoded sprite rows through the palette and returns the rendered elements.
 Elements RenderSprite(const std::vector<std::string>& rows, const Palette& palette) {
     Elements rendered;
     rendered.reserve(rows.size());
@@ -87,6 +92,7 @@ Elements RenderSprite(const std::vector<std::string>& rows, const Palette& palet
     return rendered;
 }
 
+// Builds the Vanguard color palette from the animation tick and returns it.
 Palette VanguardPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(255, 156, 71) : Color::RGB(255, 214, 92);
     return {
@@ -97,6 +103,7 @@ Palette VanguardPalette(int tick) {
     };
 }
 
+// Builds the Drift Fox color palette from the animation tick and returns it.
 Palette DriftFoxPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(255, 146, 78) : Color::RGB(255, 196, 97);
     return {
@@ -107,6 +114,7 @@ Palette DriftFoxPalette(int tick) {
     };
 }
 
+// Builds the Iron Bastion color palette from the animation tick and returns it.
 Palette IronBastionPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(255, 170, 99) : Color::RGB(255, 224, 120);
     return {
@@ -117,6 +125,7 @@ Palette IronBastionPalette(int tick) {
     };
 }
 
+// Builds the common enemy color palette from the animation tick and returns it.
 Palette CommonEnemyPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(255, 101, 98) : Color::RGB(255, 169, 84);
     return {
@@ -127,6 +136,7 @@ Palette CommonEnemyPalette(int tick) {
     };
 }
 
+// Builds the Furnace Carrier color palette from the animation tick and returns it.
 Palette FurnaceCarrierPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(255, 124, 73) : Color::RGB(255, 189, 101);
     return {
@@ -137,6 +147,7 @@ Palette FurnaceCarrierPalette(int tick) {
     };
 }
 
+// Builds the Abyss Core Sentinel color palette from the animation tick and returns it.
 Palette SentinelPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(163, 229, 136) : Color::RGB(125, 255, 209);
     return {
@@ -147,6 +158,7 @@ Palette SentinelPalette(int tick) {
     };
 }
 
+// Builds the Genesis Guardian color palette from the animation tick and returns it.
 Palette GenesisGuardianPalette(int tick) {
     const Color engine = tick % 2 == 0 ? Color::RGB(159, 241, 255) : Color::RGB(255, 215, 138);
     return {
@@ -158,6 +170,7 @@ Palette GenesisGuardianPalette(int tick) {
     };
 }
 
+// Provides the encoded Vanguard sprite rows without input and returns them.
 std::vector<std::string> VanguardRows() {
     return {
         "          c          ",
@@ -171,6 +184,7 @@ std::vector<std::string> VanguardRows() {
     };
 }
 
+// Provides the encoded Drift Fox sprite rows without input and returns them.
 std::vector<std::string> DriftFoxRows() {
     return {
         "          c          ",
@@ -184,6 +198,7 @@ std::vector<std::string> DriftFoxRows() {
     };
 }
 
+// Provides the encoded Iron Bastion sprite rows without input and returns them.
 std::vector<std::string> IronBastionRows() {
     return {
         "        ccccc        ",
@@ -197,6 +212,7 @@ std::vector<std::string> IronBastionRows() {
     };
 }
 
+// Provides the encoded common enemy sprite rows without input and returns them.
 std::vector<std::string> CommonEnemyRows() {
     return {
         "        yyyyy        ",
@@ -209,6 +225,7 @@ std::vector<std::string> CommonEnemyRows() {
     };
 }
 
+// Provides the encoded Furnace Carrier sprite rows without input and returns them.
 std::vector<std::string> FurnaceCarrierRows() {
     return {
         "      yyyyyyyyy      ",
@@ -221,6 +238,7 @@ std::vector<std::string> FurnaceCarrierRows() {
     };
 }
 
+// Provides the encoded Abyss Core Sentinel sprite rows without input and returns them.
 std::vector<std::string> SentinelRows() {
     return {
         "          y          ",
@@ -234,6 +252,7 @@ std::vector<std::string> SentinelRows() {
     };
 }
 
+// Provides the encoded Creation Core Guardian sprite rows without input and returns them.
 std::vector<std::string> GenesisGuardianRows() {
     return {
         "          yyy          ",
@@ -251,6 +270,7 @@ std::vector<std::string> GenesisGuardianRows() {
 
 }  // namespace
 
+// Chooses player ship art from the run state and tick and returns rendered rows.
 Elements PlayerArt(const RunState& state, int tick) {
     if (state.player.shipId == "iron_bastion") {
         return RenderSprite(IronBastionRows(), IronBastionPalette(tick));
@@ -261,6 +281,7 @@ Elements PlayerArt(const RunState& state, int tick) {
     return RenderSprite(VanguardRows(), VanguardPalette(tick));
 }
 
+// Chooses enemy art from the run state and tick and returns rendered rows.
 Elements EnemyArt(const RunState& state, int tick) {
     if (state.enemy.enemyId == "creation_core_guardian") {
         return RenderSprite(GenesisGuardianRows(), GenesisGuardianPalette(tick));
@@ -274,6 +295,7 @@ Elements EnemyArt(const RunState& state, int tick) {
     return RenderSprite(CommonEnemyRows(), CommonEnemyPalette(tick));
 }
 
+// Uses the reflected lane box or terminal size to return a safe lane width hint.
 int LaneWidthHint(const Box& lane_box) {
     const int reflected_width = BoxWidth(lane_box);
     if (reflected_width > 0) {
@@ -283,6 +305,7 @@ int LaneWidthHint(const Box& lane_box) {
     return std::max(24, terminal_width / 3 - 8);
 }
 
+// Builds animated combat lane rows from current state, tick, and width and returns them.
 std::vector<std::string> LaneRows(const RunState& state, int tick, int width) {
     width = std::max(24, width);
     const std::string stars[3] = {

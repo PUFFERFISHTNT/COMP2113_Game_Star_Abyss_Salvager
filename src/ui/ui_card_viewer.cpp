@@ -12,6 +12,7 @@ using namespace ftxui;
 
 namespace {
 
+// Chooses how many cards fit in each viewer row from terminal width and visible count and returns it.
 int CardViewerCardsPerRow(int terminal_width, size_t visible_cards) {
     if (visible_cards == 0) {
         return 1;
@@ -25,6 +26,7 @@ int CardViewerCardsPerRow(int terminal_width, size_t visible_cards) {
     return 1;
 }
 
+// Calculates a stable card width from terminal width and cards per row and returns it.
 int CardViewerCardWidth(int terminal_width, int cards_per_row) {
     const int safe_columns = std::max(1, cards_per_row);
     const int available_width = std::max(32, terminal_width - 18);
@@ -32,6 +34,7 @@ int CardViewerCardWidth(int terminal_width, int cards_per_row) {
     return std::max(28, std::min(44, computed_width));
 }
 
+// Renders one library or owned-card entry from its view data and returns the panel element.
 Element CardViewerEntryPanel(UiLanguage language,
                              const CardView& card_view,
                              int copies,
@@ -77,6 +80,7 @@ Element CardViewerEntryPanel(UiLanguage language,
            size(HEIGHT, GREATER_THAN, 10);
 }
 
+// Renders one achievement entry from its data and category label and returns the panel element.
 Element AchievementEntryPanel(UiLanguage language,
                               const AchievementEntry& entry,
                               const std::string& category_label,
@@ -106,6 +110,7 @@ Element AchievementEntryPanel(UiLanguage language,
 
 }  // namespace
 
+// Renders the card viewer or achievements overlay from current app state and returns it.
 Element StarAbyssApp::RenderCardViewer() const {
     const int terminal_width = Terminal::Size().dimx;
     const int terminal_height = Terminal::Size().dimy;

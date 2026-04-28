@@ -11,10 +11,12 @@
 
 using namespace ftxui;
 
+// Wraps the given element in a vertical scroll frame at the requested line and returns it.
 Element StarAbyssApp::ApplyVerticalScrollFrame(Element content, int scroll_line) const {
     return content | focusPosition(0, scroll_line) | vscroll_indicator | yframe;
 }
 
+// Moves the currently active scroll position by the line delta and returns true after handling it.
 bool StarAbyssApp::ScrollActiveView(int delta_lines) {
     int& scroll_line = saveDialogVisible_ ? saveDialogScrollLine_
                                           : (cardViewerVisible_ ? cardViewerScrollLine_
@@ -23,6 +25,7 @@ bool StarAbyssApp::ScrollActiveView(int delta_lines) {
     return true;
 }
 
+// Handles one keyboard or mouse event across overlays and pages and returns whether it was consumed.
 bool StarAbyssApp::HandleEvent(Event event) {
     const auto contains = [](const Box& box, int x, int y) {
         return x >= box.x_min && x <= box.x_max && y >= box.y_min && y <= box.y_max;
@@ -507,6 +510,7 @@ bool StarAbyssApp::HandleEvent(Event event) {
     return false;
 }
 
+// Opens the requested card viewer mode when allowed by the current UI state and returns nothing.
 void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
     if (saveDialogVisible_ || mode == CardViewerMode::None) {
         return;
@@ -523,21 +527,25 @@ void StarAbyssApp::OpenCardViewer(CardViewerMode mode) {
     cardViewerScrollLine_ = 0;
 }
 
+// Closes the card viewer, resets its mode and scroll state, and returns nothing.
 void StarAbyssApp::CloseCardViewer() {
     cardViewerVisible_ = false;
     cardViewerMode_ = CardViewerMode::None;
     cardViewerScrollLine_ = 0;
 }
 
+// Toggles the requested battle pile inspector and returns nothing.
 void StarAbyssApp::ToggleBattlePileInspector(BattlePileInspector target) {
     battlePileInspector_ = battlePileInspector_ == target ? BattlePileInspector::None : target;
     pageScrollLines_[PageIndex(AppPage::Battle)] = 0;
 }
 
+// Closes any active battle pile inspector without input and returns nothing.
 void StarAbyssApp::CloseBattlePileInspector() {
     battlePileInspector_ = BattlePileInspector::None;
 }
 
+// Leaves the info screen for the correct run page or menu and returns nothing.
 void StarAbyssApp::BackFromInfo() {
     if (infoReturnsToRun_ && engine_.state().hasRun) engine_.resumeRun();
     else engine_.showMainMenu();

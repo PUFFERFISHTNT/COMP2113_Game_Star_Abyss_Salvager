@@ -7,6 +7,7 @@ enum class SaveDialogMode {
     Load,
 };
 
+// Checks one byte from a save name and returns whether it is allowed.
 bool IsAllowedSaveNameChar(unsigned char ch);
 
 #endif

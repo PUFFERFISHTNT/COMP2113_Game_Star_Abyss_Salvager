@@ -12,15 +12,18 @@ constexpr const char* kObtainedCardsRegistryPath = "save/obtained_cards.txt";
 constexpr const char* kCompletedEventsRegistryPath = "save/completed_events.txt";
 constexpr const char* kSeenEnemiesRegistryPath = "save/seen_enemies.txt";
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
 }
 
+// Searches a string list for the requested value and returns whether it exists.
 bool HasString(const std::vector<std::string>& values, const std::string& needle) {
     return std::find(values.begin(), values.end(), needle) != values.end();
 }
 
+// Trims registry-style ASCII whitespace from a string and returns the result.
 std::string TrimAscii(const std::string& value) {
     size_t begin = 0;
     while (begin < value.size() && (value[begin] == ' ' || value[begin] == '\t' || value[begin] == '\r')) {
@@ -35,6 +38,7 @@ std::string TrimAscii(const std::string& value) {
 
 }  // namespace
 
+// Loads cards, enemies, ships, relics, and registries into the engine and returns nothing.
 void GameEngine::initializeData() {
     std::string error;
     const std::string cards_path = ResolveCardsJsonPath();
@@ -128,10 +132,12 @@ void GameEngine::initializeData() {
     };
 }
 
+// Checks the obtained-card registry for a card id or reference and returns whether it is present.
 bool GameEngine::hasObtainedCard(const std::string& cardId) const {
     return HasString(obtainedCardIds_, baseCardId(cardId));
 }
 
+// Records one card reference as obtained, persists it when allowed, and returns nothing.
 void GameEngine::recordObtainedCard(const std::string& cardRef) {
     if (dev_session_active_) {
         return;
@@ -147,6 +153,7 @@ void GameEngine::recordObtainedCard(const std::string& cardRef) {
     saveObtainedCardRegistry(nullptr);
 }
 
+// Records every card currently owned by the player and returns nothing.
 void GameEngine::recordCurrentOwnedCards() {
     if (dev_session_active_) {
         return;
@@ -183,6 +190,7 @@ void GameEngine::recordCurrentOwnedCards() {
     saveObtainedCardRegistry(nullptr);
 }
 
+// Adds one owned card reference to discard, records ownership, and returns nothing.
 void GameEngine::queueOwnedCardToDiscard(const std::string& cardRef) {
     if (cardRef.empty()) {
         return;
@@ -192,12 +200,14 @@ void GameEngine::queueOwnedCardToDiscard(const std::string& cardRef) {
     recordCurrentOwnedCards();
 }
 
+// Adds each given card reference to discard and returns nothing.
 void GameEngine::queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs) {
     for (const std::string& cardRef : cardRefs) {
         queueOwnedCardToDiscard(cardRef);
     }
 }
 
+// Loads obtained-card ids from persistent storage and returns nothing.
 void GameEngine::loadObtainedCardRegistry() {
     obtainedCardIds_.clear();
     std::ifstream input(kObtainedCardsRegistryPath);
@@ -218,6 +228,7 @@ void GameEngine::loadObtainedCardRegistry() {
     obtainedCardIds_.erase(unique_end, obtainedCardIds_.end());
 }
 
+// Saves obtained-card ids, fills error when needed, and returns whether saving worked.
 bool GameEngine::saveObtainedCardRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -239,6 +250,7 @@ bool GameEngine::saveObtainedCardRegistry(std::string* error) const {
     return true;
 }
 
+// Checks event achievement completion by encounter id and returns the result.
 bool GameEngine::hasCompletedEventAchievement(const std::string& encounterId) const {
     return std::any_of(completedEventAchievements_.begin(),
                        completedEventAchievements_.end(),
@@ -247,6 +259,7 @@ bool GameEngine::hasCompletedEventAchievement(const std::string& encounterId) co
                        });
 }
 
+// Records one completed event achievement from id and title and returns nothing.
 void GameEngine::recordCompletedEventAchievement(const std::string& encounterId, const std::string& title) {
     if (dev_session_active_ || encounterId.empty() || title.empty() || hasCompletedEventAchievement(encounterId)) {
         return;
@@ -263,6 +276,7 @@ void GameEngine::recordCompletedEventAchievement(const std::string& encounterId,
     saveCompletedEventAchievementRegistry(nullptr);
 }
 
+// Loads completed event achievements from storage and returns nothing.
 void GameEngine::loadCompletedEventAchievementRegistry() {
     completedEventAchievements_.clear();
     std::ifstream input(kCompletedEventsRegistryPath);
@@ -293,6 +307,7 @@ void GameEngine::loadCompletedEventAchievementRegistry() {
               });
 }
 
+// Saves completed event achievements, fills error when needed, and returns whether saving worked.
 bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -314,10 +329,12 @@ bool GameEngine::saveCompletedEventAchievementRegistry(std::string* error) const
     return true;
 }
 
+// Checks the seen-enemy registry for the given enemy id and returns the result.
 bool GameEngine::hasSeenEnemy(const std::string& enemyId) const {
     return HasString(seenEnemyIds_, enemyId);
 }
 
+// Records an enemy id as seen, persists it when allowed, and returns nothing.
 void GameEngine::recordSeenEnemy(const std::string& enemyId) {
     if (dev_session_active_ || enemyId.empty() || enemyTemplateById(enemyId) == nullptr || hasSeenEnemy(enemyId)) {
         return;
@@ -329,6 +346,7 @@ void GameEngine::recordSeenEnemy(const std::string& enemyId) {
     saveSeenEnemyRegistry(nullptr);
 }
 
+// Loads seen enemy ids from storage and returns nothing.
 void GameEngine::loadSeenEnemyRegistry() {
     seenEnemyIds_.clear();
     std::ifstream input(kSeenEnemiesRegistryPath);
@@ -349,6 +367,7 @@ void GameEngine::loadSeenEnemyRegistry() {
     seenEnemyIds_.erase(unique_end, seenEnemyIds_.end());
 }
 
+// Saves seen enemy ids, fills error when needed, and returns whether saving worked.
 bool GameEngine::saveSeenEnemyRegistry(std::string* error) const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -370,6 +389,7 @@ bool GameEngine::saveSeenEnemyRegistry(std::string* error) const {
     return true;
 }
 
+// Builds the player from the selected ship and difficulty and returns nothing.
 void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     PlayerState player;
     player.shipId = ship.id;
@@ -407,6 +427,7 @@ void GameEngine::setupPlayerForShip(const ShipTemplate& ship, int difficulty) {
     }
 }
 
+// Grants a relic by id, applies immediate effects, and returns nothing.
 void GameEngine::grantRelic(const std::string& relicId) {
     if (relicId.empty() || hasRelic(relicId)) {
         return;
@@ -420,6 +441,7 @@ void GameEngine::grantRelic(const std::string& relicId) {
     }
 }
 
+// Checks the current player relic list for the given id and returns whether it is owned.
 bool GameEngine::hasRelic(const std::string& relicId) const {
     return HasString(state_.player.relics, relicId);
 }

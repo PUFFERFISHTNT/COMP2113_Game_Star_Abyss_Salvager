@@ -333,71 +333,176 @@ struct RunState {
 
 class GameEngine {
 public:
+    // Creates the engine, loads content and registries, and leaves it ready at the menu.
     GameEngine();
 
+    // Gives read-only access to the current run state and returns that state reference.
     const RunState& state() const;
 
+    // Starts a run from the selected difficulty and ship id and returns nothing.
     void startNewRun(int difficulty, const std::string& shipId);
+
+    // Writes the current run to the given path, fills error when needed, and returns whether saving worked.
     bool saveToFile(const std::string& path, std::string* error) const;
+
+    // Loads a run from the given path, fills error when needed, and returns whether loading worked.
     bool loadFromFile(const std::string& path, std::string* error);
+
+    // Seeds the random generator with the given value for tests and returns nothing.
     void setSeedForTesting(unsigned int seed);
 
+    // Moves the engine to the main menu without taking arguments and returns nothing.
     void showMainMenu();
+
+    // Resumes the active run from its stored page without input and returns nothing.
     void resumeRun();
+
+    // Opens the help screen without input and returns nothing.
     void showHelp();
+
+    // Opens the achievements screen without input and returns nothing.
     void showAchievements();
+
+    // Loads leaderboard text from the given path and shows it without returning a value.
     void showLeaderboard(const std::string& path);
+
+    // Shows an information page from the given title, lines, and footer and returns nothing.
     void showInfo(const std::string& title,
                   const std::vector<std::string>& lines,
                   const std::string& footer);
 
+    // Chooses the route option at index and starts its node without returning a value.
     void chooseNode(size_t index);
+
+    // Resolves the encounter choice at index and returns nothing.
     void resolveEncounter(size_t index);
+
+    // Checks the hand card at index and returns whether it can be played now.
     bool canPlayCard(size_t index) const;
+
+    // Plays the hand card at index, resolving its effects, and returns nothing.
     void playCard(size_t index);
+
+    // Upgrades the referenced card through the given source, fills error when needed, and returns success.
     bool upgradeCard(const std::string& cardRef,
                      CardUpgradeSource source = CardUpgradeSource::Market,
                      std::string* error = nullptr);
+
+    // Ends the player's current battle turn without input and returns nothing.
     void endTurn();
+
+    // Applies the reward choice at index, or a skip when negative, and returns nothing.
     void chooseReward(int index);
+
+    // Returns to the main menu without input and returns nothing.
     void returnToMenu();
+
+    // Moves from summary toward another setup flow without input and returns nothing.
     void startAnotherRun();
+
+    // Advances animation state by one tick without input and returns nothing.
     void tickAnimation();
 
+    // Looks up a card by id or reference and returns the matching definition pointer when found.
     const CardDef* cardById(const std::string& id) const;
+
+    // Resolves a card reference into its effective card definition and returns that value.
     CardDef resolvedCard(const std::string& cardRef) const;
+
+    // Builds a display name from a card reference and returns the text.
     std::string displayCardName(const std::string& cardRef) const;
+
+    // Normalizes a card reference and returns its canonical stored form.
     std::string canonicalCardRef(const std::string& cardRef) const;
+
+    // Reads the upgrade level from a card reference and returns the numeric level.
     int cardUpgradeLevel(const std::string& cardRef) const;
+
+    // Computes the upgrade cost for the given source and returns the scrap amount.
     int cardUpgradeCost(CardUpgradeSource source) const;
+
+    // Builds card views for current reward choices and returns them.
     std::vector<CardView> rewardCards() const;
+
+    // Builds card views for the player's hand and returns them.
     std::vector<CardView> handCards() const;
+
+    // Builds card views for the draw pile and returns them.
     std::vector<CardView> drawPileCards() const;
+
+    // Builds card views for the discard pile and returns them.
     std::vector<CardView> discardPileCards() const;
+
+    // Samples cards from the requested rarity and returns the chosen ids.
     std::vector<std::string> randomCardChoicesByRarity(size_t count, CardRarity rarity);
+
+    // Groups all currently owned cards and returns the ownership entries.
     std::vector<CardOwnershipEntry> ownedCards() const;
+
+    // Lists owned card instances separately and returns their card views.
     std::vector<CardView> ownedCardInstances() const;
+
+    // Builds the full card library with obtained flags and returns the entries.
     std::vector<CardLibraryEntry> allCardLibraryEntries() const;
+
+    // Builds event achievement entries with completion flags and returns them.
     std::vector<AchievementEntry> allEventAchievementEntries() const;
+
+    // Builds enemy discovery achievement entries with completion flags and returns them.
     std::vector<AchievementEntry> allEnemyAchievementEntries() const;
+
+    // Counts obtained cards without input and returns the count.
     size_t obtainedCardCount() const;
+
+    // Counts all known cards without input and returns the count.
     size_t totalCardCount() const;
+
+    // Counts completed event achievements without input and returns the count.
     size_t completedEventAchievementCount() const;
+
+    // Counts all event achievements without input and returns the count.
     size_t totalEventAchievementCount() const;
+
+    // Counts seen enemies without input and returns the count.
     size_t seenEnemyCount() const;
+
+    // Counts all enemy templates without input and returns the count.
     size_t totalEnemyCount() const;
+
+    // Counts completed achievements across categories without input and returns the count.
     size_t completedAchievementCount() const;
+
+    // Reports whether auxiliary ship selection is waiting and returns that state.
     bool auxiliaryTransformSelectionPending() const;
+
+    // Reports whether an auxiliary transform target is waiting and returns that state.
     bool auxiliaryTransformTargetChoicePending() const;
+
+    // Returns the selected auxiliary ship index, or minus one when none is selected.
     int auxiliaryTransformSelectedShipIndex() const;
+
+    // Returns how many auxiliary transform selections remain.
     int auxiliaryTransformRemainingSelections() const;
+
+    // Lists valid auxiliary transform target unit ids and returns them.
     std::vector<std::string> auxiliaryTransformTargetUnitIds() const;
+
+    // Selects an auxiliary ship by index and returns whether the selection succeeded.
     bool selectAuxiliaryTransformShip(size_t index);
+
+    // Selects an auxiliary transform target by index and returns whether it succeeded.
     bool selectAuxiliaryTransformTarget(size_t index);
 
+    // Builds the current difficulty name without input and returns it.
     std::string difficultyName() const;
+
+    // Looks up a ship id and returns its display name or a fallback.
     std::string shipNameForId(const std::string& shipId) const;
+
+    // Looks up a relic id and returns its display name or a fallback.
     std::string relicNameForId(const std::string& relicId) const;
+
+    // Looks up a relic id and returns its description or empty text.
     std::string relicDescriptionForId(const std::string& relicId) const;
 
     // ---------------------------------------------------------------
@@ -407,43 +512,106 @@ public:
     // normal gameplay flow. Implementations live in
     // src/engine/game_dev.cpp so no other engine file is touched.
     // ---------------------------------------------------------------
+    // Ensures a developer run exists for the given difficulty and ship and returns nothing.
     void dev_initRunIfNeeded(int difficulty, const std::string& shipId);
+
+    // Sets the developer difficulty value and returns nothing.
     void dev_setDifficulty(int difficulty);
+
+    // Rebuilds the developer run around the given ship id and returns nothing.
     void dev_setShip(const std::string& shipId);
+
+    // Sets player hull for developer mode and returns nothing.
     void dev_setHp(int hp);
+
+    // Sets player maximum hull for developer mode and returns nothing.
     void dev_setMaxHp(int maxHp);
+
+    // Sets player energy for developer mode and returns nothing.
     void dev_setEnergy(int energy);
+
+    // Sets player scrap for developer mode and returns nothing.
     void dev_setScrap(int scrap);
+
+    // Sets player heat for developer mode and returns nothing.
     void dev_setHeat(int heat);
+
+    // Sets player shield for developer mode and returns nothing.
     void dev_setShield(int shield);
+
+    // Adds the given delta to player hull in developer mode and returns nothing.
     void dev_addHp(int delta);
+
+    // Adds the given delta to player energy in developer mode and returns nothing.
     void dev_addEnergy(int delta);
+
+    // Adds the given delta to player scrap in developer mode and returns nothing.
     void dev_addScrap(int delta);
+
+    // Adds the given delta to player heat in developer mode and returns nothing.
     void dev_addHeat(int delta);
+
+    // Adds the given delta to player shield in developer mode and returns nothing.
     void dev_addShield(int delta);
+
+    // Reloads the current developer encounter without input and returns nothing.
     void dev_reloadCurrentEncounter();
+
+    // Opens a developer scene from the scene key and payload and returns nothing.
     void dev_openDebugScene(const std::string& sceneKey,
                             const std::string& payload = "");
+
+    // Ends the developer session without input and returns nothing.
     void dev_shutdownSession();
+
+    // Jumps to the given sector and depth for developer mode and returns nothing.
     void dev_jumpToSector(int sector, int depth);
+
+    // Adds the chosen card id to the draw pile and returns nothing.
     void dev_addCardToDrawPile(const std::string& cardId);
+
+    // Adds the chosen card id to the hand when possible and returns nothing.
     void dev_addCardToHand(const std::string& cardId);
+
+    // Plays the top developer hand card without input and returns whether a play was attempted.
     bool dev_playTopOfHand();
+
+    // Starts a battle from the given node type and enemy id and returns nothing.
     void dev_startBattleWith(const std::string& nodeType, const std::string& enemyId);
+
+    // Forces the current battle to victory without input and returns nothing.
     void dev_skipCurrentBattleAsVictory();
+
+    // Builds a developer encounter from the given text and choice data and returns nothing.
     void dev_forceEncounter(const std::string& typeId,
                             const std::string& encounterId,
                             const std::string& title,
                             const std::string& description,
                             const std::vector<std::string>& choices,
                             const std::vector<std::string>& details);
+
+    // Moves the escape story to the requested stage and returns nothing.
     void dev_setEscapeStage(int stage);
+
+    // Moves the truth story to the requested stage and post-battle state and returns nothing.
     void dev_setTruthStage(int stage, bool postBattle);
+
+    // Shows the requested developer ending kind and returns nothing.
     void dev_showEnding(int kind);  // 0 normal, 1 escape, 2 truth
+
+    // Sends developer mode back to the map without input and returns nothing.
     void dev_returnToMap();
+
+    // Lists all card ids for developer controls and returns them.
     std::vector<std::string> dev_listCardIds() const;
+
+    // Lists card ids with display names for developer controls and returns the pairs.
     std::vector<std::pair<std::string, std::string>> dev_listCardsWithNames() const;
+
+    // Lists enemy ids with display names for developer controls and returns the pairs.
     std::vector<std::pair<std::string, std::string>> dev_listEnemiesWithNames() const;
+
+    // Lists ship ids with display names for developer controls and returns the pairs.
     std::vector<std::pair<std::string, std::string>> dev_listShipsWithNames() const;
 
 private:
@@ -497,120 +665,329 @@ private:
     std::vector<ShipTemplate> ships_;
     std::vector<RelicDef> relicPool_;
 
+    // Loads built-in content and registries into the engine and returns nothing.
     void initializeData();
+
+    // Resets the current run state to defaults and returns nothing.
     void resetRunState();
+
+    // Applies the chosen ship and difficulty to the player state and returns nothing.
     void setupPlayerForShip(const ShipTemplate& ship, int difficulty);
+
+    // Grants the named relic when available and returns nothing.
     void grantRelic(const std::string& relicId);
+
+    // Checks the named relic against the player state and returns whether it is owned.
     bool hasRelic(const std::string& relicId) const;
+
+    // Finds configured upgrade data for a base card id and returns the definition pointer when present.
     const CardDef* configuredUpgradeCardByBaseId(const std::string& cardId) const;
+
+    // Migrates legacy upgrade markers into card instance references and returns nothing.
     void normalizeUpgradedCards();
+
+    // Checks a card id for upgrade support and returns whether it can be upgraded.
     bool cardTypeSupportsUpgrade(const std::string& cardId) const;
+
+    // Encodes a pile id and index into a deck instance payload and returns it.
     std::string makeDeckInstancePayload(const std::string& pileId, size_t index) const;
+
+    // Parses a deck instance payload into optional outputs and returns whether it was valid.
     bool parseDeckInstancePayload(const std::string& payload, std::string* pileId, size_t* index) const;
+
+    // Replaces the card referenced by a deck instance payload and returns whether replacement worked.
     bool replaceDeckInstanceCardRef(const std::string& payload, const std::string& newCardRef);
+
+    // Builds the current player form label without input and returns it.
     std::string playerFormLabel() const;
+
+    // Extracts the base card id from the given reference and returns it.
     std::string baseCardId(const std::string& cardRef) const;
+
+    // Combines a card id and upgrade level into a stored reference and returns it.
     std::string makeCardRef(const std::string& cardId, int upgradeLevel) const;
 
+    // Generates route options for the current story state and returns nothing.
     void generateRouteOptions();
+
+    // Starts the battle or encounter for the given route node and returns nothing.
     void startEncounterForNode(const NodeOption& node);
+
+    // Starts a battle from node type and optional enemy override and returns nothing.
     void startBattle(const std::string& nodeType, const std::string& forcedEnemyId = "");
+
+    // Rebuilds the battle deck from current piles and returns nothing.
     void resetBattleDeck();
+
+    // Starts a player turn by restoring resources and drawing cards, then returns nothing.
     void startPlayerTurn();
+
+    // Chooses enemy intent for the coming turn and returns nothing.
     void chooseEnemyIntent();
+
+    // Resolves the current enemy intent and returns nothing.
     void resolveEnemyIntent();
+
+    // Applies battle victory rewards and progression and returns nothing.
     void handleBattleVictory();
+
+    // Applies defeat cleanup and summary state and returns nothing.
     void handleDefeat();
+
+    // Finishes the active route node and returns nothing.
     void finishCurrentNode();
 
+    // Applies the given damage amount to the player and returns nothing.
     void applyDamageToPlayer(int amount);
+
+    // Applies repeated damage to the enemy with shield handling and returns nothing.
     void applyDamageToEnemy(int amount, bool ignoreShield, int hits);
+
+    // Draws the requested number of cards into hand and returns nothing.
     void drawCards(int count);
+
+    // Moves discard cards back into draw and shuffles, returning nothing.
     void reshuffleDiscardIntoDraw();
+
+    // Changes player heat by the given delta and returns nothing.
     void changeHeat(int delta);
+
+    // Checks current player heat and returns whether the player is overheated.
     bool playerIsOverheated() const;
+
+    // Reads current player heat state and returns the overheat stage.
     int playerOverheatStage() const;
+
+    // Syncs player overheat counters from heat state and returns nothing.
     void syncPlayerOverheatState();
+
+    // Advances player overheat severity by one round and returns nothing.
     void advancePlayerOverheatRound();
+
+    // Summons auxiliary ships from a card and optional base id and returns nothing.
     void summonAuxiliaryShips(const CardDef& card, const std::string& baseCardId = "");
+
+    // Resolves end-turn auxiliary ship effects without input and returns nothing.
     void resolveAuxiliaryShipsEndTurn();
+
+    // Resolves one auxiliary ship trigger from its index and context flags and returns nothing.
     void resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, bool immediateContext);
+
+    // Triggers auxiliary ships the given number of times and returns nothing.
     void triggerAuxiliaryShipsNow(int times);
+
+    // Applies rewards from destroying auxiliary ships with the given card and returns nothing.
     void resolveAuxiliaryShipDestroyRewards(const CardDef& card);
+
+    // Applies removal burst effects from the removed ship and reason and returns nothing.
     void resolveAuxiliaryShipRemovalBurst(const AuxiliaryShipState& ship, const char* reason);
+
+    // Handles Blackbox Protocol selection for the hand index and returns whether it consumed play.
     bool resolveBlackboxProtocol(size_t handIndex);
+
+    // Resolves the first form-change relic trigger without input and returns nothing.
     void resolveFirstFormChangeRelic();
+
+    // Starts auxiliary transform selection from the card and count and returns nothing.
     void beginAuxiliaryTransformSelection(const CardDef& card, int transformCount);
+
+    // Chooses an auxiliary ship by index for transformation and returns whether it worked.
     bool resolveAuxiliaryTransformSelection(size_t index);
+
+    // Chooses a transform target by index and returns whether it worked.
     bool resolveAuxiliaryTransformTargetSelection(size_t index);
+
+    // Builds current auxiliary transform target ids without input and returns them.
     std::vector<std::string> currentAuxiliaryTransformTargetUnitIds() const;
+
+    // Clears auxiliary transform selection state without input and returns nothing.
     void clearAuxiliaryTransformSelection();
+
+    // Checks a card reference and returns whether it names a temporary copy.
     bool isTemporaryCopyRef(const std::string& cardRef) const;
+
+    // Wraps a card reference as a temporary copy and returns the new reference.
     std::string makeTemporaryCopyRef(const std::string& cardRef) const;
+
+    // Removes temporary copy wrapping from a card reference and returns the base reference.
     std::string unwrapTemporaryCopyRef(const std::string& cardRef) const;
+
+    // Adds Blackbox temporary copies for the turn without input and returns nothing.
     void addBlackboxTurnCopies();
+
+    // Applies auxiliary buffs from the given card and returns nothing.
     void buffAuxiliaryShips(const CardDef& card);
+
+    // Handles bookkeeping for a removed auxiliary ship and reason and returns nothing.
     void onAuxiliaryShipRemoved(const AuxiliaryShipState& ship, const char* reason);
+
+    // Shifts player form according to the given card and returns nothing.
     void shiftPlayerForm(const CardDef& card);
+
+    // Toggles player form without input and returns nothing.
     void togglePlayerForm();
+
+    // Removes destroyed auxiliary ships without input and returns nothing.
     void clearDestroyedAuxiliaryShips();
+
+    // Changes enemy heat by the given delta and returns nothing.
     void changeEnemyHeat(int delta);
+
+    // Checks current enemy heat and returns whether the enemy is overheated.
     bool enemyIsOverheated() const;
+
+    // Reads current enemy heat state and returns the overheat stage.
     int enemyOverheatStage() const;
+
+    // Computes enemy attack damage from current modifiers and returns it.
     int effectiveEnemyAttackDamage() const;
+
+    // Checks the enemy heat state and returns whether cooling should be used.
     bool enemyShouldUseCooling() const;
+
+    // Computes enemy cooling from current sector and returns the amount.
     int enemyCoolingAmount() const;
+
+    // Applies enemy cooling without input and returns nothing.
     void triggerEnemyCooling();
+
+    // Syncs enemy overheat counters from heat state and returns nothing.
     void syncEnemyOverheatState();
+
+    // Advances enemy overheat severity by one round and returns nothing.
     void advanceEnemyOverheatRound();
+
+    // Appends the given line to the battle log and returns nothing.
     void log(const std::string& line);
+
+    // Checks the obtained-card registry for a card id and returns whether it is recorded.
     bool hasObtainedCard(const std::string& cardId) const;
+
+    // Records a card reference as obtained and returns nothing.
     void recordObtainedCard(const std::string& cardRef);
+
+    // Records all currently owned cards as obtained and returns nothing.
     void recordCurrentOwnedCards();
+
+    // Adds one owned card reference to the discard pile and returns nothing.
     void queueOwnedCardToDiscard(const std::string& cardRef);
+
+    // Adds several owned card references to the discard pile and returns nothing.
     void queueOwnedCardsToDiscard(const std::vector<std::string>& cardRefs);
+
+    // Loads obtained-card registry data without input and returns nothing.
     void loadObtainedCardRegistry();
+
+    // Saves obtained-card registry data, fills error when needed, and returns success.
     bool saveObtainedCardRegistry(std::string* error = nullptr) const;
+
+    // Checks the event achievement registry and returns whether the encounter is complete.
     bool hasCompletedEventAchievement(const std::string& encounterId) const;
+
+    // Records a completed event achievement from id and title and returns nothing.
     void recordCompletedEventAchievement(const std::string& encounterId, const std::string& title);
+
+    // Loads completed event achievement data without input and returns nothing.
     void loadCompletedEventAchievementRegistry();
+
+    // Saves completed event achievement data, fills error when needed, and returns success.
     bool saveCompletedEventAchievementRegistry(std::string* error = nullptr) const;
+
+    // Checks the seen-enemy registry for an id and returns whether it is recorded.
     bool hasSeenEnemy(const std::string& enemyId) const;
+
+    // Records an enemy id as seen and returns nothing.
     void recordSeenEnemy(const std::string& enemyId);
+
+    // Loads seen-enemy registry data without input and returns nothing.
     void loadSeenEnemyRegistry();
+
+    // Saves seen-enemy registry data, fills error when needed, and returns success.
     bool saveSeenEnemyRegistry(std::string* error = nullptr) const;
+
+    // Starts an animation from its kind, label, magnitude, direction, and duration and returns nothing.
     void startAnimation(const std::string& kind,
                         const std::string& label,
                         int magnitude,
                         bool playerToEnemy,
                         int duration);
 
+    // Samples general card rewards by count and returns the chosen ids.
     std::vector<std::string> randomCardChoices(size_t count);
+
+    // Samples battle reward cards from count and node type and returns the chosen ids.
     std::vector<std::string> randomBattleCardChoices(size_t count, const std::string& nodeType);
+
+    // Samples market cards by count and returns the chosen ids.
     std::vector<std::string> randomMarketCardChoices(size_t count);
+
+    // Chooses an unowned relic without input and returns its id.
     std::string randomRelic();
+
+    // Chooses an enemy for the node type and optional forced id and returns the template.
     const EnemyTemplate& pickEnemy(const std::string& nodeType, const std::string& forcedEnemyId = "");
+
+    // Looks up an enemy id and returns the template pointer when present.
     const EnemyTemplate* enemyTemplateById(const std::string& id) const;
+
+    // Looks up a ship id and returns the template pointer when present.
     const ShipTemplate* shipTemplateById(const std::string& id) const;
+
+    // Looks up a relic id and returns the definition pointer when present.
     const RelicDef* relicById(const std::string& id) const;
 
+    // Fills help page state without input and returns nothing.
     void fillHelpInfo();
+
+    // Fills summary state from the victory flag and returns nothing.
     void fillSummary(bool victory);
+
+    // Opens the repair station service without input and returns nothing.
     void openRepairStation();
+
+    // Opens the market service without input and returns nothing.
     void openMarketShop();
+
+    // Clears market service state without input and returns nothing.
     void clearMarketState();
+
+    // Resolves the purge option at index and returns whether it was handled.
     bool resolvePurgeSelection(size_t index);
+
+    // Resolves the upgrade option at index and returns whether it was handled.
     bool resolveUpgradeSelection(size_t index);
+
+    // Opens market purge selection at the given offset and returns nothing.
     void enterMarketPurge(size_t offset);
+
+    // Opens market upgrade selection at the given offset and returns nothing.
     void enterMarketUpgrade(size_t offset);
+
+    // Opens repair purge selection at the given offset and returns nothing.
     void enterRepairPurge(size_t offset);
+
+    // Opens repair upgrade selection at the given offset and returns nothing.
     void enterRepairUpgrade(size_t offset);
+
+    // Opens event purge selection at the given offset and returns nothing.
     void enterEventPurge(size_t offset);
+
+    // Opens event upgrade selection at the given offset and returns nothing.
     void enterEventUpgrade(size_t offset);
+
+    // Lists upgradeable card instance references without input and returns them.
     std::vector<std::string> upgradeableCardInstanceRefs() const;
+
+    // Lists purgeable card ids with counts without input and returns them.
     std::vector<std::pair<std::string, int>> purgeableCards() const;
+
+    // Lists upgradeable card ids with counts without input and returns them.
     std::vector<std::pair<std::string, int>> upgradeableCards() const;
+
+    // Removes one card id from the deck and returns whether a card was removed.
     bool purgeCardFromDeck(const std::string& cardId);
+
+    // Upgrades a random eligible card, fills outputs when supplied, and returns success.
     bool upgradeRandomCard(CardUpgradeSource source, std::string* upgradedCardName, std::string* error);
 };
 

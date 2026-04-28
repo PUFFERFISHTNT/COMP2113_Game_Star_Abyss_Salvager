@@ -10,6 +10,7 @@ using namespace ftxui;
 
 // The map page groups route choice, run status, and installed relics. Keeping
 // it separate makes future node types or route layouts straightforward to add.
+// Renders route choices, run status, and relics without input and returns the map element.
 Element StarAbyssApp::RenderMap() const {
     const RunState& state = engine_.state();
     const int terminal_width = Terminal::Size().dimx;

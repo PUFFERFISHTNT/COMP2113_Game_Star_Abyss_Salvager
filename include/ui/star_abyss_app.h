@@ -20,9 +20,13 @@ namespace dev_mode { class DevModeUi; }
 
 class StarAbyssApp {
 public:
+    // Creates the terminal app around the given screen and prepares all pages and overlays.
     explicit StarAbyssApp(ftxui::ScreenInteractive& screen);
+
+    // Stops the app's background work during destruction and returns no value.
     ~StarAbyssApp();
 
+    // Gives FTXUI the app root component, with no extra input needed.
     ftxui::Component root() const { return root_; }
 
 private:
@@ -47,38 +51,100 @@ private:
     static constexpr int kWheelScrollLines = 4;
     static constexpr int kPageScrollLines = 14;
 
+    // Syncs visible labels, selected pages, and overlay state from the engine without returning anything.
     void SyncUi();
+
+    // Processes one FTXUI event and returns whether the app handled it.
     bool HandleEvent(ftxui::Event event);
+
+    // Scrolls the active view by the given line delta and returns whether scrolling was applied.
     bool ScrollActiveView(int delta_lines);
+
+    // Saves the current run through the active save dialog state and returns nothing.
     void SaveRun();
+
+    // Loads the selected run from the save dialog and returns nothing.
     void LoadRun();
+
+    // Leaves an information page for the proper previous page and returns nothing.
     void BackFromInfo();
+
+    // Opens the save dialog in the requested mode and returns nothing.
     void OpenSaveDialog(SaveDialogMode mode);
+
+    // Closes the save dialog without taking input and returns nothing.
     void CloseSaveDialog();
+
+    // Refreshes save slot lists from disk without taking input and returns nothing.
     void RefreshSaveEntries();
+
+    // Saves to the named slot, optionally showing feedback, and returns nothing.
     void SaveToSlot(const std::string& slot_name, bool show_feedback);
+
+    // Loads the currently selected save entry without taking input and returns nothing.
     void LoadSelectedSave();
+
+    // Writes the active run to autosave when possible and returns nothing.
     void AutoSave();
+
+    // Cleans a raw save name for filesystem use and returns the sanitized slot name.
     std::string SanitizeSaveName(const std::string& raw_name) const;
+
+    // Formats the save entry at the given index and returns its display name.
     std::string SaveDisplayName(size_t index) const;
+
+    // Opens the card viewer in the requested mode and returns nothing.
     void OpenCardViewer(CardViewerMode mode);
+
+    // Closes the card viewer without input and returns nothing.
     void CloseCardViewer();
+
+    // Toggles the requested battle pile inspector and returns nothing.
     void ToggleBattlePileInspector(BattlePileInspector target);
+
+    // Closes the active battle pile inspector without input and returns nothing.
     void CloseBattlePileInspector();
+
+    // Loads the saved UI language preference from disk and returns nothing.
     void LoadLanguagePreference();
+
+    // Saves the current UI language preference without input and returns nothing.
     void SaveLanguagePreference() const;
+
+    // Frames the given content at the requested scroll line and returns the scrollable element.
     ftxui::Element ApplyVerticalScrollFrame(ftxui::Element content, int scroll_line) const;
+
+    // Converts an app page enum to an array index and returns that index.
     static constexpr size_t PageIndex(AppPage page) { return static_cast<size_t>(page); }
 
+    // Renders the main menu without input and returns the page element.
     ftxui::Element RenderMainMenu() const;
+
+    // Renders run setup without input and returns the page element.
     ftxui::Element RenderSetup() const;
+
+    // Renders the route map without input and returns the page element.
     ftxui::Element RenderMap() const;
+
+    // Renders the active encounter without input and returns the page element.
     ftxui::Element RenderEncounter() const;
+
+    // Renders the battle screen without input and returns the page element.
     ftxui::Element RenderBattle() const;
+
+    // Renders reward selection without input and returns the page element.
     ftxui::Element RenderReward() const;
+
+    // Renders the run summary without input and returns the page element.
     ftxui::Element RenderSummary() const;
+
+    // Renders the information page without input and returns the page element.
     ftxui::Element RenderInfo() const;
+
+    // Renders the save dialog without input and returns the overlay element.
     ftxui::Element RenderSaveDialog() const;
+
+    // Renders the card viewer without input and returns the overlay element.
     ftxui::Element RenderCardViewer() const;
 
     ftxui::ScreenInteractive& screen_;
