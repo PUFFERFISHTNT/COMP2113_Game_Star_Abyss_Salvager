@@ -141,6 +141,8 @@ FTXUI is used for:
 - page layout and panels
 - scrollable UI pages
 
+## Gameplay Content Overview
+
 ## Route and Ending Structure
 
 The route and ending logic below reflects the **actual current in-game implementation**.
@@ -371,7 +373,7 @@ flowchart LR
 
 ![Achievements screenshot](docs/images/achivements.png)
 
-## Project Structure
+# Project Structure
 
 ```text
 .
