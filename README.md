@@ -89,6 +89,13 @@ flowchart LR
 - uses summon, trigger, destroy, and support interactions
 - strongest when the board is filled with the right drone mix
 
+### Auxiliary Ships
+
+- the current battle bay supports up to `3` auxiliary ships
+- when the bay is full, newer summons replace the oldest ships
+- different drone types can attack, shield, repair, apply enemy heat, or amplify other triggers
+- some cards destroy or recycle auxiliary ships for immediate payoff
+
 ### Iron Bastion
 
 - form-switching defensive ship
@@ -162,13 +169,6 @@ flowchart LR
   - overheated enemies deal less damage
   - deeper enemy overheat makes them take more damage
   - at the highest stage, enemy overheat also burns enemy HP each turn
-
-### Auxiliary Ships
-
-- the current battle bay supports up to `3` auxiliary ships
-- when the bay is full, newer summons replace the oldest ships
-- different drone types can attack, shield, repair, apply enemy heat, or amplify other triggers
-- some cards destroy or recycle auxiliary ships for immediate payoff
 
 ### Services and Progression
 
