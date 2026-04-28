@@ -1,184 +1,203 @@
 # Star Abyss Salvager
 
-`Star Abyss Salvager` is a text-based roguelike deckbuilding game developed for the COMP2113 course project. The player pilots a salvager ship into the Star Abyss, chooses routes across dangerous sectors, fights hostile ships in turn-based card battles, upgrades the deck, collects relics, and progresses toward different story routes and endings.
+`Star Abyss Salvager` is a terminal roguelike deckbuilding game built for the COMP2113 course project.
+You pilot a salvager ship into the Star Abyss, route through unstable sectors, fight hostile ships in turn-based card battles, upgrade or purge cards, collect relics, and push toward one of several endings.
 
-The combat and run-based structure are partly inspired by **Slay the Spire**, while the setting, story routes, heat system, auxiliary ships, and terminal UI are custom to this project.
+The structure is inspired by **Slay the Spire**, but the implemented game logic is its own system: heat and overheat management, auxiliary ships, form switching, route events, story boss branches, an escape route, and a truth route.
 
 ## Team Members
 
-- `PUFFERFISHTNT` Xu Yukuan(3036478148)
-- `Annie-goat`  Guo Xinyao(3036483478)
-- `victorxsy` Xu Siyuan(3036482955)
-- `Andy-MRX`  Hu Pengfei(3036588852)
-- `Kong Ce` Kong Ce(3036483650)
+- `PUFFERFISHTNT` Xu Yukuan (3036478148)
+- `Annie-goat` Guo Xinyao (3036483478)
+- `victorxsy` Xu Siyuan (3036482955)
+- `Andy-MRX` Hu Pengfei (3036588852)
+- `Kong Ce` Kong Ce (3036483650)
 
-## Game Description
+## Current Content Snapshot
 
-This game combines:
+The current repository already contains a fully playable build with:
 
-- route selection across sectors
-- random encounters and branching events
-- turn-based card combat
-- deck growth through rewards, upgrades, and purges
-- multiple ships with different combat styles
-- multiple difficulty levels
+- `3` playable starter ships
+- `4` difficulty levels
+- `138` cards loaded from `data/cards.json`
+- `20` enemy templates across normal, elite, boss, and story encounters
+- sector-based route progression with battles, elites, salvage, repair, event, market, and boss nodes
+- branching story logic for:
+  - normal ending
+  - escape route
+  - truth route
+- reward screens for cards, relics, and credits
+- black market purchase / purge / upgrade services
+- repair station heal / vent / plating / upgrade / purge services
+- manual save / load and autosave
+- card library, owned deck viewer, leaderboard, and achievement tracking
 - bilingual English / Chinese UI
 
-The player starts a new run by choosing a ship and a difficulty, then advances through nodes such as battle, elite, salvage, repair, event, market, and boss nodes. Different event choices can unlock alternative routes, including the escape route and truth route.
+## Route and Ending Structure
 
-## Features Implemented
+The route and ending logic below reflects the **actual current in-game implementation**.
 
-### Core Gameplay
+![Current true ending flow](docs/images/true-ending-flow.png)
 
-- `3` starter ships:
-  - `Vanguard`: heat-oriented direct offense
-  - `Drift Fox`: auxiliary ship / drone-focused playstyle
-  - `Iron Bastion`: defensive form-switching playstyle
-- `4` difficulty levels:
-  - `Easy`
-  - `Normal`
-  - `Hard`
-  - `Hell`
-- sector-based map progression with route choice
-- normal battles, elite battles, and boss battles
-- enemy intent system
-- reward screens for cards, credits, and relics
-- black market services:
-  - buy colorless cards
-  - purge cards
-  - upgrade cards
-- repair station and event-based free upgrade / purge services
-- multiple endings and special route events
+### High-level Run Loop
 
-### Combat Systems
+```mermaid
+flowchart LR
+    A["Start New Run"] --> B["Choose Ship and Difficulty"]
+    B --> C["Map: Generate Route Options"]
+    C --> D{"Selected Node Type"}
+    D -->|battle / elite / boss| E["Battle"]
+    E -->|win| F["Reward Screen"]
+    E -->|lose| G["Run Summary"]
+    F --> H{"Continue Route?"}
+    H -->|yes| C
+    H -->|ending reached| G
+    D -->|event / salvage / repair / market| I["Encounter / Service Resolution"]
+    I --> C
+```
+
+### Current Route Notes
+
+- A normal sector has `5` non-boss depth steps before the sector boss appears.
+- The map can generate:
+  - `battle`
+  - `elite`
+  - `salvage`
+  - `repair`
+  - `event`
+  - `market` (from sector 2 onward)
+- Event nodes can open:
+  - random event branches
+  - story boss signals
+  - the Ark Beacon branch
+  - escape-route progression
+  - truth-route progression
+- Blocking the Ark Beacon starts the escape route and disables normal boss progression after that point.
+- Activating the Ark Beacon is the condition that later allows the truth route to open.
+
+## Playable Ships
+
+### Vanguard
+
+- direct-fire heat offense
+- strong burst attacks with deliberate heat buildup
+- can trade thermal risk for damage tempo
+
+### Drift Fox
+
+- auxiliary ship / drone-focused playstyle
+- uses summon, trigger, destroy, and support interactions
+- strongest when the board is filled with the right drone mix
+
+### Iron Bastion
+
+- form-switching defensive ship
+- swaps between `Neutral`, `Overload`, and `Defense`
+- can route value through shield, energy, draw, and stance transition effects
+
+## Difficulty Modes
+
+### Easy
+
+- more forgiving player baseline
+- starting survivability is increased
+- max heat tolerance is increased
+
+### Normal
+
+- standard enemy stats
+- elite and boss enemies can prepare a second intent with a `30%` chance
+
+### Hard
+
+- enemy HP, max heat, and intent values are increased
+- enemy attack bias is stronger
+- elite and boss enemies can prepare a second intent with a `40%` chance
+
+### Hell
+
+- enemy scaling matches `Hard`
+- enemy attack bias matches `Hard`
+- all enemy intents are hidden as `Unknown`
+- elite and boss enemies can prepare a second intent with a `50%` chance
+
+## Core Gameplay Systems
+
+### Combat Loop
+
+```mermaid
+flowchart LR
+    A["Start Turn"] --> B["Gain Energy"]
+    B --> C["Draw Cards"]
+    C --> D["Play Cards"]
+    D --> E["Use Heat / Form / Auxiliary Effects"]
+    E --> F["End Turn"]
+    F --> G["Enemy Intent Resolves"]
+    G --> H["Next Turn"]
+    H --> A
+```
+
+### Combat Features
 
 - turn-based deck combat
-- draw pile, discard pile, exile pile, and hand limit
+- draw pile, hand, discard pile, and exile pile
+- hand limit of `10`
 - energy system
-- shield system
-- heat / overheat system
-- auxiliary ship / drone system
-- combat forms:
-  - `Neutral`
-  - `Overload`
-  - `Defense`
-- card upgrade system using definitions from `data/cards.json`
+- temporary shield system
+- heat / overheat stages
+- enemy intent forecasting
+- elite / boss double-intent pressure on higher difficulties
+- form switching
+- auxiliary ship deployment, triggering, replacement, and dismantling
+- per-card upgrades loaded from `data/cards.json`
 
-### Persistent Systems
+### Heat / Overheat
 
-- manual save / load
-- autosave
-- obtained card registry
-- leaderboard
-- event achievement system
-- saved language preference
+- many cards raise or reduce heat
+- if heat exceeds the limit, overflow causes immediate self-damage
+- sustained overheat in battle escalates through multiple penalty stages:
+  - reduced draw
+  - reduced outgoing damage
+  - increased incoming damage
+  - eventually HP burn each turn
 
-### UI / Quality-of-Life
+### Auxiliary Ships
 
-- bilingual English / Chinese interface
+- the current battle bay supports up to `3` auxiliary ships
+- when the bay is full, newer summons replace the oldest ships
+- different drone types can attack, shield, repair, apply enemy heat, or amplify other triggers
+- some cards destroy or recycle auxiliary ships for immediate payoff
+
+### Services and Progression
+
+- black market:
+  - buy colorless cards
+  - upgrade one card
+  - purge one card
+- repair station:
+  - patch hull
+  - vent heat
+  - install plating
+  - upgrade one card for free
+  - purge one card for free
+- reward flow:
+  - credits
+  - card rewards
+  - relic rewards on elite / boss victories
+
+## UI and Quality-of-Life
+
+- full-screen FTXUI terminal UI
 - keyboard and mouse input
-- owned card viewer
+- bilingual English / Chinese interface
+- owned-card viewer
 - full card library viewer
+- achievement viewer
+- leaderboard viewer
 - scrollable long pages
-- setup page descriptions for each difficulty and ship
+- autosave and manual named saves
 
-## How the Course Coding Requirements Are Satisfied
-
-### 1. Generation of Random Events
-
-Randomness is used throughout the game, including:
-
-- random route generation in `src/engine/game_route.cpp`
-- random event selection
-- random enemy selection for battles
-- random reward card generation in `src/engine/game_reward.cpp`
-- random relic rewards
-- random market offers
-- random branches in some event outcomes
-
-This directly supports replayability and makes each run different.
-
-### 2. Data Structures for Storing Data
-
-The project uses multiple data structures to represent gameplay state:
-
-- `RunState`, `PlayerState`, `EnemyState`, `EncounterState`, `RewardState`, and `InfoState` in `include/tui_game.h`
-- `std::vector` for piles, logs, relics, route options, encounters, and achievements
-- `std::array` for fixed UI button groups and page labels
-- structured gameplay records such as `CardDef`, `CardView`, `NodeOption`, and `AuxiliaryShipState`
-
-These structures support card combat, routing, save/load, and UI rendering.
-
-### 3. Dynamic Memory Management
-
-The game uses dynamic memory management through standard C++ facilities:
-
-- `std::vector` and `std::string` for dynamically sized runtime data
-- `std::shared_ptr` and `std::make_shared` in the FTXUI application shell
-- dynamically built FTXUI component trees and modal stacks
-
-This is essential because the number of cards, encounters, route options, save entries, and UI components changes during play.
-
-### 4. File Input / Output
-
-The project reads and writes several files:
-
-- `data/cards.json`: loads card and upgrade definitions
-- `save/*.sav`: manual saves and autosave
-- `save/ui_language.txt`: saved language preference
-- `save/obtained_cards.txt`: unlocked card registry
-- `save/completed_events.txt`: completed event achievements
-- `data/leaderboard.txt`: recorded run results
-
-This supports persistent progression, save/load, and content loading.
-
-### 5. Program Codes in Multiple Files
-
-The project is modularized into multiple source files instead of one monolithic file:
-
-- bootstrap:
-  - `src/tui_main.cpp`
-- app shell:
-  - `src/tui_app.cpp`
-- gameplay API:
-  - `src/tui_game.cpp`
-- engine modules:
-  - `src/engine/*.cpp`
-- UI modules:
-  - `src/ui/*.cpp`
-- headers:
-  - `include/**/*.h`
-
-This separation improves maintainability and keeps gameplay logic, save logic, routing logic, and rendering logic independent.
-
-### 6. Multiple Difficulty Levels
-
-The game supports `Easy`, `Normal`, `Hard`, and `Hell`.
-
-- `Easy`: baseline forgiving mode
-- `Normal`: enemies are more attack-oriented; elite and boss enemies may prepare a second intent
-- `Hard`: stronger enemy stats and stronger enemy intent values
-- `Hell`: same enemy strength as `Hard`, but enemy intents are hidden as `Unknown`
-
-This requirement is fully implemented and exposed to the player on the setup page.
-
-## Non-Standard Libraries
-
-### FTXUI
-
-This project uses the vendored [FTXUI](https://github.com/ArthurSonzogni/FTXUI) terminal UI library under `vendor/FTXUI/`.
-
-FTXUI is used for:
-
-- full-screen terminal rendering
-- buttons, toggles, menus, and modal dialogs
-- keyboard and mouse input handling
-- page layout and panels
-- scrollable pages
-
-No extra download is needed because the library source is already included in this repository.
-
-## Compilation Instructions
+## Compilation
 
 Run all commands from the project root:
 
@@ -196,11 +215,11 @@ This builds:
 
 - `g++` with C++17 support
 - GNU `make`
-- UTF-8 terminal
+- a UTF-8 terminal
 
-The build is offline-friendly. No internet installation is required.
+No internet download is required because FTXUI is vendored in the repository.
 
-## Execution Instructions
+## Running the Game
 
 Run from the project root:
 
@@ -208,67 +227,140 @@ Run from the project root:
 ./star_abyss_salvager
 ```
 
-Please launch the executable from the repository root so the following relative paths work correctly:
+Please launch the executable from the repository root so these runtime paths resolve correctly:
 
 - `data/cards.json`
 - `save/*.sav`
 - `save/ui_language.txt`
 - `save/obtained_cards.txt`
 - `save/completed_events.txt`
+- `save/seen_enemies.txt`
 - `data/leaderboard.txt`
 
 ## Controls
 
-### General Controls
+### General
 
-- `1` - `9`, `0`: choose visible menu entries or play cards
+- `1` - `9`, `0`: choose visible menu entries or card/service targets
 - `S`: open save dialog
 - `L`: open load dialog
-- `Esc`: close a modal, leave a safe page, or return to main menu depending on context
+- `Esc`: close a modal, leave a service page, go back from info pages, or return to the menu depending on context
 - `PgUp` / `PgDn`: scroll long pages
-- `Ctrl+Up` / `Ctrl+Down`: fallback scrolling
-- `[` / `]`: additional scrolling shortcuts
-- mouse:
-  - click menu buttons
-  - click map nodes
-  - click encounter options
-  - click reward cards
-  - click service cards
+- `Ctrl+Up` / `Ctrl+Down`: alternate scroll
+- `[` / `]`: alternate scroll
 
-### Battle Controls
+### Main Menu / Views
+
+- `C`: open the card library from the main menu
+- `A`: open achievements from the main menu
+- `D`: open the owned deck viewer during a run
+
+### Battle
 
 - `1` - `9`, `0`: play cards in hand
 - `E`: end turn
-- mouse: click cards, auxiliary ship targets, and battle UI buttons
+- mouse:
+  - click cards
+  - click auxiliary ship targets when required
+  - click battle utility buttons
 
-### Service / Upgrade Screens
+### Service Screens
 
-- black market upgrade screen:
-  - `Esc`, `B`, or `0` returns to the broker
-- repair / event upgrade screen:
-  - `Esc` or `0` skips the service
+- black market service screens:
+  - `Esc`, `B`, or `0`: return to the broker
+- repair / event service screens:
+  - `Esc` or `0`: leave the service
 
-## What Is Included in the Current Game
+## Persistent Files
 
-The current playable version includes:
+The game reads or writes:
 
-- main menu
-- run setup
-- multilingual UI
-- multiple difficulty levels
-- three playable ships
-- route progression across sectors
-- random events and branching narrative
-- turn-based card combat
-- heat / overheat combat mechanics
-- auxiliary ship mechanics
+- `data/cards.json`
+  - card definitions and upgrade definitions
+- `save/*.sav`
+  - manual saves and autosave
+- `save/ui_language.txt`
+  - current language preference
+- `save/obtained_cards.txt`
+  - unlocked card registry
+- `save/completed_events.txt`
+  - event achievement registry
+- `save/seen_enemies.txt`
+  - enemy discovery registry
+- `data/leaderboard.txt`
+  - recorded run results
+
+## How the COMP2113 Requirements Are Satisfied
+
+### 1. Random Event Generation
+
+The project uses randomness for:
+
+- route option generation
+- event selection
+- enemy selection
+- card rewards
 - relic rewards
-- card upgrades
-- purge systems
-- save / load / autosave
-- leaderboard viewing
-- card library viewing
-- event achievements
+- market offers
+- some event branches
+
+### 2. Data Structures
+
+The project uses:
+
+- `RunState`, `PlayerState`, `EnemyState`, `EncounterState`, `RewardState`, and `InfoState`
+- `std::vector` for piles, logs, relics, route options, encounters, achievements, and auxiliary ships
+- `std::array` for fixed UI button groups and labels
+- structured records such as `CardDef`, `CardView`, `NodeOption`, and `AuxiliaryShipState`
+
+### 3. Dynamic Memory Management
+
+The project relies on standard C++ dynamic facilities such as:
+
+- `std::vector`
+- `std::string`
+- `std::shared_ptr`
+- dynamically built FTXUI component trees
+
+### 4. File Input / Output
+
+The game reads and writes game content, saves, UI preferences, progression registries, and leaderboard records.
+
+### 5. Multiple Source Files
+
+The project is split across:
+
+- bootstrap
+- app shell
+- gameplay API
+- engine modules
+- UI modules
+- public headers
+
+### 6. Multiple Difficulty Levels
+
+The game implements:
+
+- `Easy`
+- `Normal`
+- `Hard`
+- `Hell`
+
+and exposes them directly in the setup page.
+
+## Non-Standard Library
+
+### FTXUI
+
+This repository vendors [FTXUI](https://github.com/ArthurSonzogni/FTXUI) under `vendor/FTXUI/`.
+
+FTXUI is used for:
+
+- full-screen terminal rendering
+- buttons, toggles, menus, and modal dialogs
+- keyboard and mouse input
+- page layout and panels
+- scrollable UI pages
 
 ## Project Structure
 
@@ -280,6 +372,9 @@ The current playable version includes:
 |-- data/
 |   |-- cards.json
 |   `-- leaderboard.txt
+|-- docs/
+|   `-- images/
+|       `-- true-ending-flow.png
 |-- include/
 |   |-- engine/
 |   |-- ui/
@@ -298,4 +393,5 @@ The current playable version includes:
 
 ## Notes
 
-- A more detailed technical handoff is available in `DEVELOPMENT_STATUS.md`.
+- A deeper technical handoff is available in `DEVELOPMENT_STATUS.md`.
+- The route / ending flow image in `docs/images/true-ending-flow.png` matches the current in-game branch logic in this repository version.
