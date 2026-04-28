@@ -34,7 +34,9 @@ The current repository already contains a fully playable build with:
 - card library, owned deck viewer, leaderboard, and achievement tracking
 - bilingual English / Chinese UI
 
-## Compilation
+## Running the Game
+
+### Compilation
 
 Run all commands from the project root:
 
@@ -56,7 +58,7 @@ This builds:
 
 No internet download is required because FTXUI is vendored in the repository.
 
-## Running the Game
+### Start
 
 Run from the project root:
 
@@ -141,7 +143,46 @@ FTXUI is used for:
 - page layout and panels
 - scrollable UI pages
 
-## Gameplay Content Overview
+## Project Structure
+
+```text
+.
+|-- Makefile
+|-- README.md
+|-- data/
+|   |-- cards.json
+|   `-- leaderboard.txt
+|-- docs/
+|   `-- images/
+|       |-- achivements.png
+|       |-- battle-bridge.png
+|       |-- black-market.png
+|       |-- card-library.png
+|       |-- choose-route.png
+|       |-- derelict-wreck.png
+|       |-- game-screenshot.png
+|       |-- launch-setup.png
+|       |-- repair-station.png
+|       |-- reward.png
+|       |-- signal.png
+|       `-- true-ending-flow.png
+|-- include/
+|   |-- engine/
+|   |-- ui/
+|   |-- tui_app.h
+|   `-- tui_game.h
+|-- save/
+|-- src/
+|   |-- engine/
+|   |-- ui/
+|   |-- tui_app.cpp
+|   |-- tui_game.cpp
+|   `-- tui_main.cpp
+`-- vendor/
+    `-- FTXUI/
+```
+
+# Gameplay Content Overview
 
 ## Route and Ending Structure
 
@@ -372,42 +413,3 @@ flowchart LR
 ![Card library screenshot](docs/images/card-library.png)
 
 ![Achievements screenshot](docs/images/achivements.png)
-
-# Project Structure
-
-```text
-.
-|-- Makefile
-|-- README.md
-|-- data/
-|   |-- cards.json
-|   `-- leaderboard.txt
-|-- docs/
-|   `-- images/
-|       |-- achivements.png
-|       |-- battle-bridge.png
-|       |-- black-market.png
-|       |-- card-library.png
-|       |-- choose-route.png
-|       |-- derelict-wreck.png
-|       |-- game-screenshot.png
-|       |-- launch-setup.png
-|       |-- repair-station.png
-|       |-- reward.png
-|       |-- signal.png
-|       `-- true-ending-flow.png
-|-- include/
-|   |-- engine/
-|   |-- ui/
-|   |-- tui_app.h
-|   `-- tui_game.h
-|-- save/
-|-- src/
-|   |-- engine/
-|   |-- ui/
-|   |-- tui_app.cpp
-|   |-- tui_game.cpp
-|   `-- tui_main.cpp
-`-- vendor/
-    `-- FTXUI/
-```
