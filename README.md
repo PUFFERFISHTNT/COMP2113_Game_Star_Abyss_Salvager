@@ -99,9 +99,7 @@ flowchart LR
 
 ### Easy
 
-- more forgiving player baseline
-- starting survivability is increased
-- max heat tolerance is increased
+- current baseline difficulty with the existing forgiving balance
 
 ### Normal
 
@@ -160,6 +158,10 @@ flowchart LR
   - reduced outgoing damage
   - increased incoming damage
   - eventually HP burn each turn
+- enemy heat has its own overheat effect too:
+  - overheated enemies deal less damage
+  - deeper enemy overheat makes them take more damage
+  - at the highest stage, enemy overheat also burns enemy HP each turn
 
 ### Auxiliary Ships
 
@@ -290,7 +292,7 @@ The game reads or writes:
 - `data/leaderboard.txt`
   - recorded run results
 
-## How the COMP2113 Requirements Are Satisfied
+## COMP2113 Requirements
 
 ### 1. Random Event Generation
 
@@ -368,7 +370,6 @@ FTXUI is used for:
 .
 |-- Makefile
 |-- README.md
-|-- DEVELOPMENT_STATUS.md
 |-- data/
 |   |-- cards.json
 |   `-- leaderboard.txt
@@ -393,5 +394,4 @@ FTXUI is used for:
 
 ## Notes
 
-- A deeper technical handoff is available in `DEVELOPMENT_STATUS.md`.
 - The route / ending flow image in `docs/images/true-ending-flow.png` matches the current in-game branch logic in this repository version.
