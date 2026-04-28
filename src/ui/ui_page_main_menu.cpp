@@ -9,6 +9,7 @@ using namespace ftxui;
 
 // Keeps the landing screen presentation isolated from run/battle UI so the
 // menu can evolve independently from gameplay pages.
+// Renders the main menu from current app state and returns the page element.
 Element StarAbyssApp::RenderMainMenu() const {
     const int terminal_width = Terminal::Size().dimx;
     const bool compact_layout = terminal_width < 118;

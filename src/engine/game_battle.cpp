@@ -40,10 +40,12 @@ enum class AuxiliaryTriggerContext {
     EndTurn,
 };
 
+// Checks heat against its maximum and returns whether it is past the high-heat threshold.
 bool IsHighHeat(int heat, int max_heat) {
     return std::max(0, heat) * 2 > std::max(1, max_heat);
 }
 
+// Checks an auxiliary removal reason and returns whether it should count as destruction.
 bool AuxiliaryRemovalCountsAsDestroyed(const char* reason) {
     if (reason == nullptr) {
         return false;
@@ -52,6 +54,7 @@ bool AuxiliaryRemovalCountsAsDestroyed(const char* reason) {
     return reason_view == "replaced" || reason_view == "furnace" || reason_view == "dismantled";
 }
 
+// Scales a removal burst value by the bonus percentage and returns the adjusted value.
 int ScaleAuxiliaryRemovalBurstValue(int value, int bonus_percent) {
     if (value <= 0) {
         return 0;
@@ -59,11 +62,13 @@ int ScaleAuxiliaryRemovalBurstValue(int value, int bonus_percent) {
     return (value * (150 + std::max(0, bonus_percent)) + 99) / 100;
 }
 
+// Reads auxiliary slot capacity from player state and returns the current maximum.
 int MaxAuxiliaryShipSlots(const PlayerState& player) {
     (void)player;
     return kMaxAuxiliaryShips;
 }
 
+// Chooses an auxiliary unit id and display name from a summon card and returns them.
 std::pair<std::string, std::string> AuxiliaryUnitProfileForCard(const CardDef& card) {
     // Keep summon cards data-driven while still providing stable type ids for UI.
     const std::string lowered = card.name;
@@ -84,10 +89,12 @@ std::pair<std::string, std::string> AuxiliaryUnitProfileForCard(const CardDef& c
     return {"aux_drone", "Auxiliary Drone"};
 }
 
+// Lists the basic auxiliary unit ids without input and returns them.
 std::array<std::string, 4> BasicAuxiliaryUnitIds() {
     return {kAuxUnitInterceptor, kAuxUnitGuardian, kAuxUnitRepair, kAuxUnitPulse};
 }
 
+// Builds a basic auxiliary recipe from unit id and upgrade tier and returns it.
 AuxiliaryUnitRecipe BasicAuxiliaryRecipeForId(const std::string& unit_id, bool upgraded_tier) {
     if (unit_id == kAuxUnitGuardian) {
         return {kAuxUnitGuardian, "Guardian Drone", 0, upgraded_tier ? 4 : 3, 0, 0, 0, 0};
@@ -101,6 +108,7 @@ AuxiliaryUnitRecipe BasicAuxiliaryRecipeForId(const std::string& unit_id, bool u
     return {kAuxUnitInterceptor, "Interceptor Drone", upgraded_tier ? 4 : 3, 0, 0, 0, 0, 0};
 }
 
+// Builds the auxiliary recipe produced by a card and returns it.
 AuxiliaryUnitRecipe AuxiliaryRecipeForCard(const std::string& base_card_id, const CardDef& card) {
     if (base_card_id == "df_27") {
         return {kAuxUnitQueenWasp, "Queen Wasp Drone", std::max(0, card.summonDroneAttack),
@@ -122,6 +130,7 @@ AuxiliaryUnitRecipe AuxiliaryRecipeForCard(const std::string& base_card_id, cons
     return {profile.first, profile.second, std::max(0, card.summonDroneAttack), shield, heal, 0, 0, 0};
 }
 
+// Converts a recipe and duration into live auxiliary ship state and returns it.
 AuxiliaryShipState MakeAuxiliaryShipState(const AuxiliaryUnitRecipe& recipe, int remaining_turns) {
     AuxiliaryShipState ship;
     ship.unitId = recipe.unitId;
@@ -136,6 +145,7 @@ AuxiliaryShipState MakeAuxiliaryShipState(const AuxiliaryUnitRecipe& recipe, int
     return ship;
 }
 
+// Checks a basic auxiliary ship and returns whether it is using upgraded-tier stats.
 bool IsUpgradedBasicAuxiliaryTier(const AuxiliaryShipState& ship) {
     if (ship.unitId == kAuxUnitPulse) {
         return ship.attack >= 3 || ship.shield >= 3;
@@ -152,23 +162,28 @@ bool IsUpgradedBasicAuxiliaryTier(const AuxiliaryShipState& ship) {
     return ship.attack >= 4 || ship.shield >= 4 || ship.heal >= 4 || ship.attack + ship.shield + ship.heal >= 6;
 }
 
+// Calculates card cost from player state and card data and returns the effective cost.
 int EffectiveCardCost(const PlayerState& player, const CardDef& card) {
     return player.firstCardCostZeroThisTurn ? 0 : std::max(0, card.cost);
 }
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
 }
 
+// Checks a summon card and returns whether it leans attack or hybrid.
 bool IsAttackOrHybridSummon(const CardDef& card) {
     return card.summonDroneAttack >= card.summonDroneShield;
 }
 
+// Checks a card definition and returns whether its type is Ability.
 bool IsAbilityCard(const CardDef& card) {
     return card.type == "Ability";
 }
 
+// Scales a positive value above baseline percent and returns the result.
 int ScalePositivePercent(int value, int percent) {
     if (value <= 0 || percent <= 100) {
         return value;
@@ -176,6 +191,7 @@ int ScalePositivePercent(int value, int percent) {
     return (value * percent + 99) / 100;
 }
 
+// Converts difficulty into enemy effect scaling percent and returns it.
 int EnemyEffectScalePercent(int difficulty) {
     if (difficulty >= 2) {
         return 130;
@@ -183,6 +199,7 @@ int EnemyEffectScalePercent(int difficulty) {
     return 100;
 }
 
+// Converts difficulty into enemy hull scaling percent and returns it.
 int EnemyHpScalePercent(int difficulty) {
     if (difficulty <= 0) {
         return 90;
@@ -190,10 +207,12 @@ int EnemyHpScalePercent(int difficulty) {
     return EnemyEffectScalePercent(difficulty);
 }
 
+// Checks difficulty and returns whether aggressive enemy selection is enabled.
 bool DifficultyUsesAggressiveEnemySelection(int difficulty) {
     return difficulty >= 2;
 }
 
+// Converts difficulty into aggressive enemy selection chance and returns the percent.
 int DifficultyAggressiveEnemySelectionPercent(int difficulty) {
     if (difficulty >= 2) {
         return 50;
@@ -201,11 +220,13 @@ int DifficultyAggressiveEnemySelectionPercent(int difficulty) {
     return 0;
 }
 
+// Checks current battle state and returns whether dual elite intents can apply.
 bool DifficultyUsesDualEliteEnemyIntents(const RunState& state) {
     return state.difficulty >= 1 &&
            (state.activeNodeType == "elite" || state.activeNodeType == "boss");
 }
 
+// Converts difficulty into dual intent chance and returns the percent.
 int DifficultyDualEliteIntentPercent(int difficulty) {
     if (difficulty >= 3) {
         return 50;
@@ -221,6 +242,7 @@ int DifficultyDualEliteIntentPercent(int difficulty) {
 
 }  // namespace
 
+// Checks the hand card at index against battle state and returns whether it can be played.
 bool GameEngine::canPlayCard(size_t index) const {
     if (state_.page != AppPage::Battle) {
         return false;
@@ -242,6 +264,7 @@ bool GameEngine::canPlayCard(size_t index) const {
     return EffectiveCardCost(state_.player, resolvedCard(cardRef)) <= state_.player.energy;
 }
 
+// Plays the hand card at index, resolves all its battle effects, and returns nothing.
 void GameEngine::playCard(size_t index) {
     if (state_.player.blackboxSelectionPending) {
         if (!resolveBlackboxProtocol(index)) {
@@ -942,6 +965,7 @@ void GameEngine::playCard(size_t index) {
     }
 }
 
+// Ends the player turn, resolves enemy actions, starts the next turn when possible, and returns nothing.
 void GameEngine::endTurn() {
     if (state_.page != AppPage::Battle) {
         return;
@@ -995,6 +1019,7 @@ void GameEngine::endTurn() {
     state_.statusLine = "Enemy cycle resolved. Your turn begins.";
 }
 
+// Starts a battle from the node type and optional forced enemy id and returns nothing.
 void GameEngine::startBattle(const std::string& nodeType, const std::string& forcedEnemyId) {
     const EnemyTemplate& enemy = pickEnemy(nodeType, forcedEnemyId);
     recordSeenEnemy(enemy.id);
@@ -1102,6 +1127,7 @@ void GameEngine::startBattle(const std::string& nodeType, const std::string& for
     log("Hostile contact acquired: " + state_.enemy.name + ".");
 }
 
+// Recombines hand and discard into draw pile, shuffles for battle, and returns nothing.
 void GameEngine::resetBattleDeck() {
     for (const std::string& card : state_.player.hand) {
         state_.player.drawPile.push_back(card);
@@ -1115,6 +1141,7 @@ void GameEngine::resetBattleDeck() {
     state_.player.shield = 0;
 }
 
+// Starts the player's turn by handling shields, overheat, draw, and energy, then returns nothing.
 void GameEngine::startPlayerTurn() {
     if (state_.battleTurn > 0 && state_.player.shield > 0) {
         log("Your temporary shield field dissipates.");
@@ -1213,6 +1240,7 @@ void GameEngine::startPlayerTurn() {
         " energy and " + std::to_string(static_cast<int>(state_.player.hand.size())) + " cards in hand.");
 }
 
+// Chooses the enemy's primary and optional secondary intent and returns nothing.
 void GameEngine::chooseEnemyIntent() {
     state_.enemy.secondaryIntentKind.clear();
     state_.enemy.secondaryIntentLabel.clear();
@@ -1353,6 +1381,7 @@ void GameEngine::chooseEnemyIntent() {
                  &state_.enemy.secondaryIntentValue);
 }
 
+// Resolves the enemy's chosen intent against the player and returns nothing.
 void GameEngine::resolveEnemyIntent() {
     if (state_.enemy.shield > 0) {
         log(state_.enemy.name + "'s temporary shield collapses.");
@@ -1452,6 +1481,7 @@ void GameEngine::resolveEnemyIntent() {
     state_.enemy.secondaryIntentValue = 0;
 }
 
+// Applies battle victory cleanup, rewards, and route state and returns nothing.
 void GameEngine::handleBattleVictory() {
     state_.animation.active = false;
     state_.reward = {};
@@ -1559,6 +1589,7 @@ void GameEngine::handleBattleVictory() {
     state_.statusLine = "Enemy destroyed. Choose your salvage reward.";
 }
 
+// Applies defeat cleanup and summary flow without input and returns nothing.
 void GameEngine::handleDefeat() {
     state_.player.overheatRounds = 0;
     state_.player.form = kPlayerFormNeutral;
@@ -1624,6 +1655,7 @@ void GameEngine::handleDefeat() {
     fillSummary(false);
 }
 
+// Applies incoming damage to the player after shields and modifiers and returns nothing.
 void GameEngine::applyDamageToPlayer(int amount) {
     int remaining = amount;
     if (remaining > 0 && state_.player.nextIncomingDamageFlatReductionThisTurn > 0) {
@@ -1660,6 +1692,7 @@ void GameEngine::applyDamageToPlayer(int amount) {
     state_.player.hp = std::max(0, state_.player.hp);
 }
 
+// Applies damage hits to the enemy with optional shield bypass and returns nothing.
 void GameEngine::applyDamageToEnemy(int amount, bool ignoreShield, int hits) {
     for (int hit = 0; hit < hits; ++hit) {
         int remaining = amount;
@@ -1682,6 +1715,7 @@ void GameEngine::applyDamageToEnemy(int amount, bool ignoreShield, int hits) {
     }
 }
 
+// Draws the requested number of cards into hand, reshuffling when needed, and returns nothing.
 void GameEngine::drawCards(int count) {
     for (int i = 0; i < count; ++i) {
         if (state_.player.drawPile.empty()) {
@@ -1702,6 +1736,7 @@ void GameEngine::drawCards(int count) {
     }
 }
 
+// Moves discard pile cards into draw pile, shuffles them, and returns nothing.
 void GameEngine::reshuffleDiscardIntoDraw() {
     if (state_.player.discardPile.empty()) {
         return;
@@ -1716,6 +1751,7 @@ void GameEngine::reshuffleDiscardIntoDraw() {
     }
 }
 
+// Changes player heat by the given delta, applies overheat effects, and returns nothing.
 void GameEngine::changeHeat(int delta) {
     const bool wasHighHeat = IsHighHeat(state_.player.heat, state_.player.maxHeat);
     const int beforeHeat = state_.player.heat;
@@ -1777,10 +1813,12 @@ void GameEngine::changeHeat(int delta) {
     }
 }
 
+// Checks player heat and returns whether the player is overheated.
 bool GameEngine::playerIsOverheated() const {
     return state_.player.heat >= state_.player.maxHeat;
 }
 
+// Reads player overheat state and returns the current stage.
 int GameEngine::playerOverheatStage() const {
     if (!playerIsOverheated()) {
         return 0;
@@ -1788,6 +1826,7 @@ int GameEngine::playerOverheatStage() const {
     return std::max(1, std::min(3, state_.player.overheatRounds));
 }
 
+// Syncs player overheat counters from current heat and returns nothing.
 void GameEngine::syncPlayerOverheatState() {
     if (state_.page != AppPage::Battle) {
         state_.player.overheatRounds = 0;
@@ -1810,6 +1849,7 @@ void GameEngine::syncPlayerOverheatState() {
     }
 }
 
+// Advances player overheat severity for a new round and returns nothing.
 void GameEngine::advancePlayerOverheatRound() {
     if (!playerIsOverheated()) {
         state_.player.overheatRounds = 0;
@@ -1834,6 +1874,7 @@ void GameEngine::advancePlayerOverheatRound() {
     }
 }
 
+// Summons auxiliary ships from the given card and base id and returns nothing.
 void GameEngine::summonAuxiliaryShips(const CardDef& card, const std::string& baseCardId) {
     if (card.summonDroneCount <= 0) {
         return;
@@ -1894,6 +1935,7 @@ void GameEngine::summonAuxiliaryShips(const CardDef& card, const std::string& ba
     }
 }
 
+// Resolves end-turn auxiliary ship triggers, durations, and cleanup, then returns nothing.
 void GameEngine::resolveAuxiliaryShipsEndTurn() {
     if (state_.auxiliaryShips.empty()) {
         return;
@@ -1914,6 +1956,7 @@ void GameEngine::resolveAuxiliaryShipsEndTurn() {
     clearDestroyedAuxiliaryShips();
 }
 
+// Resolves one auxiliary ship trigger from its index and context flags and returns nothing.
 void GameEngine::resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, bool immediateContext) {
     if (shipIndex >= state_.auxiliaryShips.size()) {
         return;
@@ -1975,6 +2018,7 @@ void GameEngine::resolveAuxiliaryShipTrigger(size_t shipIndex, bool allowAura, b
     }
 }
 
+// Triggers all auxiliary ships immediately the requested number of times and returns nothing.
 void GameEngine::triggerAuxiliaryShipsNow(int times) {
     if (times <= 0 || state_.auxiliaryShips.empty()) {
         return;
@@ -1987,6 +2031,7 @@ void GameEngine::triggerAuxiliaryShipsNow(int times) {
     }
 }
 
+// Dismantles auxiliary ships for card-defined rewards and returns nothing.
 void GameEngine::resolveAuxiliaryShipDestroyRewards(const CardDef& card) {
     if (card.auxDestroyCount <= 0) {
         return;
@@ -2060,6 +2105,7 @@ void GameEngine::resolveAuxiliaryShipDestroyRewards(const CardDef& card) {
     }
 }
 
+// Applies departure burst effects for a removed auxiliary ship and returns nothing.
 void GameEngine::resolveAuxiliaryShipRemovalBurst(const AuxiliaryShipState& ship, const char* reason) {
     if (!AuxiliaryRemovalCountsAsDestroyed(reason)) {
         return;
@@ -2098,6 +2144,7 @@ void GameEngine::resolveAuxiliaryShipRemovalBurst(const AuxiliaryShipState& ship
     }
 }
 
+// Handles all removal bookkeeping for an auxiliary ship and returns nothing.
 void GameEngine::onAuxiliaryShipRemoved(const AuxiliaryShipState& ship, const char* reason) {
     resolveAuxiliaryShipRemovalBurst(ship, reason);
     if (!AuxiliaryRemovalCountsAsDestroyed(reason)) {
@@ -2111,6 +2158,7 @@ void GameEngine::onAuxiliaryShipRemoved(const AuxiliaryShipState& ship, const ch
     }
 }
 
+// Exiles the selected hand card for Blackbox Protocol and returns whether it succeeded.
 bool GameEngine::resolveBlackboxProtocol(size_t handIndex) {
     if (handIndex >= state_.player.hand.size()) {
         return false;
@@ -2132,6 +2180,7 @@ bool GameEngine::resolveBlackboxProtocol(size_t handIndex) {
     return true;
 }
 
+// Clears auxiliary transform selection state without input and returns nothing.
 void GameEngine::clearAuxiliaryTransformSelection() {
     state_.player.auxTransformSelectionPending = false;
     state_.player.auxTransformTargetChoicePending = false;
@@ -2139,6 +2188,7 @@ void GameEngine::clearAuxiliaryTransformSelection() {
     state_.player.auxTransformSelectedShipIndex = -1;
 }
 
+// Lists valid target unit ids for the selected transform and returns them.
 std::vector<std::string> GameEngine::currentAuxiliaryTransformTargetUnitIds() const {
     if (!state_.player.auxTransformSelectionPending || !state_.player.auxTransformTargetChoicePending) {
         return {};
@@ -2158,6 +2208,7 @@ std::vector<std::string> GameEngine::currentAuxiliaryTransformTargetUnitIds() co
     return targets;
 }
 
+// Starts auxiliary transform selection from the requested count and returns nothing.
 void GameEngine::beginAuxiliaryTransformSelection(const CardDef&, int transformCount) {
     const int available_ships = static_cast<int>(state_.auxiliaryShips.size());
     const int selections = std::min(std::max(1, transformCount), available_ships);
@@ -2176,6 +2227,7 @@ void GameEngine::beginAuxiliaryTransformSelection(const CardDef&, int transformC
     log("Wing Rotation awaits auxiliary ship selection.");
 }
 
+// Selects the auxiliary ship at index for transformation and returns whether it succeeded.
 bool GameEngine::resolveAuxiliaryTransformSelection(size_t index) {
     if (!state_.player.auxTransformSelectionPending || state_.player.auxTransformTargetChoicePending) {
         return false;
@@ -2190,6 +2242,7 @@ bool GameEngine::resolveAuxiliaryTransformSelection(size_t index) {
     return true;
 }
 
+// Applies the chosen auxiliary transform target and returns whether it succeeded.
 bool GameEngine::resolveAuxiliaryTransformTargetSelection(size_t index) {
     if (!state_.player.auxTransformSelectionPending || !state_.player.auxTransformTargetChoicePending) {
         return false;
@@ -2230,42 +2283,52 @@ bool GameEngine::resolveAuxiliaryTransformTargetSelection(size_t index) {
     return true;
 }
 
+// Reports whether auxiliary transform selection is active and returns the result.
 bool GameEngine::auxiliaryTransformSelectionPending() const {
     return state_.player.auxTransformSelectionPending;
 }
 
+// Reports whether auxiliary target choice is active and returns the result.
 bool GameEngine::auxiliaryTransformTargetChoicePending() const {
     return state_.player.auxTransformSelectionPending && state_.player.auxTransformTargetChoicePending;
 }
 
+// Returns the selected auxiliary ship index for transformation.
 int GameEngine::auxiliaryTransformSelectedShipIndex() const {
     return state_.player.auxTransformSelectedShipIndex;
 }
 
+// Returns how many auxiliary transform selections remain.
 int GameEngine::auxiliaryTransformRemainingSelections() const {
     return state_.player.auxTransformRemainingSelections;
 }
 
+// Returns the current valid auxiliary transform target unit ids.
 std::vector<std::string> GameEngine::auxiliaryTransformTargetUnitIds() const {
     return currentAuxiliaryTransformTargetUnitIds();
 }
 
+// Selects an auxiliary ship by index and returns whether it succeeded.
 bool GameEngine::selectAuxiliaryTransformShip(size_t index) {
     return resolveAuxiliaryTransformSelection(index);
 }
 
+// Selects an auxiliary transform target by index and returns whether it succeeded.
 bool GameEngine::selectAuxiliaryTransformTarget(size_t index) {
     return resolveAuxiliaryTransformTargetSelection(index);
 }
 
+// Checks a card reference and returns whether it is a temporary copy reference.
 bool GameEngine::isTemporaryCopyRef(const std::string& cardRef) const {
     return cardRef.rfind(kTemporaryCopyPrefix, 0) == 0;
 }
 
+// Wraps the given card reference as a temporary copy and returns the wrapped reference.
 std::string GameEngine::makeTemporaryCopyRef(const std::string& cardRef) const {
     return std::string(kTemporaryCopyPrefix) + canonicalCardRef(cardRef);
 }
 
+// Removes temporary copy wrapping from a card reference and returns the original reference.
 std::string GameEngine::unwrapTemporaryCopyRef(const std::string& cardRef) const {
     if (!isTemporaryCopyRef(cardRef)) {
         return cardRef;
@@ -2273,6 +2336,7 @@ std::string GameEngine::unwrapTemporaryCopyRef(const std::string& cardRef) const
     return cardRef.substr(std::char_traits<char>::length(kTemporaryCopyPrefix));
 }
 
+// Adds temporary Blackbox imprint copies to hand at turn start and returns nothing.
 void GameEngine::addBlackboxTurnCopies() {
     if (state_.player.blackboxImprintRef.empty()) {
         return;
@@ -2292,6 +2356,7 @@ void GameEngine::addBlackboxTurnCopies() {
     }
 }
 
+// Applies auxiliary attack and shield buffs from the card and returns nothing.
 void GameEngine::buffAuxiliaryShips(const CardDef& card) {
     if (card.buffDroneAttack == 0 && card.buffDroneShield == 0) {
         return;
@@ -2303,6 +2368,7 @@ void GameEngine::buffAuxiliaryShips(const CardDef& card) {
     log("Auxiliary ship formation is recalibrated.");
 }
 
+// Shifts the player form according to the card and returns nothing.
 void GameEngine::shiftPlayerForm(const CardDef& card) {
     if (card.formShift == 0 && !card.formExit) {
         return;
@@ -2380,6 +2446,7 @@ void GameEngine::shiftPlayerForm(const CardDef& card) {
     log("Combat form shifted to " + playerFormLabel() + ".");
 }
 
+// Resolves the first form-change relic bonus when available and returns nothing.
 void GameEngine::resolveFirstFormChangeRelic() {
     if (!hasRelic("phase_resonator") || state_.player.firstFormChangeRelicTriggeredThisBattle) {
         return;
@@ -2389,6 +2456,7 @@ void GameEngine::resolveFirstFormChangeRelic() {
     log("Phase Resonator draws 1 card on your first form change this battle.");
 }
 
+// Toggles the player form, resolves related triggers, and returns nothing.
 void GameEngine::togglePlayerForm() {
     const int previousForm = state_.player.form;
     if (previousForm == kPlayerFormOverload) {
@@ -2454,6 +2522,7 @@ void GameEngine::togglePlayerForm() {
     log("Combat form toggled to " + playerFormLabel() + ".");
 }
 
+// Removes expired auxiliary ships, runs their removal hooks, and returns nothing.
 void GameEngine::clearDestroyedAuxiliaryShips() {
     const auto it = std::remove_if(
         state_.auxiliaryShips.begin(),
@@ -2468,6 +2537,7 @@ void GameEngine::clearDestroyedAuxiliaryShips() {
     state_.auxiliaryShips.erase(it, state_.auxiliaryShips.end());
 }
 
+// Builds the current player form label without input and returns it.
 std::string GameEngine::playerFormLabel() const {
     switch (state_.player.form) {
     case kPlayerFormOverload:
@@ -2479,6 +2549,7 @@ std::string GameEngine::playerFormLabel() const {
     }
 }
 
+// Changes enemy heat by the given delta, updates overheat state, and returns nothing.
 void GameEngine::changeEnemyHeat(int delta) {
     state_.enemy.maxHeat = std::max(1, state_.enemy.maxHeat);
     const int beforeHeat = state_.enemy.heat;
@@ -2495,10 +2566,12 @@ void GameEngine::changeEnemyHeat(int delta) {
     syncEnemyOverheatState();
 }
 
+// Checks enemy heat and returns whether the enemy is overheated.
 bool GameEngine::enemyIsOverheated() const {
     return state_.enemy.heat >= state_.enemy.maxHeat;
 }
 
+// Reads enemy overheat state and returns the current stage.
 int GameEngine::enemyOverheatStage() const {
     if (!enemyIsOverheated()) {
         return 0;
@@ -2506,6 +2579,7 @@ int GameEngine::enemyOverheatStage() const {
     return std::max(1, std::min(3, state_.enemy.overheatRounds));
 }
 
+// Computes current enemy attack damage after modifiers and returns it.
 int GameEngine::effectiveEnemyAttackDamage() const {
     int damage = state_.enemy.intentValue;
     if (state_.enemy.weakenTurns > 0) {
@@ -2517,6 +2591,7 @@ int GameEngine::effectiveEnemyAttackDamage() const {
     return std::max(0, damage);
 }
 
+// Checks enemy cooldown and heat and returns whether emergency cooling should happen.
 bool GameEngine::enemyShouldUseCooling() const {
     if (state_.enemy.coolingCooldownTurns > 0) {
         return false;
@@ -2524,6 +2599,7 @@ bool GameEngine::enemyShouldUseCooling() const {
     return state_.enemy.heat >= std::max(1, state_.enemy.maxHeat - 1);
 }
 
+// Calculates enemy emergency cooling from sector depth and returns the heat amount.
 int GameEngine::enemyCoolingAmount() const {
     // Enemy emergency cooling scales with sector depth:
     // sector 1 -> 3 heat, sector 2 -> 5 heat, sector 3+ -> 7 heat.
@@ -2536,6 +2612,7 @@ int GameEngine::enemyCoolingAmount() const {
     return 7;
 }
 
+// Applies enemy emergency cooling, starts feedback animation, and returns nothing.
 void GameEngine::triggerEnemyCooling() {
     const int cooling = enemyCoolingAmount();
     changeEnemyHeat(-cooling);
@@ -2544,6 +2621,7 @@ void GameEngine::triggerEnemyCooling() {
     log(state_.enemy.name + " vents reactor heat by " + std::to_string(cooling) + ".");
 }
 
+// Syncs enemy overheat counters from current heat and returns nothing.
 void GameEngine::syncEnemyOverheatState() {
     if (enemyIsOverheated()) {
         if (state_.enemy.overheatRounds == 0) {
@@ -2561,6 +2639,7 @@ void GameEngine::syncEnemyOverheatState() {
     }
 }
 
+// Advances enemy overheat severity for a new round and returns nothing.
 void GameEngine::advanceEnemyOverheatRound() {
     if (!enemyIsOverheated()) {
         state_.enemy.overheatRounds = 0;
@@ -2585,6 +2664,7 @@ void GameEngine::advanceEnemyOverheatRound() {
     }
 }
 
+// Adds a line to the battle log, trims old lines, and returns nothing.
 void GameEngine::log(const std::string& line) {
     state_.battleLog.push_back(line);
     while (state_.battleLog.size() > 7) {
@@ -2592,6 +2672,7 @@ void GameEngine::log(const std::string& line) {
     }
 }
 
+// Starts an animation from the given details and returns nothing.
 void GameEngine::startAnimation(const std::string& kind,
                                 const std::string& label,
                                 int magnitude,

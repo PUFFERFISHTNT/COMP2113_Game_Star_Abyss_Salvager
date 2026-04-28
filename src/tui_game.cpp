@@ -5,6 +5,7 @@
 
 namespace {
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
@@ -12,6 +13,7 @@ void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
 
 }  // namespace
 
+// Creates the game engine, loads content and registries, and leaves the help page data ready.
 GameEngine::GameEngine() : rng_(std::random_device{}()) {
     initializeData();
     loadObtainedCardRegistry();
@@ -21,10 +23,12 @@ GameEngine::GameEngine() : rng_(std::random_device{}()) {
     fillHelpInfo();
 }
 
+// Returns the current run state by const reference without changing it.
 const RunState& GameEngine::state() const {
     return state_;
 }
 
+// Clears the active run back to menu defaults and returns nothing.
 void GameEngine::resetRunState() {
     state_ = RunState{};
     state_.difficulty = 1;
@@ -33,10 +37,12 @@ void GameEngine::resetRunState() {
     resumePage_ = AppPage::Map;
 }
 
+// Seeds the engine random generator with the provided value and returns nothing.
 void GameEngine::setSeedForTesting(unsigned int seed) {
     rng_.seed(seed);
 }
 
+// Advances animation timing without input and returns nothing.
 void GameEngine::tickAnimation() {
     if (!state_.animation.active) {
         return;
@@ -48,6 +54,7 @@ void GameEngine::tickAnimation() {
     }
 }
 
+// Looks up the base card behind the given id or reference and returns its definition when found.
 const CardDef* GameEngine::cardById(const std::string& id) const {
     const std::string baseId = baseCardId(id);
     const auto found = std::find_if(cardPool_.begin(), cardPool_.end(), [&](const CardDef& card) {
@@ -56,6 +63,7 @@ const CardDef* GameEngine::cardById(const std::string& id) const {
     return found == cardPool_.end() ? nullptr : &(*found);
 }
 
+// Chooses an enemy for the node type and optional forced id and returns the selected template.
 const GameEngine::EnemyTemplate& GameEngine::pickEnemy(const std::string& nodeType,
                                                        const std::string& forcedEnemyId) {
     if (!forcedEnemyId.empty()) {
@@ -91,6 +99,7 @@ const GameEngine::EnemyTemplate& GameEngine::pickEnemy(const std::string& nodeTy
     return enemyPool_.front();
 }
 
+// Searches enemy templates by id and returns the matching pointer when present.
 const GameEngine::EnemyTemplate* GameEngine::enemyTemplateById(const std::string& id) const {
     const auto found = std::find_if(enemyPool_.begin(), enemyPool_.end(), [&](const EnemyTemplate& enemy) {
         return enemy.id == id;
@@ -98,6 +107,7 @@ const GameEngine::EnemyTemplate* GameEngine::enemyTemplateById(const std::string
     return found == enemyPool_.end() ? nullptr : &(*found);
 }
 
+// Searches ship templates by id and returns the matching pointer when present.
 const GameEngine::ShipTemplate* GameEngine::shipTemplateById(const std::string& id) const {
     const auto found = std::find_if(ships_.begin(), ships_.end(), [&](const ShipTemplate& ship) {
         return ship.id == id;
@@ -105,6 +115,7 @@ const GameEngine::ShipTemplate* GameEngine::shipTemplateById(const std::string& 
     return found == ships_.end() ? nullptr : &(*found);
 }
 
+// Searches relic definitions by id and returns the matching pointer when present.
 const GameEngine::RelicDef* GameEngine::relicById(const std::string& id) const {
     const auto found = std::find_if(relicPool_.begin(), relicPool_.end(), [&](const RelicDef& relic) {
         return relic.id == id;

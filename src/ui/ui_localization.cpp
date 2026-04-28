@@ -11,19 +11,23 @@
 // layout and interaction, while gameplay text continues to map 1:1 with the
 // original single-file implementation.
 
+// Chooses the English or Chinese string for the requested language and returns it.
 std::string Tr(UiLanguage language, const std::string& english, const std::string& chinese) {
     return language == UiLanguage::Chinese ? chinese : english;
 }
 
+// Checks the beginning of text against prefix and returns whether it matches.
 bool StartsWith(const std::string& text, const std::string& prefix) {
     return text.size() >= prefix.size() && text.compare(0, prefix.size(), prefix) == 0;
 }
 
+// Checks the end of text against suffix and returns whether it matches.
 bool EndsWith(const std::string& text, const std::string& suffix) {
     return text.size() >= suffix.size() &&
            text.compare(text.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+// Translates known gameplay text for the selected language and returns the best matching string.
 std::string TranslateGameText(UiLanguage language, const std::string& text) {
     static std::map<std::string, std::string> zh_to_en;
     static std::map<std::string, std::string> en_to_zh;

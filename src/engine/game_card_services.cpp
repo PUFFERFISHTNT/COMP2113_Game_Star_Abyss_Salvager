@@ -17,6 +17,7 @@ constexpr const char* kPayloadBackMarket = "service_back_market";
 constexpr const char* kPayloadSkipService = "service_skip_service";
 constexpr const char* kTemporaryCopyPrefix = "tmp|";
 
+// Shuffles the given vector with the supplied random generator and returns nothing.
 template <typename T>
 void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
     std::shuffle(values.begin(), values.end(), rng);
@@ -24,6 +25,7 @@ void ShuffleVector(std::vector<T>& values, std::mt19937& rng) {
 
 }  // namespace
 
+// Normalizes a card id, alias, or reference to its base card id and returns it.
 std::string GameEngine::baseCardId(const std::string& cardRef) const {
     const std::string normalized =
         cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
@@ -54,6 +56,7 @@ std::string GameEngine::baseCardId(const std::string& cardRef) const {
     return normalized.substr(0, separator);
 }
 
+// Reads the upgrade level from a card reference and returns the numeric level.
 int GameEngine::cardUpgradeLevel(const std::string& cardRef) const {
     const std::string normalized =
         cardRef.rfind(kTemporaryCopyPrefix, 0) == 0 ? cardRef.substr(4) : cardRef;
@@ -79,14 +82,17 @@ int GameEngine::cardUpgradeLevel(const std::string& cardRef) const {
     }
 }
 
+// Combines a base card id and upgrade level into the stored reference string and returns it.
 std::string GameEngine::makeCardRef(const std::string& cardId, int upgradeLevel) const {
     return upgradeLevel <= 0 ? cardId : (cardId + "@" + std::to_string(upgradeLevel));
 }
 
+// Converts the given card reference into the engine's canonical form and returns it.
 std::string GameEngine::canonicalCardRef(const std::string& cardRef) const {
     return makeCardRef(baseCardId(cardRef), cardUpgradeLevel(cardRef));
 }
 
+// Finds configured upgrade data for the given card id or reference and returns it when present.
 const CardDef* GameEngine::configuredUpgradeCardByBaseId(const std::string& cardId) const {
     const std::string baseId = baseCardId(cardId);
     const auto found = std::find_if(
@@ -95,6 +101,7 @@ const CardDef* GameEngine::configuredUpgradeCardByBaseId(const std::string& card
     return found == configuredUpgradePool_.end() ? nullptr : &(*found);
 }
 
+// Normalizes all stored card references and clears legacy upgrade markers, returning nothing.
 void GameEngine::normalizeUpgradedCards() {
     const auto normalize_pile = [&](std::vector<std::string>& pile) {
         for (std::string& ref : pile) {
@@ -131,10 +138,12 @@ void GameEngine::normalizeUpgradedCards() {
     state_.upgradedCardTypes.clear();
 }
 
+// Encodes a deck pile and index into an instance payload and returns it.
 std::string GameEngine::makeDeckInstancePayload(const std::string& pileId, size_t index) const {
     return "instance:" + pileId + ":" + std::to_string(index);
 }
 
+// Parses a deck instance payload into optional pile and index outputs and returns whether it succeeded.
 bool GameEngine::parseDeckInstancePayload(const std::string& payload, std::string* pileId, size_t* index) const {
     if (payload.rfind("instance:", 0) != 0) {
         return false;
@@ -162,6 +171,7 @@ bool GameEngine::parseDeckInstancePayload(const std::string& payload, std::strin
     }
 }
 
+// Replaces the card reference targeted by the payload and returns whether replacement worked.
 bool GameEngine::replaceDeckInstanceCardRef(const std::string& payload, const std::string& newCardRef) {
     std::string pileId;
     size_t index = 0;
@@ -188,10 +198,12 @@ bool GameEngine::replaceDeckInstanceCardRef(const std::string& payload, const st
     return true;
 }
 
+// Checks whether the given card id or reference has upgrade data and returns the result.
 bool GameEngine::cardTypeSupportsUpgrade(const std::string& cardId) const {
     return configuredUpgradeCardByBaseId(cardId) != nullptr;
 }
 
+// Resolves a card reference to the effective card definition and returns it.
 CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
     const CardDef* base = cardById(cardRef);
     if (base == nullptr) {
@@ -215,11 +227,13 @@ CardDef GameEngine::resolvedCard(const std::string& cardRef) const {
     return fallback;
 }
 
+// Builds the display name for the card reference and returns it.
 std::string GameEngine::displayCardName(const std::string& cardRef) const {
     const CardDef resolved = resolvedCard(cardRef);
     return resolved.name.empty() ? baseCardId(cardRef) : resolved.name;
 }
 
+// Calculates upgrade cost for the requested source and returns the scrap amount.
 int GameEngine::cardUpgradeCost(CardUpgradeSource source) const {
     if (source == CardUpgradeSource::RepairStation || source == CardUpgradeSource::EventReward) {
         return 0;
@@ -235,6 +249,7 @@ int GameEngine::cardUpgradeCost(CardUpgradeSource source) const {
     return static_cast<int>(cost);
 }
 
+// Builds card views for current reward choices and returns them.
 std::vector<CardView> GameEngine::rewardCards() const {
     std::vector<CardView> result;
     for (const std::string& ref : state_.reward.cardIds) {
@@ -245,6 +260,7 @@ std::vector<CardView> GameEngine::rewardCards() const {
     return result;
 }
 
+// Builds card views for cards in hand and returns them.
 std::vector<CardView> GameEngine::handCards() const {
     std::vector<CardView> result;
     for (const std::string& ref : state_.player.hand) {
@@ -262,6 +278,7 @@ std::vector<CardView> GameEngine::handCards() const {
     return result;
 }
 
+// Builds top-first draw pile card views and returns them.
 std::vector<CardView> GameEngine::drawPileCards() const {
     std::vector<CardView> result;
     result.reserve(state_.player.drawPile.size());
@@ -273,6 +290,7 @@ std::vector<CardView> GameEngine::drawPileCards() const {
     return result;
 }
 
+// Builds top-first discard pile card views and returns them.
 std::vector<CardView> GameEngine::discardPileCards() const {
     std::vector<CardView> result;
     result.reserve(state_.player.discardPile.size());
@@ -284,6 +302,7 @@ std::vector<CardView> GameEngine::discardPileCards() const {
     return result;
 }
 
+// Groups all deck cards by base id and returns ownership entries.
 std::vector<CardOwnershipEntry> GameEngine::ownedCards() const {
     std::vector<std::string> owned_refs;
     owned_refs.insert(owned_refs.end(), state_.player.drawPile.begin(), state_.player.drawPile.end());
@@ -317,6 +336,7 @@ std::vector<CardOwnershipEntry> GameEngine::ownedCards() const {
     return result;
 }
 
+// Lists each owned card instance with its pile payload and returns card views.
 std::vector<CardView> GameEngine::ownedCardInstances() const {
     struct CardInstance {
         std::string pileId;
@@ -361,6 +381,7 @@ std::vector<CardView> GameEngine::ownedCardInstances() const {
     return result;
 }
 
+// Builds sorted card library entries with obtained flags and returns them.
 std::vector<CardLibraryEntry> GameEngine::allCardLibraryEntries() const {
     std::vector<const CardDef*> cards;
     cards.reserve(cardPool_.size());
@@ -382,18 +403,22 @@ std::vector<CardLibraryEntry> GameEngine::allCardLibraryEntries() const {
     return result;
 }
 
+// Returns the number of obtained card ids recorded in the registry.
 size_t GameEngine::obtainedCardCount() const {
     return obtainedCardIds_.size();
 }
 
+// Returns the number of base cards currently known to the engine.
 size_t GameEngine::totalCardCount() const {
     return cardPool_.size();
 }
 
+// Adds completed event and enemy achievement counts and returns the total.
 size_t GameEngine::completedAchievementCount() const {
     return completedEventAchievementCount() + seenEnemyCount();
 }
 
+// Upgrades the requested card or deck instance and returns whether the upgrade succeeded.
 bool GameEngine::upgradeCard(const std::string& cardRef,
                              CardUpgradeSource source,
                              std::string* error) {
@@ -517,6 +542,7 @@ bool GameEngine::upgradeCard(const std::string& cardRef,
     return true;
 }
 
+// Lists card ids that can be purged with copy counts and returns them.
 std::vector<std::pair<std::string, int>> GameEngine::purgeableCards() const {
     std::vector<std::string> allCards;
     allCards.insert(allCards.end(), state_.player.drawPile.begin(), state_.player.drawPile.end());
@@ -547,6 +573,7 @@ std::vector<std::pair<std::string, int>> GameEngine::purgeableCards() const {
     return result;
 }
 
+// Lists card references that can be upgraded with copy counts and returns them.
 std::vector<std::pair<std::string, int>> GameEngine::upgradeableCards() const {
     std::vector<std::string> allCards;
     const auto collect = [&](const std::vector<std::string>& pile) {
@@ -582,6 +609,7 @@ std::vector<std::pair<std::string, int>> GameEngine::upgradeableCards() const {
     return result;
 }
 
+// Lists deck instance payloads for upgradeable cards and returns them.
 std::vector<std::string> GameEngine::upgradeableCardInstanceRefs() const {
     std::vector<std::string> result;
     const auto collect = [&](const std::vector<std::string>& pile, const std::string& pileId) {
@@ -632,6 +660,7 @@ std::vector<std::string> GameEngine::upgradeableCardInstanceRefs() const {
     return result;
 }
 
+// Removes one copy of the given card id from deck piles and returns whether anything was removed.
 bool GameEngine::purgeCardFromDeck(const std::string& cardId) {
     const std::string baseId = baseCardId(cardId);
     std::vector<std::vector<std::string>*> piles = {
@@ -651,6 +680,7 @@ bool GameEngine::purgeCardFromDeck(const std::string& cardId) {
     return false;
 }
 
+// Upgrades one random eligible card, fills optional output text, and returns whether it succeeded.
 bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
                                    std::string* upgradedCardName,
                                    std::string* error) {
@@ -682,6 +712,7 @@ bool GameEngine::upgradeRandomCard(CardUpgradeSource source,
     return true;
 }
 
+// Opens the repair station service screen without input and returns nothing.
 void GameEngine::openRepairStation() {
     state_.encounter = {};
     state_.encounter.typeId = "repair";
@@ -707,6 +738,7 @@ void GameEngine::openRepairStation() {
     add_option("Leave station", "Finish repairs and continue the route.", "leave");
 }
 
+// Opens the market shop service screen without input and returns nothing.
 void GameEngine::openMarketShop() {
     if (state_.marketOfferCardIds.empty()) {
         state_.marketOfferCardIds = randomMarketCardChoices(3);
@@ -748,11 +780,13 @@ void GameEngine::openMarketShop() {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Clears market offer and purge state without input and returns nothing.
 void GameEngine::clearMarketState() {
     state_.marketOfferCardIds.clear();
     state_.marketPurgeUsed = false;
 }
 
+// Opens market purge selection at the given offset and returns nothing.
 void GameEngine::enterMarketPurge(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = purgeableCards();
     const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
@@ -800,6 +834,7 @@ void GameEngine::enterMarketPurge(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Opens market upgrade selection at the given offset and returns nothing.
 void GameEngine::enterMarketUpgrade(size_t offset) {
     const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     const int price = cardUpgradeCost(CardUpgradeSource::Market);
@@ -834,6 +869,7 @@ void GameEngine::enterMarketUpgrade(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Opens repair upgrade selection at the given offset and returns nothing.
 void GameEngine::enterRepairUpgrade(size_t offset) {
     const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     (void)offset;
@@ -866,6 +902,7 @@ void GameEngine::enterRepairUpgrade(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Opens repair purge selection at the given offset and returns nothing.
 void GameEngine::enterRepairPurge(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = purgeableCards();
     const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
@@ -913,6 +950,7 @@ void GameEngine::enterRepairPurge(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Opens event purge selection at the given offset and returns nothing.
 void GameEngine::enterEventPurge(size_t offset) {
     const std::vector<std::pair<std::string, int>> candidates = purgeableCards();
     const size_t totalPages = std::max<size_t>(1, (candidates.size() + kCardServicePageSize - 1) / kCardServicePageSize);
@@ -960,6 +998,7 @@ void GameEngine::enterEventPurge(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Opens event upgrade selection at the given offset and returns nothing.
 void GameEngine::enterEventUpgrade(size_t offset) {
     const std::vector<std::string> candidates = upgradeableCardInstanceRefs();
     (void)offset;
@@ -992,6 +1031,7 @@ void GameEngine::enterEventUpgrade(size_t offset) {
     state_.encounter.payloadValues.push_back(0);
 }
 
+// Resolves one purge-service option by index and returns whether it was handled.
 bool GameEngine::resolvePurgeSelection(size_t index) {
     if (index >= state_.encounter.choices.size()) {
         return false;
@@ -1060,6 +1100,7 @@ bool GameEngine::resolvePurgeSelection(size_t index) {
     return true;
 }
 
+// Resolves one upgrade-service option by index and returns whether it was handled.
 bool GameEngine::resolveUpgradeSelection(size_t index) {
     if (index >= state_.encounter.choices.size()) {
         return false;

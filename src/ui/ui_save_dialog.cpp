@@ -13,18 +13,22 @@
 
 using namespace ftxui;
 
+// Checks one save-name byte and returns whether the character is allowed.
 bool IsAllowedSaveNameChar(unsigned char ch) {
     return std::isalnum(ch) != 0 || ch == '_' || ch == '-';
 }
 
+// Saves the current run through the active save-name field and returns nothing.
 void StarAbyssApp::SaveRun() {
     SaveToSlot(saveNameInput_, true);
 }
 
+// Loads the currently selected save slot and returns nothing.
 void StarAbyssApp::LoadRun() {
     LoadSelectedSave();
 }
 
+// Opens the save or load dialog for the requested mode and returns nothing.
 void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
     CloseCardViewer();
     saveDialogMode_ = mode;
@@ -42,11 +46,13 @@ void StarAbyssApp::OpenSaveDialog(SaveDialogMode mode) {
     }
 }
 
+// Hides the save dialog, clears its mode, and returns nothing.
 void StarAbyssApp::CloseSaveDialog() {
     saveDialogVisible_ = false;
     saveDialogMode_ = SaveDialogMode::None;
 }
 
+// Cleans a raw save name into a safe slot name and returns it.
 std::string StarAbyssApp::SanitizeSaveName(const std::string& raw_name) const {
     std::string cleaned;
     for (unsigned char ch : raw_name) {
@@ -65,6 +71,7 @@ std::string StarAbyssApp::SanitizeSaveName(const std::string& raw_name) const {
     return cleaned.empty() ? "save" : cleaned;
 }
 
+// Scans the save directory, rebuilds the visible save lists, and returns nothing.
 void StarAbyssApp::RefreshSaveEntries() {
     namespace fs = std::filesystem;
     saveEntries_.clear();
@@ -110,6 +117,7 @@ void StarAbyssApp::RefreshSaveEntries() {
     }
 }
 
+// Formats the save entry at the given index and returns its display label.
 std::string StarAbyssApp::SaveDisplayName(size_t index) const {
     if (index >= saveSlotNames_.size()) {
         return "";
@@ -121,6 +129,7 @@ std::string StarAbyssApp::SaveDisplayName(size_t index) const {
     return entry;
 }
 
+// Saves to the chosen slot, optionally shows feedback, and returns nothing.
 void StarAbyssApp::SaveToSlot(const std::string& slot_name, bool show_feedback) {
     if (!engine_.state().hasRun) {
         if (show_feedback) {
@@ -153,6 +162,7 @@ void StarAbyssApp::SaveToSlot(const std::string& slot_name, bool show_feedback) 
     }
 }
 
+// Loads the selected save file, updates feedback state, and returns nothing.
 void StarAbyssApp::LoadSelectedSave() {
     if (savePaths_.empty()) {
         engine_.showInfo(Tr(language_, "Load Failed", "读取失败"),
@@ -180,6 +190,7 @@ void StarAbyssApp::LoadSelectedSave() {
     }
 }
 
+// Writes the active run to the autosave slot when a run exists and returns nothing.
 void StarAbyssApp::AutoSave() {
     if (!engine_.state().hasRun) {
         return;
@@ -189,6 +200,7 @@ void StarAbyssApp::AutoSave() {
 
 // The save dialog is separated from page rendering because it is a modal
 // workflow shared by map, encounter, battle, and menu actions.
+// Renders the save or load dialog without input and returns the overlay element.
 Element StarAbyssApp::RenderSaveDialog() const {
     const bool save_mode = saveDialogMode_ == SaveDialogMode::Save;
     const int terminal_width = Terminal::Size().dimx;

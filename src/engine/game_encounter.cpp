@@ -4,6 +4,7 @@
 
 namespace {
 
+// Chooses a random rescue or exploration epilogue line and writes it to the output string.
 void SetEpilogue_A(std::string& out, std::mt19937& rng) {
     std::uniform_int_distribution<int> pick(0, 2);
     switch (pick(rng)) {
@@ -13,6 +14,7 @@ void SetEpilogue_A(std::string& out, std::mt19937& rng) {
     }
 }
 
+// Chooses a random malfunction epilogue line and writes it to the output string.
 void SetEpilogue_C(std::string& out, std::mt19937& rng) {
     std::uniform_int_distribution<int> pick(0, 2);
     switch (pick(rng)) {
@@ -22,6 +24,7 @@ void SetEpilogue_C(std::string& out, std::mt19937& rng) {
     }
 }
 
+// Chooses a random black-market epilogue line and writes it to the output string.
 void SetEpilogue_D(std::string& out, std::mt19937& rng) {
     std::uniform_int_distribution<int> pick(0, 2);
     switch (pick(rng)) {
@@ -48,6 +51,7 @@ extern bool g_sa_escape_intro_pending;
 extern bool g_sa_game_intro_pending;
 extern std::string g_sa_event_epilogue;
 
+// Resolves the encounter choice at the given index, applies its outcome, and returns nothing.
 void GameEngine::resolveEncounter(size_t index) {
     if (state_.page != AppPage::Encounter || index >= state_.encounter.choices.size()) {
         return;

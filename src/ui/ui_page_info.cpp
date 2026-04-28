@@ -6,6 +6,7 @@ using namespace ftxui;
 
 // Generic information popups share one renderer so help, leaderboard, and save
 // feedback all keep the same presentation contract.
+// Renders the current information page without input and returns the page element.
 Element StarAbyssApp::RenderInfo() const {
     const RunState& state = engine_.state();
     Elements lines;

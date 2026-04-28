@@ -24,6 +24,7 @@ constexpr const char* kLanguagePreferencePath = "save/ui_language.txt";
 
 }  // namespace
 
+// Builds the terminal app around the supplied screen, wires pages and overlays, and returns through construction.
 StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     LoadLanguagePreference();
 
@@ -177,6 +178,7 @@ StarAbyssApp::StarAbyssApp(ScreenInteractive& screen) : screen_(screen) {
     });
 }
 
+// Stops the ticker thread during teardown, takes no arguments, and returns nothing.
 StarAbyssApp::~StarAbyssApp() {
     running_ = false;
     if (ticker_.joinable()) {
@@ -184,6 +186,7 @@ StarAbyssApp::~StarAbyssApp() {
     }
 }
 
+// Reads the language preference from disk, falls back when needed, and returns nothing.
 void StarAbyssApp::LoadLanguagePreference() {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -208,6 +211,7 @@ void StarAbyssApp::LoadLanguagePreference() {
     }
 }
 
+// Writes the current language choice to disk without input and returns nothing.
 void StarAbyssApp::SaveLanguagePreference() const {
     namespace fs = std::filesystem;
     std::error_code ec;
@@ -220,6 +224,7 @@ void StarAbyssApp::SaveLanguagePreference() const {
     output << (language_ == UiLanguage::Chinese ? "zh\n" : "en\n");
 }
 
+// Creates a shared app for the given screen and returns the layered FTXUI root component.
 ftxui::Component CreateApp(ftxui::ScreenInteractive& screen) {
     auto app = std::make_shared<StarAbyssApp>(screen);
     auto layered = Renderer(app->root(), [app] {

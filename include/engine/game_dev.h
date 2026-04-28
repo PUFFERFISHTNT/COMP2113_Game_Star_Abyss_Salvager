@@ -47,20 +47,35 @@ inline constexpr const char* kPassword = "123456";
 
 class DevModeUi {
 public:
+    // Creates the developer UI around the engine, screen, language state, visibility flag, and close callback.
     DevModeUi(GameEngine& engine,
               ftxui::ScreenInteractive& screen,
               UiLanguage& language,
               bool& visible,
               std::function<void()> on_close);
 
+    // Returns the modal component without taking extra input.
     ftxui::Component component() const { return root_; }
+
+    // Returns the persistent overlay component without taking extra input.
     ftxui::Component overlay() const { return overlay_root_; }
 
+    // Opens the developer modal and does not return a value.
     void open();
+
+    // Hides the modal while keeping developer mode state intact and returns nothing.
     void dismissModal();
+
+    // Leaves developer mode, resets its UI state, and returns nothing.
     void exitDeveloperMode();
+
+    // Handles one FTXUI event for the overlay and returns whether it was consumed.
     bool handleOverlayEvent(ftxui::Event event);
+
+    // Reports whether the password has unlocked developer mode, with no input needed.
     bool unlocked() const { return unlocked_; }
+
+    // Reports whether either debug panel is visible, with no input needed.
     bool debugPanelVisible() const { return debug_panel_visible_ || event_panel_visible_; }
 
 private:
@@ -69,17 +84,40 @@ private:
         Main = 1,
     };
 
+    // Rebuilds localized text labels from the current language and returns nothing.
     void rebuildLabels();
+
+    // Renders the password page without input and returns the FTXUI element.
     ftxui::Element renderPassword() const;
+
+    // Renders the main developer modal without input and returns the FTXUI element.
     ftxui::Element renderMain() const;
+
+    // Renders the floating overlay without input and returns the FTXUI element.
     ftxui::Element renderOverlay() const;
+
+    // Renders the live debug panel without input and returns the FTXUI element.
     ftxui::Element renderDebugPanel() const;
+
+    // Renders the event picker panel without input and returns the FTXUI element.
     ftxui::Element renderEventPanel() const;
+
+    // Clears transient selections and text fields without returning anything.
     void resetUiState();
+
+    // Rebuilds jump destination options from the current game state and returns nothing.
     void rebuildDestinationOptions();
+
+    // Shows the debug panel without taking input and returns nothing.
     void openDebugPanel();
+
+    // Hides the debug panel without taking input and returns nothing.
     void closeDebugPanel();
+
+    // Shows the event panel without taking input and returns nothing.
     void openEventPanel();
+
+    // Hides the event panel without taking input and returns nothing.
     void closeEventPanel();
 
     GameEngine& engine_;
