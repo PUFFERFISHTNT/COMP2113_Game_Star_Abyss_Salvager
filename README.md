@@ -3,10 +3,7 @@
 `Star Abyss Salvager` is a terminal roguelike deckbuilding game built for the COMP2113 course project.
 You pilot a salvager ship into the Star Abyss, route through unstable sectors, fight hostile ships in turn-based card battles, upgrade or purge cards, collect relics, and push toward one of several endings.
 
-The structure is inspired by **Slay the Spire**, but the implemented game logic is its own system: heat and overheat management, auxiliary ships, form switching, route events, story boss branches, an escape route, and a truth route.
-
-## Screenshot
-
+The gameplay draws inspiration from **Slay the Spire**, but the implemented game logic is its own system: heat and overheat management, auxiliary ships, form switching, route events, story boss branches, an escape route, and a truth route.
 ![Current gameplay screenshot](docs/images/game-screenshot.png)
 
 ## Team Members
@@ -36,6 +33,113 @@ The current repository already contains a fully playable build with:
 - manual save / load and autosave
 - card library, owned deck viewer, leaderboard, and achievement tracking
 - bilingual English / Chinese UI
+
+## Compilation
+
+Run all commands from the project root:
+
+```bash
+make
+```
+
+This builds:
+
+```bash
+./star_abyss_salvager
+```
+
+### Requirements
+
+- `g++` with C++17 support
+- GNU `make`
+- a UTF-8 terminal
+
+No internet download is required because FTXUI is vendored in the repository.
+
+## Running the Game
+
+Run from the project root:
+
+```bash
+./star_abyss_salvager
+```
+
+Please launch the executable from the repository root so these runtime paths resolve correctly:
+
+- `data/cards.json`
+- `save/*.sav`
+- `save/ui_language.txt`
+- `save/obtained_cards.txt`
+- `save/completed_events.txt`
+- `save/seen_enemies.txt`
+- `data/leaderboard.txt`
+
+## Controls
+
+### General
+
+- `1` - `9`, `0`: choose visible menu entries or card/service targets
+- `S`: open save dialog
+- `L`: open load dialog
+- `Esc`: close a modal, leave a service page, go back from info pages, or return to the menu depending on context
+- `PgUp` / `PgDn`: scroll long pages
+- `Ctrl+Up` / `Ctrl+Down`: alternate scroll
+- `[` / `]`: alternate scroll
+
+### Main Menu / Views
+
+- `C`: open the card library from the main menu
+- `A`: open achievements from the main menu
+- `D`: open the owned deck viewer during a run
+
+### Battle
+
+- `1` - `9`, `0`: play cards in hand
+- `E`: end turn
+- mouse:
+  - click cards
+  - click auxiliary ship targets when required
+  - click battle utility buttons
+
+### Service Screens
+
+- black market service screens:
+  - `Esc`, `B`, or `0`: return to the broker
+- repair / event service screens:
+  - `Esc` or `0`: leave the service
+
+## Persistent Files
+
+The game reads or writes:
+
+- `data/cards.json`
+  - card definitions and upgrade definitions
+- `save/*.sav`
+  - manual saves and autosave
+- `save/ui_language.txt`
+  - current language preference
+- `save/obtained_cards.txt`
+  - unlocked card registry
+- `save/completed_events.txt`
+  - event achievement registry
+- `save/seen_enemies.txt`
+  - enemy discovery registry
+- `data/leaderboard.txt`
+  - recorded run results
+
+## Non-Standard Library
+
+### FTXUI
+
+This repository vendors [FTXUI](https://github.com/ArthurSonzogni/FTXUI) under `vendor/FTXUI/`.
+
+FTXUI is used for:
+
+- full-screen terminal rendering
+- buttons, toggles, menus, and modal dialogs
+- keyboard and mouse input
+- page layout and panels
+- scrollable UI pages
 
 ## Route and Ending Structure
 
@@ -180,22 +284,76 @@ flowchart LR
 
 ### Services and Progression
 
-- black market:
-  - buy colorless cards
-  - upgrade one card
-  - purge one card
-- repair station:
+#### Route Selection
+
+- route choice is the backbone of run progression
+- the map can branch into battles, elites, salvage, repair, events, markets, and boss progression
+- route generation is also where story boss signals, truth-route triggers, and escape-route triggers are layered into a run
+
+![Route selection screenshot](docs/images/choose-route.png)
+
+#### Repair Station
+
+- repair stations provide controlled recovery and maintenance between battles
+- the current station services include:
   - patch hull
   - vent heat
   - install plating
-  - upgrade one card for free
-  - purge one card for free
-- reward flow:
+  - free upgrade
+  - free purge
+
+![Repair station screenshot](docs/images/repair-station.png)
+
+#### Derelict Wreck
+
+- salvage / wreck nodes provide smaller risk-reward decisions during route progression
+- the player can strip credits, recover a module rack for card rewards, or leave without taking risk
+- these nodes help connect exploration, deck growth, and economy management
+
+![Derelict wreck screenshot](docs/images/derelict-wreck.png)
+
+#### Black Market
+
+- the black market is a major deck-shaping service node
+- current black market functions include:
+  - buying colorless cards
+  - upgrading one card
+  - purging one card
+
+![Black market screenshot](docs/images/black-market.png)
+
+#### Rewards
+
+- reward screens are used after successful battle progression
+- current reward flow can contain:
   - credits
   - card rewards
   - relic rewards on elite / boss victories
 
-![Repair station screenshot](docs/images/repair-station.png)
+![Reward screen screenshot](docs/images/reward.png)
+
+#### Strange Signals
+
+- the current random event pool includes:
+  - `Distress Beacon`
+  - `Ghost Ship`
+  - `Strange Signal`
+  - `Space Fold`
+  - `Ark Beacon`
+  - `Reactor Leak`
+  - `Hull Breach`
+  - `Deck Chaos`
+  - `Smuggler Cache`
+  - `Wandering Trader`
+  - `Pirate Ambush`
+  - `Cryo Pod`
+- event nodes can also become special story boss signals:
+  - `Broker Echo`
+  - `Cinder Shrine Signal`
+  - `Beneath Choir Resonance`
+  - `Prototype Zero Trace`
+
+![Signal event screenshot](docs/images/signal.png)
 
 ## UI and Quality-of-Life
 
@@ -213,115 +371,6 @@ flowchart LR
 
 ![Achievements screenshot](docs/images/achivements.png)
 
-## Compilation
-
-Run all commands from the project root:
-
-```bash
-make
-```
-
-This builds:
-
-```bash
-./star_abyss_salvager
-```
-
-### Requirements
-
-- `g++` with C++17 support
-- GNU `make`
-- a UTF-8 terminal
-
-No internet download is required because FTXUI is vendored in the repository.
-
-## Running the Game
-
-Run from the project root:
-
-```bash
-./star_abyss_salvager
-```
-
-Please launch the executable from the repository root so these runtime paths resolve correctly:
-
-- `data/cards.json`
-- `save/*.sav`
-- `save/ui_language.txt`
-- `save/obtained_cards.txt`
-- `save/completed_events.txt`
-- `save/seen_enemies.txt`
-- `data/leaderboard.txt`
-
-## Controls
-
-### General
-
-- `1` - `9`, `0`: choose visible menu entries or card/service targets
-- `S`: open save dialog
-- `L`: open load dialog
-- `Esc`: close a modal, leave a service page, go back from info pages, or return to the menu depending on context
-- `PgUp` / `PgDn`: scroll long pages
-- `Ctrl+Up` / `Ctrl+Down`: alternate scroll
-- `[` / `]`: alternate scroll
-
-### Main Menu / Views
-
-- `C`: open the card library from the main menu
-- `A`: open achievements from the main menu
-- `D`: open the owned deck viewer during a run
-
-### Battle
-
-- `1` - `9`, `0`: play cards in hand
-- `E`: end turn
-- mouse:
-  - click cards
-  - click auxiliary ship targets when required
-  - click battle utility buttons
-
-### Service Screens
-
-- black market service screens:
-  - `Esc`, `B`, or `0`: return to the broker
-- repair / event service screens:
-  - `Esc` or `0`: leave the service
-
-## Persistent Files
-
-The game reads or writes:
-
-- `data/cards.json`
-  - card definitions and upgrade definitions
-- `save/*.sav`
-  - manual saves and autosave
-- `save/ui_language.txt`
-  - current language preference
-- `save/obtained_cards.txt`
-  - unlocked card registry
-- `save/completed_events.txt`
-  - event achievement registry
-- `save/seen_enemies.txt`
-  - enemy discovery registry
-- `data/leaderboard.txt`
-  - recorded run results
-
-
-
-## Non-Standard Library
-
-### FTXUI
-
-This repository vendors [FTXUI](https://github.com/ArthurSonzogni/FTXUI) under `vendor/FTXUI/`.
-
-FTXUI is used for:
-
-- full-screen terminal rendering
-- buttons, toggles, menus, and modal dialogs
-- keyboard and mouse input
-- page layout and panels
-- scrollable UI pages
-
 ## Project Structure
 
 ```text
@@ -333,6 +382,17 @@ FTXUI is used for:
 |   `-- leaderboard.txt
 |-- docs/
 |   `-- images/
+|       |-- achivements.png
+|       |-- battle-bridge.png
+|       |-- black-market.png
+|       |-- card-library.png
+|       |-- choose-route.png
+|       |-- derelict-wreck.png
+|       |-- game-screenshot.png
+|       |-- launch-setup.png
+|       |-- repair-station.png
+|       |-- reward.png
+|       |-- signal.png
 |       `-- true-ending-flow.png
 |-- include/
 |   |-- engine/
