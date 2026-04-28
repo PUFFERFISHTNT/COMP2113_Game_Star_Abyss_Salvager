@@ -4,7 +4,7 @@
 You pilot a salvager ship into the Star Abyss, route through unstable sectors, fight hostile ships in turn-based card battles, upgrade or purge cards, collect relics, and push toward one of several endings.
 
 The gameplay draws inspiration from **Slay the Spire**, but the implemented game logic is its own system: heat and overheat management, auxiliary ships, form switching, route events, story boss branches, an escape route, and a truth route.
-![Current gameplay screenshot](docs/images/game-screenshot.png)
+![Poster](docs/images/game-screenshot.png)
 
 ## Team Members
 
