@@ -11,14 +11,6 @@ Game introduction video: [COMP2113 Group19 Star Abyss Salvager Presentation Vide
 
 ![Poster](docs/images/game-screenshot.png)
 
-## Team Members
-
-- `PUFFERFISHTNT` Xu Yukuan (3036478148)
-- `Annie-goat` Guo Xinyao (3036483478)
-- `victorxsy` Xu Siyuan (3036482955)
-- `Andy-MRX` Hu Pengfei (3036588852)
-- `Kong Ce` Kong Ce (3036483650)
-
 ## Current Content Snapshot
 
 The current repository already contains a fully playable build with:
